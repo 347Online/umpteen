@@ -1,4 +1,4 @@
-use crate::{error::{UmpError, UmpResult}, value::Value};
+use crate::error::{UmpError, UmpResult};
 
 #[derive(Clone, Copy)]
 pub enum Instruction {
@@ -31,32 +31,32 @@ impl From<u8> for Argument {
 
 #[derive(Clone, Copy)]
 pub union Bytecode {
-    code: Instruction,
-    data: Argument,
+    inst: Instruction,
+    arg: Argument,
 }
 
 impl Bytecode {
     pub fn code(self) -> UmpResult<Instruction> {
         // SAFETY:
         // Failed conversion safely returns an error
-        (unsafe { self.code } as u8).try_into()
+        (unsafe { self.inst } as u8).try_into()
     }
 
     pub fn data(self) -> Argument {
         // SAFETY:
         // This operation is infallible
-        unsafe { self.data }
+        unsafe { self.arg }
     }
 }
 
 impl From<Instruction> for Bytecode {
     fn from(value: Instruction) -> Self {
-        Bytecode { code: value }
+        Bytecode { inst: value }
     }
 }
 
 impl From<Argument> for Bytecode {
     fn from(value: Argument) -> Self {
-        Bytecode { data: value }
+        Bytecode { arg: value }
     }
 }
