@@ -1,6 +1,6 @@
 use std::fmt::{Display, Write};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     Let,
     Identifier,
@@ -17,7 +17,7 @@ impl Display for TokenType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     kind: TokenType,
     lexeme: String,
@@ -31,6 +31,14 @@ impl Token {
             lexeme: lexeme.to_string(),
             line,
         }
+    }
+
+    pub fn kind(&self) -> TokenType {
+        self.kind
+    }
+
+    pub fn lexeme(&self) -> String {
+        self.lexeme.clone()
     }
 }
 
