@@ -1,10 +1,9 @@
 pub mod error;
 pub mod token;
 
-use error::*;
 use token::*;
 
-pub fn lex(source: &str) -> UmpResult<Vec<Token>> {
+fn lex(source: &str) -> Vec<Token> {
     let mut source = source.chars().peekable();
     let mut line = 1;
     let mut col = 1;
@@ -26,7 +25,7 @@ pub fn lex(source: &str) -> UmpResult<Vec<Token>> {
                 line += 1;
                 col = 1;
             }
-            
+
             c if c.is_ascii_whitespace() => (),
 
             ';' => token!(Semicolon),
@@ -57,5 +56,14 @@ pub fn lex(source: &str) -> UmpResult<Vec<Token>> {
         col += 1;
     }
 
-    Ok(tokens)
+    #[cfg(debug_assertions)]
+    if let Err(e) = print_tokens(&tokens) {
+        eprintln!("{e}")
+    }
+
+    tokens
+}
+
+pub fn exec(source: &str) {
+    let tokens = lex(source);
 }

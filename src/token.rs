@@ -47,7 +47,7 @@ impl Display for Token {
     }
 }
 
-pub fn print_tokens(tokens: Vec<Token>) -> std::fmt::Result {
+pub fn print_tokens(tokens: &Vec<Token>) -> std::fmt::Result {
     let mut buffer = String::new();
     write!(&mut buffer, "Tokens: [")?;
     for (i, tk) in tokens.iter().enumerate() {
