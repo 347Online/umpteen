@@ -21,16 +21,16 @@ pub fn lex(source: &str) -> UmpResult<Vec<Token>> {
             };
         }
         match c {
-            c if c.is_ascii_whitespace() => (),
-
-            ';' => token!(Semicolon),
-            '=' => token!(Equal),
-
             '\n' => {
                 token!(Newline);
                 line += 1;
                 col = 1;
             }
+            
+            c if c.is_ascii_whitespace() => (),
+
+            ';' => token!(Semicolon),
+            '=' => token!(Equal),
 
             c if c.is_ascii_digit() => {
                 let mut num_str = String::from(c);
