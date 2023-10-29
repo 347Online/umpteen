@@ -1,6 +1,8 @@
+pub mod bytecode;
+pub mod chunk;
 pub mod error;
 pub mod token;
-pub mod bytecode;
+pub mod value;
 
 use token::*;
 

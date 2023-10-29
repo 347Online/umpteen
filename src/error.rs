@@ -6,7 +6,7 @@ pub type UmpResult<T> = Result<T, UmpError>;
 pub enum UmpErrorType {
     Unknown,
     UnexpectedEof,
-    InvalidOpcode(u8),
+    InvalidInstruction(u8),
 }
 
 impl Display for UmpErrorType {
@@ -15,7 +15,7 @@ impl Display for UmpErrorType {
         let desc = match self {
             Self::Unknown => "Unknown error",
             Self::UnexpectedEof => "Unexpected end of file",
-            Self::InvalidOpcode(byte) => {
+            Self::InvalidInstruction(byte) => {
                 tmp = format!("Invalid Opcode `{byte}`");
                 &tmp
             }
@@ -40,8 +40,8 @@ impl UmpError {
         Self::new(UmpErrorType::Unknown, line)
     }
 
-    pub fn invalid_opcode(byte: u8) -> Self {
-        Self::new(UmpErrorType::InvalidOpcode(byte), 0)
+    pub fn invalid_instruction(byte: u8) -> Self {
+        Self::new(UmpErrorType::InvalidInstruction(byte), 0)
     }
 }
 
