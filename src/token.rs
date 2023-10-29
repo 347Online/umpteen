@@ -8,7 +8,7 @@ pub enum TokenType {
     Newline,
     Equal,
     Number,
-    Error(&'static str),
+    Error(&'static str, u32),
 }
 
 impl Display for TokenType {
@@ -22,7 +22,6 @@ pub struct Token {
     kind: TokenType,
     lexeme: String,
     line: u32,
-    column: u32,
 }
 
 impl Token {
@@ -31,16 +30,19 @@ impl Token {
             kind,
             lexeme: lexeme.to_string(),
             line,
-            column: 0,
         }
     }
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use TokenType as TT;
         match self.kind {
-            TokenType::Error(s) => write!(f, "Error [{}:{}]: {s}", self.line, self.column),
-            _ => write!(f, "{}({:?})", self.kind, self.lexeme),
+            TT::Error(s, col) => {
+                write!(f, "ERR{{line {}:{col} @ {:?} {s}}}", self.line, self.lexeme)
+            }
+            TT::Number | TT::Identifier => write!(f, "{}({:?})", self.kind, self.lexeme),
+            _ => write!(f, "{}", self.kind),
         }
     }
 }
