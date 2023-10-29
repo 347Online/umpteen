@@ -1,6 +1,7 @@
-pub enum Value {
-  Empty,
-  Boolean(bool),
-  Number(f64),
-  String(Box<String>),
+#[derive(Clone, Copy)]
+pub enum Value<'v> {
+    Empty,
+    Boolean(bool),
+    Number(f64),
+    String(&'v String),
 }
