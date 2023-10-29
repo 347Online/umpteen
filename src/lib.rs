@@ -4,44 +4,27 @@ pub mod token;
 use error::*;
 use token::*;
 
-pub fn lex(source: &str) -> Result<Vec<Token>, UmpError> {
-    let source: Vec<char> = source.to_string().chars().collect();
-    let len = source.len();
-    let mut pos = 0;
+pub fn lex(source: &str) -> UmpResult<Vec<Token>> {
+    let mut source = source.chars().peekable();
     let mut line = 1;
     let mut tokens = vec![];
 
-    while pos < len {
-        let c = source.get(pos);
-        pos += 1;
-
+    while let Some(c) = source.next() {
+        macro_rules! token {
+            ($($k:tt)+) => {
+                tokens.push(Token::new(TokenType::$($k)+, &String::from(c), line))
+            };
+        }
+        source.peek(); // TODO: remove this
         match c {
-            Some(c) => {
-                macro_rules! token {
-                    ($k:tt) => {
-                        tokens.push(Token::new(TokenType::$k, &String::from(*c), line))
-                    };
-                }
+            ';' => token!(Semicolon),
+            '=' => token!(Equal),
 
-                match c {
-                    ';' => token!(Semicolon),
-                    '=' => token!(Equal),
-
-                    '0'..='9' => (),
-
-                    '\n' => {
-                        line += 1;
-                    }
-                    _ => todo!(),
-                }
+            '\n' => {
+                token!(Newline);
+                line += 1;
             }
-            None => {
-                return Err(UmpError::new(
-                    "Unexpected end of file",
-                    UmpErrorType::UnexpectedEof,
-                    line,
-                ));
-            }
+            _ => token!(Error("Unexpected token")),
         }
     }
 

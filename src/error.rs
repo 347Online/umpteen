@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+pub type UmpResult<T> = Result<T, UmpError>;
+
 #[derive(Debug)]
 pub enum UmpErrorType {
     Unknown,
