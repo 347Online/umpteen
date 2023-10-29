@@ -6,13 +6,19 @@ pub type UmpResult<T> = Result<T, UmpError>;
 pub enum UmpErrorType {
     Unknown,
     UnexpectedEof,
+    InvalidOpcode(u8),
 }
 
 impl Display for UmpErrorType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let tmp;
         let desc = match self {
             Self::Unknown => "Unknown error",
             Self::UnexpectedEof => "Unexpected end of file",
+            Self::InvalidOpcode(byte) => {
+                tmp = format!("Invalid Opcode `{byte}`");
+                &tmp
+            }
         };
 
         write!(f, "{}", desc)
@@ -21,31 +27,34 @@ impl Display for UmpErrorType {
 
 #[derive(Debug)]
 pub struct UmpError {
-    message: String,
     kind: UmpErrorType,
-    line: u32,
+    line: usize,
 }
 
 impl UmpError {
-    pub fn new(message: &str, kind: UmpErrorType, line: u32) -> Self {
-        Self {
-            message: message.to_string(),
-            kind,
-            line,
-        }
+    pub fn new(kind: UmpErrorType, line: usize) -> Self {
+        Self { kind, line }
     }
 
-    pub fn unkown() -> Self {
-        Self::new("An unknown error occurred", UmpErrorType::Unknown, 0)
+    pub fn unknown(line: usize) -> Self {
+        Self::new(UmpErrorType::Unknown, line)
+    }
+
+    pub fn invalid_opcode(byte: u8) -> Self {
+        Self::new(UmpErrorType::InvalidOpcode(byte), 0)
     }
 }
 
 impl Display for UmpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Error encountered at [{}]: {}\n{}",
-            self.line, self.kind, self.message
-        )
+        if self.line == 0 {
+            write!(f, "Error encountered: {}", self.kind)
+        } else {
+            write!(
+                f,
+                "Error encountered on line [{}]: {}",
+                self.line, self.kind
+            )
+        }
     }
 }
