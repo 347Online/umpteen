@@ -4,6 +4,9 @@ pub mod error;
 pub mod token;
 pub mod value;
 
+use bytecode::{Argument, Instruction};
+use chunk::Chunk;
+use error::{UmpResult, UmpError};
 use token::*;
 
 fn lex(source: &str) -> Vec<Token> {
@@ -65,6 +68,36 @@ fn lex(source: &str) -> Vec<Token> {
     }
 
     tokens
+}
+
+pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
+    for chunk in program {
+        let mut val = None;
+        let code = chunk.instructions().iter().peekable();
+        let mut args = chunk.data().iter().peekable();
+        let constants = chunk.constants();
+
+        for inst in code {
+            match inst {
+                Instruction::Constant => {
+                    let Some(Argument(addr)) = args.next() else {
+                        return Err(UmpError::wrong_num_args(1, 0));
+                    };
+                    let Some(value) = constants.get(*addr as usize) else {
+                        return Err(UmpError::missing_value(*addr))
+                    };
+                    val = Some(value);
+                },
+                Instruction::Return => {
+                    if let Some(value) = val {
+                        println!("{value}");
+                    }
+                },
+            }
+        }
+    }
+
+    Ok(())
 }
 
 pub fn exec(source: &str) {
