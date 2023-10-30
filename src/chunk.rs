@@ -2,36 +2,42 @@ use crate::{bytecode::{Instruction, Argument}, value::Value};
 
 #[derive(Debug)]
 pub struct Chunk {
-    instructions: Vec<Instruction>,
-    data: Vec<Argument>,
-    constants: Vec<Value>,
+    data: Vec<Value>,
+    code: Vec<Instruction>,
+    args: Vec<Argument>,
 }
 
 impl Chunk {
     pub fn new() -> Self {
         Self {
-            instructions: vec![],
             data: vec![],
-            constants: vec![],
+            code: vec![],
+            args: vec![],
         }
     }
 
-    pub fn add_constant(&mut self, constant: Value) -> u8 {
-        let addr = self.constants.len() as u8;
-        self.constants.push(constant);
+    pub fn write_val(&mut self, constant: Value) -> u8 {
+        let addr = self.data.len() as u8;
+        self.data.push(constant);
         addr
     }
 
     pub fn write_inst(&mut self, inst: Instruction) {
-        self.instructions.push(inst)
+        self.code.push(inst)
     }
     
     pub fn write_arg(&mut self, arg: Argument) {
-        self.data.push(arg)
+        self.args.push(arg)
     }
 
-    pub fn consume(self) -> (Vec<Instruction>, Vec<Argument>, Vec<Value>) {
-        (self.instructions, self.data, self.constants)
+    pub fn write_args(&mut self, args: &[Argument]) {
+        for arg in args {
+            self.write_arg(*arg);
+        }
+    }
+
+    pub fn consume(self) -> (Vec<Value>, Vec<Instruction>, Vec<Argument>) {
+        (self.data, self.code, self.args)
     }
 }
 

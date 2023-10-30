@@ -38,7 +38,6 @@ fn lex(source: &str) -> Vec<Token> {
 
             c if c.is_ascii_whitespace() => (),
 
-
             c if c.is_ascii_digit() => {
                 let mut num_str = String::from(c);
                 while let Some(c) = source.next_if(|x| x.is_ascii_digit()) {
@@ -77,16 +76,19 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
     let mut stack: Vec<Value> = vec![];
 
     for chunk in program {
-        let (code, args, constants) = chunk.consume();
+        let (data, code, args) = chunk.consume();
         let mut args = args.iter();
 
         for inst in code {
             match inst {
+                Instruction::Line => {
+                    todo!();
+                },
                 Instruction::Constant => {
                     let Some(Argument(addr)) = args.next() else {
                         return Err(UmpError::wrong_num_args(1, 0));
                     };
-                    let Some(val) = constants.get(*addr as usize).cloned() else {
+                    let Some(val) = data.get(*addr as usize).cloned() else {
                         return Err(UmpError::missing_value(*addr));
                     };
                     stack.push(val);
@@ -110,5 +112,5 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
 }
 
 pub fn exec(source: &str) {
-    let tokens = lex(source);
+    let _ = lex(source);
 }

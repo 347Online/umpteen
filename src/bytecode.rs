@@ -5,7 +5,7 @@ use crate::error::UmpError;
 pub enum Instruction {
     Constant,
     Print,
-    // Line,
+    Line,
     Return,
 }
 
