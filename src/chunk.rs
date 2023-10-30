@@ -1,13 +1,13 @@
 use crate::{bytecode::{Instruction, Argument}, value::Value};
 
 #[derive(Debug)]
-pub struct Chunk<'c> {
+pub struct Chunk {
     instructions: Vec<Instruction>,
     data: Vec<Argument>,
-    constants: Vec<Value<'c>>,
+    constants: Vec<Value>,
 }
 
-impl<'c> Chunk<'c> {
+impl Chunk {
     pub fn new() -> Self {
         Self {
             instructions: vec![],
@@ -16,19 +16,7 @@ impl<'c> Chunk<'c> {
         }
     }
 
-    pub fn instructions(&self) -> &Vec<Instruction> {
-        &self.instructions
-    }
-
-    pub fn data(&self) -> &Vec<Argument> {
-        &self.data
-    }
-
-    pub fn constants(&self) -> &Vec<Value> {
-        &self.constants
-    }
-
-    pub fn add_constant(&mut self, constant: Value<'c>) -> u8 {
+    pub fn add_constant(&mut self, constant: Value) -> u8 {
         let addr = self.constants.len() as u8;
         self.constants.push(constant);
         addr
@@ -41,9 +29,13 @@ impl<'c> Chunk<'c> {
     pub fn write_arg(&mut self, arg: Argument) {
         self.data.push(arg)
     }
+
+    pub fn consume(self) -> (Vec<Instruction>, Vec<Argument>, Vec<Value>) {
+        (self.instructions, self.data, self.constants)
+    }
 }
 
-impl<'c> Default for Chunk<'c> {
+impl Default for Chunk {
     fn default() -> Self {
         Self::new()
     }
