@@ -1,21 +1,26 @@
-use crate::{bytecode::Bytecode, value::Value};
+use crate::{
+    bytecode::{Bytecode, Instruction},
+    value::Value,
+};
 
-pub struct Chunk {
-  code: Vec<Bytecode>,
-  constants: Vec<Value>,
+pub struct Chunk<'c> {
+    code: Vec<Bytecode>,
+    constants: Vec<Value<'c>>,
 }
 
-impl Chunk {
-  pub fn new() -> Self {
-      Self {
-          code: vec![],
-          constants: vec![],
-      }
-  }
+impl<'c> Chunk<'c> {
+    pub fn new() -> Self {
+        Self {
+            code: vec![],
+            constants: vec![],
+        }
+    }
+
+    pub fn write(&mut self, inst: Instruction) {}
 }
 
-impl Default for Chunk {
-  fn default() -> Self {
-      Self::new()
-  }
+impl<'c> Default for Chunk<'c> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
