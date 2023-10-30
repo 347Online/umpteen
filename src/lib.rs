@@ -6,8 +6,9 @@ pub mod value;
 
 use bytecode::{Argument, Instruction};
 use chunk::Chunk;
-use error::{UmpResult, UmpError};
+use error::{UmpError, UmpResult};
 use token::*;
+use value::Value;
 
 fn lex(source: &str) -> Vec<Token> {
     let mut source = source.chars().peekable();
@@ -71,11 +72,11 @@ fn lex(source: &str) -> Vec<Token> {
 }
 
 pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
+    let mut stack: Vec<Value> = vec![];
+
     for chunk in program {
-        let mut val = None;
-        let code = chunk.instructions().iter().peekable();
-        let mut args = chunk.data().iter().peekable();
-        let constants = chunk.constants();
+        let (code, args, constants) = chunk.consume();
+        let mut args = args.iter();
 
         for inst in code {
             match inst {
@@ -83,16 +84,16 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
                     let Some(Argument(addr)) = args.next() else {
                         return Err(UmpError::wrong_num_args(1, 0));
                     };
-                    let Some(value) = constants.get(*addr as usize) else {
-                        return Err(UmpError::missing_value(*addr))
+                    let Some(val) = constants.get(*addr as usize).cloned() else {
+                        return Err(UmpError::missing_value(*addr));
                     };
-                    val = Some(value);
-                },
+                    stack.push(val);
+                }
                 Instruction::Return => {
-                    if let Some(value) = val {
+                    if let Some(value) = stack.pop() {
                         println!("{value}");
                     }
-                },
+                }
             }
         }
     }
