@@ -4,6 +4,8 @@ use crate::error::UmpError;
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
     Constant,
+    Print,
+    // Line,
     Return,
 }
 

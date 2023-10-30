@@ -27,6 +27,9 @@ fn lex(source: &str) -> Vec<Token> {
             };
         }
         match c {
+            ';' => token!(Semicolon),
+            '=' => token!(Equal),
+            
             '\n' => {
                 token!(Newline);
                 line += 1;
@@ -35,8 +38,6 @@ fn lex(source: &str) -> Vec<Token> {
 
             c if c.is_ascii_whitespace() => (),
 
-            ';' => token!(Semicolon),
-            '=' => token!(Equal),
 
             c if c.is_ascii_digit() => {
                 let mut num_str = String::from(c);
@@ -54,6 +55,7 @@ fn lex(source: &str) -> Vec<Token> {
 
                 match ident_str.as_str() {
                     "let" => token!(Let, &ident_str),
+                    "print" => token!(Print, &ident_str),
                     _ => token!(Identifier, &ident_str),
                 }
             }
@@ -89,9 +91,15 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
                     };
                     stack.push(val);
                 }
+                Instruction::Print => {
+                    let Some(val) = stack.pop() else {
+                        return Err(UmpError::wrong_num_args(1, 0));
+                    };
+                    println!("{val}");
+                }
                 Instruction::Return => {
-                    if let Some(value) = stack.pop() {
-                        println!("{value}");
+                    if let Some(val) = stack.pop() {
+                        println!("Result: {val}");
                     }
                 }
             }

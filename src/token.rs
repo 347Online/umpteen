@@ -2,12 +2,17 @@ use std::fmt::{Display, Write};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
-    Let,
-    Identifier,
     Semicolon,
     Newline,
     Equal,
+
+    Let,
+    Print,
+    
     Number,
+    String,
+    Identifier,
+    
     Error(&'static str, u32),
 }
 
@@ -47,7 +52,7 @@ impl Display for Token {
         use TokenType as TT;
         match self.kind {
             TT::Error(s, col) => {
-                write!(f, "ERR{{line {}:{col} @ {:?} {s}}}", self.line, self.lexeme)
+                write!(f, "ERR{{line {}:{col} @ `{}` {s}}}", self.line, self.lexeme)
             }
             TT::Number | TT::Identifier => write!(f, "{}({:?})", self.kind, self.lexeme),
             _ => write!(f, "{}", self.kind),

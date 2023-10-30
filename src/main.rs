@@ -10,13 +10,18 @@ fn sample_programs() {
     programs.iter().for_each(|x| exec(x));
 }
 
+fn hello_world() {
+    exec("print 10.5;");
+}
+
 fn main() {
+    hello_world();
+
     let mut chunk = Chunk::new();
-    let st = "Hello world".to_string();
-    let constant = chunk.add_constant(Value::String(Box::new(String::from("Hello World"))));
+    let constant = chunk.add_constant(Value::Number(10.7));
     chunk.write_inst(Instruction::Constant);
     chunk.write_arg(Argument(constant));
-    chunk.write_inst(Instruction::Return);
+    chunk.write_inst(Instruction::Print);
     println!("{:?}", chunk);
     let _ = run(vec![chunk]);
 }
