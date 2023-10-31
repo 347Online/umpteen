@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::error::UmpError;
 
 #[repr(u8)]
@@ -6,6 +8,12 @@ pub enum Instruction {
     Constant,
     Print,
     Return,
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl TryFrom<u8> for Instruction {
@@ -18,7 +26,7 @@ impl TryFrom<u8> for Instruction {
             // Any u8 value <= Instruction::Return as u8 is valid as an instruction
             Ok(unsafe { std::mem::transmute(value) })
         } else {
-            Err(UmpError::invalid_instruction(value))
+            Err(UmpError::InvalidInstruction(value))
         }
     }
 }
