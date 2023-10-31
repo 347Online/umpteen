@@ -1,4 +1,4 @@
-use crate::{instr::Instruction, value::Value, Result};
+use crate::{instr::Instruction, value::Value};
 
 pub type Bytecode = (Vec<Value>, Vec<Instruction>, Vec<u8>);
 
@@ -33,42 +33,13 @@ impl Chunk {
         }
     }
 
-    pub fn exec(self) -> Result<Value> {
-        for instr in self {
-            
-        }
-
-        Ok(Value::Empty)
+    pub fn read_byte(&self, offset: usize) -> Option<u8> {
+        self.bytes.get(offset).copied()
     }
-}
 
-pub struct ChunkIntoIterator {
-    chunk: Chunk,
-    index: usize,
-    offset: usize,
-}
+    pub fn read(&self, offset: usize, size: usize) -> Option<&[u8]>{
+        let x = [0..10].into_iter().enumerate().map(|(i, _)| self.read_byte(offset+i)?);
 
-impl IntoIterator for Chunk {
-    type Item = Instruction;
-    type IntoIter = ChunkIntoIterator;
-
-    fn into_iter(self) -> Self::IntoIter {
-        ChunkIntoIterator {
-            chunk: self,
-            index: 0,
-            offset: 0,
-        }
-    }
-}
-
-impl Iterator for ChunkIntoIterator {
-    type Item = Instruction;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let instr = self.chunk.code.get(self.index)?;
-        self.index += 1;
-        self.offset += instr.offset();
-
-        Some(*instr)
+        todo!()
     }
 }
