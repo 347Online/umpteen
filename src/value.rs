@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, process::{Termination, ExitCode}};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
@@ -33,5 +33,12 @@ impl Display for Value {
 impl From<Option<Value>> for Value {
     fn from(value: Option<Value>) -> Self {
         value.unwrap_or(Value::Empty)
+    }
+}
+
+impl Termination for Value {
+    
+    fn report(self) -> ExitCode {
+        ExitCode::SUCCESS
     }
 }
