@@ -76,43 +76,7 @@ impl Umpteen {
         Ok(tokens)
     }
 
-    pub fn run(program: Vec<Chunk>) -> Result<()> {
-        let mut stack: Vec<Value> = vec![];
-
-        for (chunk_index, chunk) in program.into_iter().enumerate() {
-            let (data, code, args) = chunk.consume();
-            let mut args = args.iter();
-
-            for instr in code {
-                match instr {
-                    Instruction::Constant => {
-                        let Some(addr) = args.next() else {
-                            return Err(Error::WrongNumberBytes(1, 0, instr));
-                        };
-                        let Some(val) = data.get(*addr as usize).cloned() else {
-                            return Err(Error::MissingValue(chunk_index, *addr));
-                        };
-                        stack.push(val);
-                    }
-                    Instruction::Print => {
-                        let Some(val) = stack.pop() else {
-                            return Err(Error::WrongNumberArguments(1, 0, instr.to_string()));
-                        };
-                        println!("{val}");
-                    }
-                    Instruction::Return => {
-                        if let Some(val) = stack.pop() {
-                            println!("Result: {val}");
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn exec(source: &str) -> Result<()> {
+    pub fn run(source: &str) -> Result<()> {
         let _ = Umpteen::lex(source)?;
 
         Ok(())
