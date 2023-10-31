@@ -1,6 +1,6 @@
-use umpteen::{Result, Umpteen};
+use umpteen::{Result, Umpteen, value::Value};
 
-fn main() -> Result<()> {
+fn main() -> Result<Value> {
     Umpteen::run("let x = 10;")
 }
 
@@ -9,7 +9,7 @@ mod tests {
     use umpteen::{chunk::Chunk, instr::Instruction, value::Value, Umpteen};
 
     #[test]
-    fn test_hello_world() -> umpteen::Result<()> {
+    fn test_hello_world() -> umpteen::Result<Value> {
         Umpteen::run("print 10;")
     }
 
@@ -21,6 +21,8 @@ mod tests {
         chunk.write_byte(constant as u8);
         chunk.write_instr(Instruction::Print);
         println!("{:?}", chunk);
-        chunk.exec()
+        let val = chunk.exec();
+
+        Ok(())
     }
 }

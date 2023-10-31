@@ -4,9 +4,7 @@ pub mod instr;
 pub mod token;
 pub mod value;
 
-use chunk::Chunk;
 use error::Error;
-use instr::Instruction;
 use token::*;
 use value::Value;
 
@@ -76,9 +74,9 @@ impl Umpteen {
         Ok(tokens)
     }
 
-    pub fn run(source: &str) -> Result<()> {
+    pub fn run(source: &str) -> Result<Value> {
         let _ = Umpteen::lex(source)?;
 
-        Ok(())
+        Ok(Value::Empty)
     }
 }
