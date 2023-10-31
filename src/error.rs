@@ -14,6 +14,8 @@ pub enum UmpError {
     MissingValue(usize, u8),
 }
 
+impl std::error::Error for UmpError {}
+
 impl Display for UmpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let desc = match self {
