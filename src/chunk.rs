@@ -1,12 +1,14 @@
-use crate::{instr::Instruction, value::Value};
+use crate::{error::Error, instr::Instruction, value::Value, Result};
 
 pub type Bytecode = (Vec<Value>, Vec<Instruction>, Vec<u8>);
 
 #[derive(Debug, Default)]
 pub struct Chunk {
-    pub data: Vec<Value>,
-    pub code: Vec<Instruction>,
-    pub bytes: Vec<u8>,
+    pub data: Box<Vec<Value>>,
+    pub code: Box<Vec<Instruction>>,
+    pub bytes: Box<Vec<u8>>,
+    index: usize,
+    offset: usize,
 }
 
 impl Chunk {
@@ -33,13 +35,52 @@ impl Chunk {
         }
     }
 
-    pub fn read_byte(&self, offset: usize) -> Option<u8> {
-        self.bytes.get(offset).copied()
+    fn read_val(&self, addr: usize) -> Result<Value> {
+        self.data.get(addr).cloned().ok_or(Error::CorruptedChunk)
     }
 
-    pub fn read(&self, offset: usize, size: usize) -> Option<&[u8]>{
-        let x = [0..10].into_iter().enumerate().map(|(i, _)| self.read_byte(offset+i)?);
+    fn load_byte(&mut self) -> Result<u8> {
+        let byte = self.bytes.get(self.offset).ok_or(Error::CorruptedChunk)?;
+        self.offset += 1;
+        Ok(*byte)
+    }
 
-        todo!()
+    fn load_bytes(&mut self, size: usize) -> Result<Vec<u8>> {
+        let mut bytes = vec![];
+
+        let mut i = 0;
+        while i < size {
+            let byte = self.load_byte()?;
+            bytes.push(byte);
+            i += 1;
+        }
+
+        Ok(bytes)
+    }
+
+    pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
+        let code = *std::mem::take(&mut self.code);
+
+        macro_rules! pop {
+            () => {
+                Value::from(stack.pop())
+            };
+        }
+
+        for instr in code {
+            match instr {
+                Instruction::Constant => {
+                    let addr = self.load_byte()? as usize;
+                    let val = self.read_val(addr)?;
+                    stack.push(val);
+                }
+                Instruction::Print => {
+                    println!("{}", pop!());
+                }
+                Instruction::Return => return Ok(pop!()),
+            }
+        }
+
+        Ok(Value::Empty)
     }
 }
