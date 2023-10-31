@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, mem::size_of};
 
 use crate::error::Error;
 
@@ -8,6 +8,15 @@ pub enum Instruction {
     Constant,
     Print,
     Return,
+}
+
+impl Instruction {
+    pub fn size(&self) -> usize {
+        match self {
+            Instruction::Constant => size_of::<u8>(),
+            _ => 0,
+        }
+    }
 }
 
 impl Display for Instruction {
