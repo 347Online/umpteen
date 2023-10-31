@@ -15,7 +15,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct Umpteen {}
 
 impl Umpteen {
-    fn lex(source: &str) -> Result<Vec<Token>> {
+    pub fn lex(source: &str) -> Result<Vec<Token>> {
         let mut source = source.chars().peekable();
         let mut line = 1;
         let mut col = 0;
@@ -113,7 +113,7 @@ impl Umpteen {
     }
 
     pub fn exec(source: &str) -> Result<()> {
-        lex(source)?;
+        let _ = Umpteen::lex(source)?;
 
         Ok(())
     }
