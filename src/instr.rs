@@ -5,19 +5,15 @@ use crate::error::Error;
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
-    U8,
-    U16,
-    U32,
+    Constant,
     Print,
     Return,
 }
 
 impl Instruction {
-    pub fn offset(&self) -> usize {
+    pub fn size(&self) -> usize {
         match self {
-            Instruction::U8 => size_of::<u8>(),
-            Instruction::U16 => size_of::<u16>(),
-            Instruction::U32 => size_of::<u32>(),
+            Instruction::Constant => size_of::<u8>(),
             _ => 0,
         }
     }
