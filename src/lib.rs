@@ -1,10 +1,10 @@
-pub mod bytecode;
+pub mod instr;
 pub mod chunk;
 pub mod error;
 pub mod token;
 pub mod value;
 
-use bytecode::{Arg, Instruction}; 
+use instr::Instruction;
 use chunk::Chunk;
 use error::{UmpError, UmpResult};
 use token::*;
@@ -29,7 +29,7 @@ fn lex(source: &str) -> Vec<Token> {
         match c {
             ';' => token!(Semicolon),
             '=' => token!(Equal),
-            
+
             '\n' => {
                 token!(Newline);
                 line += 1;
@@ -83,9 +83,9 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
             match inst {
                 Instruction::Line => {
                     todo!();
-                },
+                }
                 Instruction::Constant => {
-                    let Some(Arg(addr)) = args.next() else {
+                    let Some(addr) = args.next() else {
                         return Err(UmpError::wrong_num_args(1, 0));
                     };
                     let Some(val) = data.get(*addr as usize).cloned() else {

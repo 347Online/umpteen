@@ -24,5 +24,8 @@ impl TryFrom<u8> for Instruction {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Arg(pub u8);
+impl From<Instruction> for u8 {
+    fn from(value: Instruction) -> Self {
+        value as u8
+    }
+}
