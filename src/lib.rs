@@ -75,21 +75,18 @@ fn lex(source: &str) -> Vec<Token> {
 pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
     let mut stack: Vec<Value> = vec![];
 
-    for chunk in program {
+    for (chunk_index, chunk) in program.into_iter().enumerate() {
         let (data, code, args) = chunk.consume();
         let mut args = args.iter();
 
-        for inst in code {
-            match inst {
-                Instruction::Line => {
-                    todo!();
-                }
+        for instr in code {
+            match instr {
                 Instruction::Constant => {
                     let Some(addr) = args.next() else {
                         return Err(UmpError::wrong_num_args(1, 0));
                     };
                     let Some(val) = data.get(*addr as usize).cloned() else {
-                        return Err(UmpError::missing_value(*addr));
+                        return Err(UmpError::missing_value(chunk_index, *addr));
                     };
                     stack.push(val);
                 }

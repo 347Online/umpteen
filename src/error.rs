@@ -8,7 +8,7 @@ pub enum UmpErrorType {
     UnexpectedEof,
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize),
-    MissingValue(u8)
+    MissingValue(usize, u8)
 }
 
 impl Display for UmpErrorType {
@@ -18,15 +18,15 @@ impl Display for UmpErrorType {
             Self::Unknown => "Unknown error",
             Self::UnexpectedEof => "Unexpected end of file",
             Self::InvalidInstruction(byte) => {
-                tmp = format!("Invalid Opcode `{byte}`");
+                tmp = format!("Invalid Instruction `{byte}`");
                 &tmp
             }
             Self::WrongNumberArguments(exp, got) => {
                 tmp = format!("Wrong number of arguments, expected {exp} but got {got}");
                 &tmp
             }
-            Self::MissingValue(addr) => {
-                tmp = format!("Missing value in current chunk @ {addr}");
+            Self::MissingValue(pos, addr) => {
+                tmp = format!("Missing value in chunk {pos} @ {addr}");
                 &tmp
             }
         };
@@ -58,8 +58,8 @@ impl UmpError {
         Self::new(UmpErrorType::WrongNumberArguments(exp, got), 0)
     }
 
-    pub fn missing_value(addr: u8) -> Self {
-        Self::new(UmpErrorType::MissingValue(addr), 0)
+    pub fn missing_value(pos: usize, addr: u8) -> Self {
+        Self::new(UmpErrorType::MissingValue(pos, addr), 0)
     }
 }
 
