@@ -1,7 +1,4 @@
-use crate::{
-    instr::{Codepoint, Instruction},
-    value::Value,
-};
+use crate::{instr::Instruction, value::Value, Result};
 
 pub type Bytecode = (Vec<Value>, Vec<Instruction>, Vec<u8>);
 
@@ -35,6 +32,10 @@ impl Chunk {
             self.write_byte(*byte);
         }
     }
+
+    pub fn exec(&self) -> Result<Option<Value>>{
+
+    }
 }
 
 pub struct ChunkIntoIterator {
@@ -44,7 +45,7 @@ pub struct ChunkIntoIterator {
 }
 
 impl IntoIterator for Chunk {
-    type Item = Codepoint;
+    type Item = (Instruction, usize);
     type IntoIter = ChunkIntoIterator;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -57,7 +58,7 @@ impl IntoIterator for Chunk {
 }
 
 impl Iterator for ChunkIntoIterator {
-    type Item = Codepoint;
+    type Item = (Instruction, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
         let instr = self.chunk.code.get(self.index)?;
@@ -65,6 +66,6 @@ impl Iterator for ChunkIntoIterator {
         self.index += 1;
         self.offset += instr.offset();
 
-        Some(Codepoint::new(*instr, offset))
+        Some((*instr, offset))
     }
 }
