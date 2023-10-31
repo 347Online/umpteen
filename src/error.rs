@@ -17,11 +17,11 @@ impl Display for Line {
 
 #[derive(Debug)]
 pub enum Error {
+    CorruptedChunk,
     UnexpectedToken(char),
     UnexpectedEof,
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
-    MissingValue(usize, u8),
 }
 
 impl std::error::Error for Error {}
@@ -29,6 +29,7 @@ impl std::error::Error for Error {}
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let desc = match self {
+            Error::CorruptedChunk => "encountered corrupted chunk".to_string(),
             Error::UnexpectedEof => "unexpected end of file".to_string(),
             Error::UnexpectedToken(c) => format!("unexpected token `{}`", c),
             Error::InvalidInstruction(byte) => format!("invalid Instruction `{}`", byte),
@@ -36,7 +37,6 @@ impl Display for Error {
                 "wrong number of arguments for {}, expected {} but got {}",
                 call, exp, got
             ),
-            Error::MissingValue(pos, addr) => format!("missing value in chunk {} @ {}", pos, addr),
         };
         write!(f, "{desc}")
     }
