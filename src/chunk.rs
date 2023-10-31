@@ -33,8 +33,12 @@ impl Chunk {
         }
     }
 
-    pub fn exec(&self) -> Result<Option<Value>>{
+    pub fn exec(self) -> Result<Value> {
+        for instr in self {
+            
+        }
 
+        Ok(Value::Empty)
     }
 }
 
@@ -45,7 +49,7 @@ pub struct ChunkIntoIterator {
 }
 
 impl IntoIterator for Chunk {
-    type Item = (Instruction, usize);
+    type Item = Instruction;
     type IntoIter = ChunkIntoIterator;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -58,14 +62,13 @@ impl IntoIterator for Chunk {
 }
 
 impl Iterator for ChunkIntoIterator {
-    type Item = (Instruction, usize);
+    type Item = Instruction;
 
     fn next(&mut self) -> Option<Self::Item> {
         let instr = self.chunk.code.get(self.index)?;
-        let offset = self.offset;
         self.index += 1;
         self.offset += instr.offset();
 
-        Some((*instr, offset))
+        Some(*instr)
     }
 }
