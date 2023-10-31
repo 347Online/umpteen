@@ -1,13 +1,26 @@
-use std::fmt::Display;
+use std::{fmt::Display, mem::size_of};
 
 use crate::error::Error;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
-    Constant,
+    U8,
+    U16,
+    U32,
     Print,
     Return,
+}
+
+impl Instruction {
+    pub fn offset(&self) -> usize {
+        match self {
+            Instruction::U8 => size_of::<u8>(),
+            Instruction::U16 => size_of::<u16>(),
+            Instruction::U32 => size_of::<u32>(),
+            _ => 0,
+        }
+    }
 }
 
 impl Display for Instruction {
@@ -34,5 +47,13 @@ impl TryFrom<u8> for Instruction {
 impl From<Instruction> for u8 {
     fn from(value: Instruction) -> Self {
         value as u8
+    }
+}
+
+pub struct Codepoint(Instruction, usize);
+
+impl Codepoint {
+    pub fn new(instr: Instruction, offset: usize) -> Self {
+        Codepoint(instr, offset)
     }
 }
