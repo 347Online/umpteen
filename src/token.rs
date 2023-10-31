@@ -1,6 +1,6 @@
 use std::fmt::{Display, Write};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub enum TokenType {
     Semicolon,
     Newline,
@@ -8,12 +8,12 @@ pub enum TokenType {
 
     Let,
     Print,
-    
+
     Number,
     String,
     Identifier,
-    
-    Error(&'static str, u32),
+
+    Error,
 }
 
 impl Display for TokenType {
@@ -26,14 +26,14 @@ impl Display for TokenType {
 pub struct Token {
     kind: TokenType,
     lexeme: String,
-    line: u32,
+    line: usize,
 }
 
 impl Token {
-    pub fn new(kind: TokenType, lexeme: &str, line: u32) -> Self {
+    pub fn new(kind: TokenType, lexeme: String, line: usize) -> Self {
         Self {
             kind,
-            lexeme: lexeme.to_string(),
+            lexeme,
             line,
         }
     }
@@ -51,9 +51,6 @@ impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use TokenType as TT;
         match self.kind {
-            TT::Error(s, col) => {
-                write!(f, "ERR{{line {}:{col} @ `{}` {s}}}", self.line, self.lexeme)
-            }
             TT::Number | TT::Identifier => write!(f, "{}({:?})", self.kind, self.lexeme),
             _ => write!(f, "{}", self.kind),
         }
