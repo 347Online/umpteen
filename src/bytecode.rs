@@ -25,10 +25,4 @@ impl TryFrom<u8> for Instruction {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Argument(pub u8);
-
-impl From<u8> for Argument {
-    fn from(value: u8) -> Self {
-        Argument(value)
-    }
-}
+pub struct Arg(pub u8);

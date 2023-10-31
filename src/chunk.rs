@@ -1,10 +1,13 @@
-use crate::{bytecode::{Instruction, Argument}, value::Value};
+use crate::{
+    bytecode::{Arg, Instruction},
+    value::Value,
+};
 
 #[derive(Debug)]
 pub struct Chunk {
     data: Vec<Value>,
     code: Vec<Instruction>,
-    args: Vec<Argument>,
+    args: Vec<Arg>,
 }
 
 impl Chunk {
@@ -25,18 +28,18 @@ impl Chunk {
     pub fn write_inst(&mut self, inst: Instruction) {
         self.code.push(inst)
     }
-    
-    pub fn write_arg(&mut self, arg: Argument) {
+
+    pub fn write_arg(&mut self, arg: Arg) {
         self.args.push(arg)
     }
 
-    pub fn write_args(&mut self, args: &[Argument]) {
+    pub fn write_args(&mut self, args: &[Arg]) {
         for arg in args {
             self.write_arg(*arg);
         }
     }
 
-    pub fn consume(self) -> (Vec<Value>, Vec<Instruction>, Vec<Argument>) {
+    pub fn consume(self) -> (Vec<Value>, Vec<Instruction>, Vec<Arg>) {
         (self.data, self.code, self.args)
     }
 }
@@ -46,4 +49,3 @@ impl Default for Chunk {
         Self::new()
     }
 }
-

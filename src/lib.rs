@@ -4,7 +4,7 @@ pub mod error;
 pub mod token;
 pub mod value;
 
-use bytecode::{Argument, Instruction};
+use bytecode::{Arg, Instruction}; 
 use chunk::Chunk;
 use error::{UmpError, UmpResult};
 use token::*;
@@ -85,7 +85,7 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
                     todo!();
                 },
                 Instruction::Constant => {
-                    let Some(Argument(addr)) = args.next() else {
+                    let Some(Arg(addr)) = args.next() else {
                         return Err(UmpError::wrong_num_args(1, 0));
                     };
                     let Some(val) = data.get(*addr as usize).cloned() else {
