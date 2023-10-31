@@ -1,14 +1,16 @@
-pub mod instr;
 pub mod chunk;
 pub mod error;
+pub mod instr;
 pub mod token;
 pub mod value;
 
-use instr::Instruction;
 use chunk::Chunk;
 use error::{UmpError, UmpResult};
+use instr::Instruction;
 use token::*;
 use value::Value;
+
+use crate::error::report_line;
 
 fn lex(source: &str) -> Vec<Token> {
     let mut source = source.chars().peekable();
@@ -21,9 +23,8 @@ fn lex(source: &str) -> Vec<Token> {
             ($k:tt, $s:expr) => {
                 tokens.push(Token::new(TokenType::$k, $s, line))
             };
-
-            ($($k:tt)+) => {
-                tokens.push(Token::new(TokenType::$($k)+, &String::from(c), line))
+            ($k:tt) => {
+                tokens.push(Token::new(TokenType::$k, String::from(c), line))
             };
         }
         match c {
@@ -43,7 +44,7 @@ fn lex(source: &str) -> Vec<Token> {
                 while let Some(c) = source.next_if(|x| x.is_ascii_digit()) {
                     num_str.push(c);
                 }
-                token!(Number, &num_str)
+                token!(Number, num_str)
             }
 
             c if c.is_ascii_alphabetic() || c == '_' => {
@@ -53,13 +54,13 @@ fn lex(source: &str) -> Vec<Token> {
                 }
 
                 match ident_str.as_str() {
-                    "let" => token!(Let, &ident_str),
-                    "print" => token!(Print, &ident_str),
-                    _ => token!(Identifier, &ident_str),
+                    "let" => token!(Let, ident_str),
+                    "print" => token!(Print, ident_str),
+                    _ => token!(Identifier, ident_str),
                 }
             }
 
-            _ => token!(Error("Unexpected token", col)),
+            c => report_line(UmpError::UnexpectedToken(c), line, col),
         }
         col += 1;
     }
@@ -83,16 +84,16 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
             match instr {
                 Instruction::Constant => {
                     let Some(addr) = args.next() else {
-                        return Err(UmpError::wrong_num_args(1, 0));
+                        return Err(UmpError::WrongNumberBytes(1, 0, instr));
                     };
                     let Some(val) = data.get(*addr as usize).cloned() else {
-                        return Err(UmpError::missing_value(chunk_index, *addr));
+                        return Err(UmpError::MissingValue(chunk_index, *addr));
                     };
                     stack.push(val);
                 }
                 Instruction::Print => {
                     let Some(val) = stack.pop() else {
-                        return Err(UmpError::wrong_num_args(1, 0));
+                        return Err(UmpError::WrongNumberArguments(1, 0, instr.to_string()));
                     };
                     println!("{val}");
                 }

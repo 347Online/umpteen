@@ -38,6 +38,6 @@ pub fn report(e: UmpError) {
     eprintln!("ERR: {e}");
 }
 
-pub fn report_line(e: UmpError, line: usize) {
-    eprintln!("ERR: {e} on line {line}");
+pub fn report_line(e: UmpError, line: usize, col: usize) {
+    eprintln!("ERR: {} on line {}:{}", e, line, col);
 }
