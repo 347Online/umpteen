@@ -1,13 +1,10 @@
-use crate::{error::Error, instr::Instruction, value::Value, Result};
-
-pub type Bytecode = (Vec<Value>, Vec<Instruction>, Vec<u8>);
+use super::{value::Value, instr::Instruction, Result, error::Error};
 
 #[derive(Debug, Default)]
 pub struct Chunk {
     pub data: Box<Vec<Value>>,
     pub code: Box<Vec<Instruction>>,
     pub bytes: Box<Vec<u8>>,
-    index: usize,
     offset: usize,
 }
 
@@ -59,7 +56,7 @@ impl Chunk {
     }
 
     pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
-        let code = *std::mem::take(&mut self.code);
+        let code = *std::mem::take(& mut self.code);
 
         macro_rules! pop {
             () => {
@@ -82,5 +79,24 @@ impl Chunk {
         }
 
         Ok(Value::Empty)
+    }
+}
+
+pub trait ChunkSerializable {
+    type Output: Sized;
+
+    fn from_bytes(bytes: Self::Output) -> Self;
+    fn to_bytes(value: Self) -> Self::Output;
+}
+
+impl ChunkSerializable for usize {
+    type Output = [u8; 8];
+
+    fn from_bytes(bytes: Self::Output) -> Self {
+        Self::from_be_bytes(bytes)
+    }
+
+    fn to_bytes(value: Self) -> Self::Output {
+        Self::to_be_bytes(value)
     }
 }

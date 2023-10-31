@@ -1,11 +1,11 @@
-use umpteen::{chunk::Chunk, instr::Instruction, value::Value, Result};
+use umpteen::repr::{chunk::Chunk, instr::Instruction, value::Value, Result};
 
 fn main() -> Result<Value> {
     let mut stack = vec![];
     let mut chunk = Chunk::new();
-    let constant = chunk.write_val(Value::Number(10.7));
+    let addr = chunk.write_val(Value::Number(10.7));
     chunk.write_instr(Instruction::Constant);
-    chunk.write_byte(constant as u8);
+    chunk.write_byte(addr as u8);
     chunk.write_instr(Instruction::Print);
     println!("{:?}", chunk);
     chunk.exec(&mut stack)

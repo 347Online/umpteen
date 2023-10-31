@@ -1,6 +1,6 @@
 use std::{fmt::Display, mem::size_of};
 
-use crate::error::Error;
+use super::error::Error;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
