@@ -1,6 +1,7 @@
 use repr::{token::{Token, print_tokens}, token::TokenType, error::Error, value::Value, Result};
 
 pub mod repr;
+pub mod vm;
 
 pub struct Umpteen {}
 

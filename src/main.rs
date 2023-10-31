@@ -1,14 +1,18 @@
-use umpteen::repr::{chunk::Chunk, instr::Instruction, value::Value, Result};
+use umpteen::{repr::{chunk::Chunk, instr::Instruction, value::Value, Result}, vm::Vm};
 
 fn main() -> Result<Value> {
-    let mut stack = vec![];
+    // let mut stack = vec![];
     let mut chunk = Chunk::new();
     let addr = chunk.write_val(Value::Number(10.7));
     chunk.write_instr(Instruction::Constant);
     chunk.write_byte(addr as u8);
     chunk.write_instr(Instruction::Print);
-    println!("{:?}", chunk);
-    chunk.exec(&mut stack)
+    // chunk.exec(&mut stack)
+
+    let mut vm = Vm::new();
+    vm.write_chunk(chunk);
+    vm.exec()
+    
 }
 
 #[cfg(test)]
