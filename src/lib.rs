@@ -5,17 +5,17 @@ pub mod token;
 pub mod value;
 
 use chunk::Chunk;
-use error::{UmpError, UmpResult};
+use error::Error;
 use instr::Instruction;
 use token::*;
 use value::Value;
 
-use crate::error::report_line;
+pub type Result<T> = std::result::Result<T, Error>;
 
-fn lex(source: &str) -> Vec<Token> {
+fn lex(source: &str) -> Result<Vec<Token>> {
     let mut source = source.chars().peekable();
     let mut line = 1;
-    let mut col = 1;
+    let mut col = 0;
     let mut tokens = vec![];
 
     while let Some(c) = source.next() {
@@ -60,7 +60,7 @@ fn lex(source: &str) -> Vec<Token> {
                 }
             }
 
-            c => report_line(UmpError::UnexpectedToken(c), line, col),
+            c => return Err(Error::UnexpectedToken(c)),
         }
         col += 1;
     }
@@ -70,10 +70,10 @@ fn lex(source: &str) -> Vec<Token> {
         eprintln!("{e}")
     }
 
-    tokens
+    Ok(tokens)
 }
 
-pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
+pub fn run(program: Vec<Chunk>) -> Result<()> {
     let mut stack: Vec<Value> = vec![];
 
     for (chunk_index, chunk) in program.into_iter().enumerate() {
@@ -84,16 +84,16 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
             match instr {
                 Instruction::Constant => {
                     let Some(addr) = args.next() else {
-                        return Err(UmpError::WrongNumberBytes(1, 0, instr));
+                        return Err(Error::WrongNumberBytes(1, 0, instr));
                     };
                     let Some(val) = data.get(*addr as usize).cloned() else {
-                        return Err(UmpError::MissingValue(chunk_index, *addr));
+                        return Err(Error::MissingValue(chunk_index, *addr));
                     };
                     stack.push(val);
                 }
                 Instruction::Print => {
                     let Some(val) = stack.pop() else {
-                        return Err(UmpError::WrongNumberArguments(1, 0, instr.to_string()));
+                        return Err(Error::WrongNumberArguments(1, 0, instr.to_string()));
                     };
                     println!("{val}");
                 }
@@ -109,6 +109,8 @@ pub fn run(program: Vec<Chunk>) -> UmpResult<()> {
     Ok(())
 }
 
-pub fn exec(source: &str) {
-    let _ = lex(source);
+pub fn exec(source: &str) -> Result<()> {
+    lex(source)?;
+
+    Ok(())
 }

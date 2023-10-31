@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::error::UmpError;
+use crate::error::Error;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
@@ -17,7 +17,7 @@ impl Display for Instruction {
 }
 
 impl TryFrom<u8> for Instruction {
-    type Error = UmpError;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         if (0..=Instruction::Return as u8).contains(&value) {
@@ -26,7 +26,7 @@ impl TryFrom<u8> for Instruction {
             // Any u8 value <= Instruction::Return as u8 is valid as an instruction
             Ok(unsafe { std::mem::transmute(value) })
         } else {
-            Err(UmpError::InvalidInstruction(value))
+            Err(Error::InvalidInstruction(value))
         }
     }
 }
