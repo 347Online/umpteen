@@ -29,3 +29,9 @@ impl Display for Value {
         write!(f, "{repr}")
     }
 }
+
+impl From<Option<Value>> for Value {
+    fn from(value: Option<Value>) -> Self {
+        value.unwrap_or(Value::Empty)
+    }
+}
