@@ -49,11 +49,3 @@ impl From<Instruction> for u8 {
         value as u8
     }
 }
-
-pub struct Codepoint(Instruction, usize);
-
-impl Codepoint {
-    pub fn new(instr: Instruction, offset: usize) -> Self {
-        Codepoint(instr, offset)
-    }
-}
