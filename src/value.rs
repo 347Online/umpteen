@@ -1,4 +1,7 @@
-use std::{fmt::Display, process::{Termination, ExitCode}};
+use std::{
+    fmt::Display,
+    process::{ExitCode, Termination},
+};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
@@ -37,7 +40,6 @@ impl From<Option<Value>> for Value {
 }
 
 impl Termination for Value {
-    
     fn report(self) -> ExitCode {
         ExitCode::SUCCESS
     }
