@@ -1,17 +1,23 @@
-use umpteen::{repr::{chunk::Chunk, instr::Instruction, value::Value, Result}, vm::Vm};
+use umpteen::{
+    repr::{
+        chunk::{Chunk},
+        instr::Instruction,
+        value::Value,
+        Result,
+    },
+    vm::Vm,
+};
 
 fn main() -> Result<Value> {
     let mut chunk = Chunk::new();
-    let addr = chunk.write_val(Value::String(Box::new(String::from("Hello World"))));
-    chunk.write_instr(Instruction::Constant);
-    chunk.write_byte(addr as u8);
-    chunk.write_instr(Instruction::Print);
-    chunk.write_instr(Instruction::Return);
-
+    chunk.write_bytes(256_i32.to_be_bytes());
+    let bytes = chunk.load_bytes(4)?;
+    let num = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+    println!("{:?}", num);
+    println!("{:?}", chunk);
     let mut vm = Vm::new();
     vm.write_chunk(chunk);
     vm.exec()
-    
 }
 
 #[cfg(test)]

@@ -28,9 +28,12 @@ impl Chunk {
         self.bytes.push(byte)
     }
 
-    pub fn write_bytes(&mut self, arg: &[u8]) {
-        for byte in arg {
-            self.write_byte(*byte);
+    pub fn write_bytes<I>(&mut self, bytes: I)
+    where
+        I: IntoIterator<Item = u8>,
+    {
+        for byte in bytes {
+            self.write_byte(byte);
         }
     }
 
@@ -44,7 +47,7 @@ impl Chunk {
         Ok(*byte)
     }
 
-    fn load_bytes(&mut self, size: usize) -> Result<Vec<u8>> {
+    pub fn load_bytes(&mut self, size: usize) -> Result<Vec<u8>> {
         let mut bytes = vec![];
 
         let mut i = 0;
@@ -57,9 +60,6 @@ impl Chunk {
         Ok(bytes)
     }
 
-    // fn serialize<T: ChunkSerializable>(&mut self, value: T) {
-    //     let bytes: Vec<u8> = value.into();
-    // }
     pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
         let code = *std::mem::take(&mut self.code);
 
@@ -84,27 +84,5 @@ impl Chunk {
         }
 
         Ok(Value::Empty)
-    }
-}
-
-pub trait TrySerialize<B>
-where
-    Self: Sized,
-{
-    type Error;
-
-    fn try_from_bytes(repr: B) -> std::result::Result<Self, Self::Error>;
-    fn to_bytes(value: Self) -> B;
-}
-
-impl TrySerialize<[u8; 4]> for i32 {
-    type Error = Infallible;
-
-    fn try_from_bytes(repr: [u8; 4]) -> std::result::Result<Self, Self::Error> {
-        Ok(Self::from_be_bytes(repr))
-    }
-
-    fn to_bytes(value: Self) -> [u8; 4] {
-        Self::to_be_bytes(value)
     }
 }

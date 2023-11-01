@@ -14,12 +14,18 @@ impl Display for Line {
 }
 
 #[derive(Debug)]
+pub enum RuntimeError {
+    Illegal,
+}
+
+#[derive(Debug)]
 pub enum Error {
+    UnexpectedEof,
     CorruptedChunk,
     UnexpectedToken(char),
-    UnexpectedEof,
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
+    Runtime(RuntimeError),
 }
 
 impl std::error::Error for Error {}
@@ -35,6 +41,9 @@ impl Display for Error {
                 "wrong number of arguments for {}, expected {} but got {}",
                 call, exp, got
             ),
+            Error::Runtime(r) => match r {
+                RuntimeError::Illegal => "illegal operation".to_string(),
+            },
         };
         write!(f, "{desc}")
     }
