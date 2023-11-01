@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use crate::instr::Instruction;
-
 #[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);
 

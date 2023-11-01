@@ -1,13 +1,12 @@
-use crate::{error::Error, instr::Instruction, value::Value, Result};
+use std::convert::Infallible;
 
-pub type Bytecode = (Vec<Value>, Vec<Instruction>, Vec<u8>);
+use super::{error::Error, instr::Instruction, value::Value, Result};
 
 #[derive(Debug, Default)]
 pub struct Chunk {
     pub data: Box<Vec<Value>>,
     pub code: Box<Vec<Instruction>>,
     pub bytes: Box<Vec<u8>>,
-    index: usize,
     offset: usize,
 }
 
@@ -58,6 +57,9 @@ impl Chunk {
         Ok(bytes)
     }
 
+    // fn serialize<T: ChunkSerializable>(&mut self, value: T) {
+    //     let bytes: Vec<u8> = value.into();
+    // }
     pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
         let code = *std::mem::take(&mut self.code);
 
@@ -82,5 +84,27 @@ impl Chunk {
         }
 
         Ok(Value::Empty)
+    }
+}
+
+pub trait TrySerialize<B>
+where
+    Self: Sized,
+{
+    type Error;
+
+    fn try_from_bytes(repr: B) -> std::result::Result<Self, Self::Error>;
+    fn to_bytes(value: Self) -> B;
+}
+
+impl TrySerialize<[u8; 4]> for i32 {
+    type Error = Infallible;
+
+    fn try_from_bytes(repr: [u8; 4]) -> std::result::Result<Self, Self::Error> {
+        Ok(Self::from_be_bytes(repr))
+    }
+
+    fn to_bytes(value: Self) -> [u8; 4] {
+        Self::to_be_bytes(value)
     }
 }

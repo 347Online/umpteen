@@ -1,14 +1,7 @@
-pub mod chunk;
-pub mod error;
-pub mod instr;
-pub mod token;
-pub mod value;
+use repr::{token::{Token, print_tokens}, token::TokenType, error::Error, value::Value, Result};
 
-use error::Error;
-use token::*;
-use value::Value;
-
-pub type Result<T> = std::result::Result<T, Error>;
+pub mod repr;
+pub mod vm;
 
 pub struct Umpteen {}
 
