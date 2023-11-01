@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Neg, Not},
+    ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     process::{ExitCode, Termination},
 };
 
@@ -18,24 +18,16 @@ pub enum Value {
     String(Box<String>),
 }
 
-// impl Value {
-//     // pub fn truthy(&self) -> bool {
-//     //     match self {
-//     //         Value::Empty => false,
-//     //         Value::Boolean(x) => *x,
-//     //         Value::Number(x) => *x > 0.0,
-//     //         Value::String(x) => !x.is_empty(),
-//     //     }
-//     // }
-//     pub fn negate(&self) -> Result<Value> {
-//         let x = match self {
-//             Value::Number(n) => -n,
-//             _ => Err(Error::Runtime(RuntimeError::Illegal))?,
-//         };
-
-//         Ok(Value::Number(x))
-//     }
-// }
+impl Value {
+    pub fn truthy(&self) -> bool {
+        match self {
+            Value::Empty => false,
+            Value::Boolean(x) => *x,
+            Value::Number(x) => *x > 0.0,
+            Value::String(x) => !x.is_empty(),
+        }
+    }
+}
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -70,6 +62,17 @@ impl From<bool> for Value {
     }
 }
 
+impl From<Value> for bool {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Empty => false,
+            Value::Boolean(x) => x,
+            Value::Number(x) => x > 0.0,
+            Value::String(x) => !x.is_empty(),
+        }
+    }
+}
+
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
         Value::Number(value)
@@ -82,28 +85,11 @@ impl From<String> for Value {
     }
 }
 
-// impl From<Value> for bool {
-//     fn from(value: Value) -> Self {
-//         match value {
-//             Value::Empty => false,
-//             Value::Boolean(x) => x,
-//             Value::Number(x) => x > 0.0,
-//             Value::String(x) => !x.is_empty(),
-//         }
-//     }
-// }
-
 impl Not for Value {
     type Output = Value;
 
     fn not(self) -> Self::Output {
-        let x = match self {
-            Value::Empty => true,
-            Value::Boolean(x) => !x,
-            Value::Number(x) => x <= 0.0,
-            Value::String(x) => x.is_empty(),
-        };
-        Value::Boolean(x)
+        Value::Boolean(!self.truthy())
     }
 }
 
@@ -128,6 +114,54 @@ impl Add for Value {
                 a.push_str(b);
                 Value::from(*a)
             }
+            _ => Err(Error::Runtime(RuntimeError::Illegal))?,
+        };
+        Ok(val)
+    }
+}
+
+impl Sub for Value {
+    type Output = Result<Value>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let val = match (self, rhs) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
+            _ => Err(Error::Runtime(RuntimeError::Illegal))?,
+        };
+        Ok(val)
+    }
+}
+
+impl Mul for Value {
+    type Output = Result<Value>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let val = match (self, rhs) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
+            _ => Err(Error::Runtime(RuntimeError::Illegal))?,
+        };
+        Ok(val)
+    }
+}
+
+impl Div for Value {
+    type Output = Result<Value>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let val = match (self, rhs) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
+            _ => Err(Error::Runtime(RuntimeError::Illegal))?,
+        };
+        Ok(val)
+    }
+}
+
+impl Rem for Value {
+    type Output = Result<Value>;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        let val = match (self, rhs) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a % b),
             _ => Err(Error::Runtime(RuntimeError::Illegal))?,
         };
         Ok(val)

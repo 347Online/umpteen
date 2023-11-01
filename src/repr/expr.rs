@@ -10,6 +10,8 @@ pub enum BinaryOp {
     Subtract,
     Multiply,
     Divide,
+    Modulo,
+    And,
 }
 
 pub enum Expr {
@@ -53,16 +55,37 @@ impl Expr {
                     let b = right.eval()?;
                     (a + b)?
                 }
-                _ => todo!()
-                // BinaryOp::Subtract => todo!(),
-                // BinaryOp::Multiply => todo!(),
-                // BinaryOp::Divide => todo!(),
+                BinaryOp::Subtract => {
+                    let a = left.eval()?;
+                    let b = right.eval()?;
+                    (a - b)?
+                }
+                BinaryOp::Multiply => {
+                    let a = left.eval()?;
+                    let b = right.eval()?;
+                    (a * b)?
+                }
+                BinaryOp::Divide => {
+                    let a = left.eval()?;
+                    let b = right.eval()?;
+                    (a / b)?
+                }
+                BinaryOp::Modulo => {
+                    let a = left.eval()?;
+                    let b = right.eval()?;
+                    (a % b)?
+                }
+
+                BinaryOp::And => {
+                    let a = left.eval()?;
+                    if !a.truthy() {
+                        a
+                    } else {
+                        right.eval()?
+                    }
+                }
             },
-            // _ => todo!(),
         };
         Ok(v)
     }
-    // pub fn truthy(self) -> bool {
-
-    // }
 }
