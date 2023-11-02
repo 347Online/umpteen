@@ -1,5 +1,6 @@
 use repr::error::Error;
 
+pub mod lexer;
 pub mod repr;
 pub mod vm;
 

@@ -22,15 +22,15 @@ impl Display for TokenType {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Token {
+#[derive(Debug)]
+pub struct Token<'t> {
     kind: TokenType,
-    lexeme: String,
+    lexeme: &'t str,
     line: usize,
 }
 
-impl Token {
-    pub fn new(kind: TokenType, lexeme: String, line: usize) -> Self {
+impl<'t> Token<'t> {
+    pub fn new(kind: TokenType, lexeme: &'t str, line: usize) -> Self {
         Self { kind, lexeme, line }
     }
 
@@ -38,12 +38,12 @@ impl Token {
         self.kind
     }
 
-    pub fn lexeme(&self) -> String {
-        self.lexeme.clone()
+    pub fn lexeme(&self) -> &'t str {
+        self.lexeme
     }
 }
 
-impl Display for Token {
+impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use TokenType as TT;
         match self.kind {
