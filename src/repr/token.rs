@@ -3,7 +3,6 @@ use std::fmt::{Display, Write};
 #[derive(Debug, Clone, Copy)]
 pub enum TokenType {
     Semicolon,
-    Newline,
     Equal,
 
     Let,

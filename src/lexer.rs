@@ -1,39 +1,68 @@
+use std::{
+    iter::{Enumerate, Peekable},
+    str::Chars,
+};
+
 use crate::repr::token::{Token, TokenType};
 
 pub struct Lexer<'s> {
     source: &'s str,
-    tokens: Vec<Token<'s>>,
+    chars: Peekable<Enumerate<Chars<'s>>>,
     line: usize,
 }
+
 impl<'s> Lexer<'s> {
     pub fn new(source: &'s str) -> Self {
         Lexer {
             source,
-            tokens: vec![],
+            chars: source.chars().enumerate().peekable(),
             line: 1,
         }
     }
 
-    pub fn scan(mut self) -> Vec<Token<'s>> {
-        let source = &self.source;
-        let mut src = self.source.char_indices().peekable();
+    fn peek(&mut self) -> Option<(usize, &char)> {
+        let (i, c) = self.chars.peek()?;
+        Some((*i, c))
+    }
 
-        while let Some((i, c)) = src.peek() {
-            match c {
-                '\n' => self.line += 1,
+    fn advance(&mut self) -> Option<(usize, char)> {
+        self.chars.next()
+    }
 
-                _ if c.is_ascii_whitespace() => (),
+    fn scan_token(&mut self) -> Option<Token<'s>> {
+        let Some((start, _)) = self.peek() else {
+            return None;
+        };
+        let (i, c) = self.advance().unwrap();
 
-                ';' => {
-                    let lx = &source[*i..*i];
-                    let tk = Token::new(TokenType::Semicolon, lx, self.line);
-                    self.tokens.push(tk);
-                }
-                _ => todo!(),
-            }
-            src.next();
+        macro_rules! token {
+            ($t:tt) => {{
+                let lx = &self.source[start..=i];
+                dbg!(&lx);
+                Token::new(TokenType::$t, lx, self.line)
+            }};
         }
-        self.tokens
+        dbg!(c);
+        let tk = match c {
+            '\n' => {
+                self.line += 1;
+                self.scan_token()?
+            }
+            ';' => token!(Semicolon),
+            '=' => token!(Equal),
+            c if c.is_whitespace() => self.scan_token()?,
+            _ => todo!(),
+        };
+        dbg!(&tk);
+        Some(tk)
+    }
+
+    pub fn scan(mut self) -> Vec<Token<'s>> {
+        let mut tokens = vec![];
+        while let Some(token) = self.scan_token() {
+            tokens.push(token);
+        }
+        tokens
     }
 }
 
@@ -43,7 +72,12 @@ mod tests {
 
     #[test]
     fn test_lex_semi() {
-        let source = "    ; \n\n  ; ";
+        let source = ";=     
+
+       123
+
+           ;;;";
+        dbg!(&source);
         let lexer = Lexer::new(source);
         let tokens = lexer.scan();
         dbg!(tokens);
