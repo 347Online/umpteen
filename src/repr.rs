@@ -4,6 +4,7 @@ pub mod chunk;
 pub mod error;
 pub mod expr;
 pub mod instr;
+pub mod object;
 pub mod token;
 pub mod value;
 

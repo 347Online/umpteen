@@ -1,5 +1,6 @@
 use crate::repr::{
     expr::Expr,
+    object::Object,
     token::{Token, TokenType},
     value::Value,
 };
@@ -25,7 +26,7 @@ impl<'t> Parser<'t> {
         use TokenType as TT;
         match tk.kind {
             TT::Number => Expr::Value(Value::Number(tk.lexeme.parse().unwrap())),
-            TT::String => Expr::Value(Value::String(Box::new(tk.lexeme.to_string()))),
+            TT::String => Expr::Value(tk.lexeme.into()),
             TT::Let => todo!(),
             TT::Print => todo!(),
             TT::Identifier => todo!(),

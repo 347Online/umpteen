@@ -6,7 +6,10 @@ use std::{
 
 use crate::Result;
 
-use super::error::{Error, RuntimeError};
+use super::{
+    error::{Error, RuntimeError},
+    object::{self, Object},
+};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
@@ -14,7 +17,7 @@ pub enum Value {
     Empty,
     Boolean(bool),
     Number(f64),
-    String(Box<String>),
+    Object(Object),
 }
 
 impl Value {
@@ -23,7 +26,7 @@ impl Value {
             Value::Empty => false,
             Value::Boolean(x) => *x,
             Value::Number(x) => *x > 0.0,
-            Value::String(x) => !x.is_empty(),
+            Value::Object(obj) => !obj.is_empty(),
         }
     }
 }
@@ -42,7 +45,10 @@ impl Display for Value {
                 tmp = x.to_string();
                 &tmp
             }
-            Value::String(x) => x,
+            Value::Object(x) => {
+                tmp = x.to_string();
+                &tmp
+            }
         };
 
         write!(f, "{repr}")
@@ -67,8 +73,14 @@ impl From<Value> for bool {
             Value::Empty => false,
             Value::Boolean(x) => x,
             Value::Number(x) => x > 0.0,
-            Value::String(x) => !x.is_empty(),
+            Value::Object(x) => !x.is_empty(),
         }
+    }
+}
+
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Value::Object(Object::String(Box::new(value.to_string())))
     }
 }
 
@@ -80,7 +92,7 @@ impl From<f64> for Value {
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::String(Box::new(value))
+        Value::Object(Object::String(Box::new(value)))
     }
 }
 
@@ -109,7 +121,7 @@ impl Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         let val = match (self, rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
-            (Value::String(mut a), Value::String(ref b)) => {
+            (Value::Object(Object::String(mut a)), Value::Object(Object::String(ref b))) => {
                 a.push_str(b);
                 Value::from(*a)
             }
