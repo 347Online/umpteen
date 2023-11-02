@@ -87,6 +87,19 @@ impl<'s> Lexer<'s> {
             ';' => token!(Semicolon),
             '=' => token!(Equal),
 
+            '"' => {
+                let mut end: usize = 0;
+                self.advance();
+                while self.peek().is_some() {
+                    let (i, c) = self.advance().unwrap();
+                    end = i;
+                    if c == '"' {
+                        break;
+                    }
+                }
+                token!(String, lexeme!(end))
+            }
+
             c if c.is_ascii_digit() => {
                 let mut end: usize = i;
                 let mut dec = false;

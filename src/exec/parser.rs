@@ -44,8 +44,8 @@ mod tests {
 
     #[test]
     fn parse_let_x_equal_10() {
-        let tokens = Lexer::new("10").scan();
+        let tokens = Lexer::new("\"Hello world 23423421 \"").scan();
         let parser = Parser::new(&tokens);
-        println!("{}", parser.parse().eval().unwrap());
+        println!("{:?}", parser.parse().eval().unwrap());
     }
 }
