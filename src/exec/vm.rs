@@ -10,13 +10,17 @@ use super::env::Environment;
 #[derive(Default)]
 pub struct Vm {
     env: Environment,
-    stack: Vec<Value>, // env: todo!()
+    stack: Vec<Value>,
     program: VecDeque<Chunk>,
 }
 
 impl Vm {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(program: VecDeque<Chunk>) -> Self {
+        Vm {
+            env: Environment::default(),
+            stack: vec![],
+            program,
+        }
     }
 
     pub fn write_chunk(&mut self, chunk: Chunk) {

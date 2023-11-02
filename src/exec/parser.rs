@@ -33,10 +33,6 @@ impl<'t, 'e> Parser<'t, 'e> {
                 name: tk.lexeme,
                 env: self.globals,
             },
-            // TT::Identifier => Expr::Ident {
-            //     name: tk.lexeme,
-            //     env: self.globals,
-            // },
             TT::Let => {
                 todo!()
             }
@@ -58,9 +54,7 @@ mod tests {
     #[test]
     fn parse_let_x_equal_10() {
         let mut globals = Environment::default();
-        globals.assign("x", 10.0.into());
-        dbg!(globals.get("x"), globals.get("y"));
-        let tokens = Lexer::new("x = 10;").scan();
+        let tokens = dbg!(Lexer::new("x = 10").scan());
         let mut parser = Parser::new(&tokens, &mut globals);
         let result = parser.parse().eval().unwrap();
         dbg!(globals);

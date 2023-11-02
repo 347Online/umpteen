@@ -1,4 +1,4 @@
-use std::{arch::aarch64::vaba_s16, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{
     repr::{error::Error, value::Value},

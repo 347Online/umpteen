@@ -148,22 +148,3 @@ impl<'s> Lexer<'s> {
         Some(tk)
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::Lexer;
-
-//     #[test]
-//     fn lex_let_x_equal_10() {
-//         let source = "let x = 10;";
-//         let lexer = Lexer::new(source);
-//         dbg!(lexer.scan());
-//     }
-
-//     #[test]
-//     fn print_10() {
-//         let source = "print 10;";
-//         let lexer = Lexer::new(source);
-//         dbg!(lexer.scan());
-//     }
-// }

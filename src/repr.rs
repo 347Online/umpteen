@@ -5,6 +5,7 @@ pub mod error;
 pub mod expr;
 pub mod instr;
 pub mod object;
+pub mod stmt;
 pub mod token;
 pub mod value;
 
