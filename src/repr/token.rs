@@ -1,6 +1,6 @@
 use std::fmt::{Display, Write};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub enum TokenType {
     Semicolon,
     Equal,

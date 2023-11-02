@@ -74,8 +74,8 @@ impl<'s> Lexer<'s> {
                 while self.peek().is_some_and(|(_, c)| {
                     c.is_ascii_digit()
                         || ({
-                            if let (Some((_, '.')), Some((_, y))) =
-                                (self.peek(), self.peek_ahead(1))
+                            if let (false, Some((_, '.')), Some((_, y))) =
+                                (dec, self.peek(), self.peek_ahead(1))
                             {
                                 y.is_ascii_digit()
                             } else {
@@ -87,6 +87,20 @@ impl<'s> Lexer<'s> {
                     if c == '.' {
                         dec = true;
                     }
+                    end = i;
+                }
+
+                token!(Number, end)
+            }
+
+            c if c == '_' || c.is_ascii_alphabetic() => {
+                let mut end: usize = i;
+                while self
+                    .peek()
+                    .is_some_and(|(_, c)| c == '_' || c.is_ascii_alphanumeric())
+                {
+                    let (i, c) = self.advance().unwrap();
+                    if c == '.' {}
                     end = i;
                 }
 
@@ -110,17 +124,17 @@ impl<'s> Lexer<'s> {
     }
 }
 
+fn is_identic(c: char) -> bool {
+    c == '_' || c.is_alphanumeric()
+}
+
 #[cfg(test)]
 mod tests {
     use super::Lexer;
 
     #[test]
-    fn test_lex_semi() {
-        let source = ";=     
-
-        4556.423
-
-           ;;;";
+    fn test_lex() {
+        let source = "10.10.10";
         dbg!(&source);
         let lexer = Lexer::new(source);
         let tokens = lexer.scan();
