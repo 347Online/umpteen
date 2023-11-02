@@ -13,16 +13,23 @@ pub struct Lexer<'s> {
 
 impl<'s> Lexer<'s> {
     pub fn new(source: &'s str) -> Self {
+        let chars = source.chars().enumerate().peekable();
+
         Lexer {
             source,
-            chars: source.chars().enumerate().peekable(),
+            chars,
             line: 1,
         }
     }
 
-    fn peek(&mut self) -> Option<(usize, &char)> {
+    fn peek(&mut self) -> Option<(usize, char)> {
         let (i, c) = self.chars.peek()?;
-        Some((*i, c))
+        Some((*i, *c))
+    }
+    fn peek_ahead(&mut self, n: usize) -> Option<(usize, char)> {
+        let x = self.chars.clone().nth(n)?;
+
+        Some(x)
     }
 
     fn advance(&mut self) -> Option<(usize, char)> {
@@ -36,6 +43,11 @@ impl<'s> Lexer<'s> {
         let (i, c) = self.advance().unwrap();
 
         macro_rules! token {
+            ($t:tt, $e:expr) => {{
+                let lx = &self.source[start..=$e];
+                dbg!(&lx);
+                Token::new(TokenType::$t, lx, self.line)
+            }};
             ($t:tt) => {{
                 let lx = &self.source[start..=i];
                 dbg!(&lx);
@@ -48,9 +60,31 @@ impl<'s> Lexer<'s> {
                 self.line += 1;
                 self.scan_token()?
             }
+            c if c.is_whitespace() => self.scan_token()?,
+
             ';' => token!(Semicolon),
             '=' => token!(Equal),
-            c if c.is_whitespace() => self.scan_token()?,
+
+            c if c.is_ascii_digit() => {
+                let mut end: usize = i;
+                while self.peek().is_some_and(|(_, c)| c.is_ascii_digit()) {
+                    let (i, _) = self.advance().unwrap();
+                    end = i;
+                }
+                match (self.peek(), self.peek_ahead(1)) {
+                    (Some((_, '.')), Some((_, y))) if y.is_ascii_digit() => {
+                        self.advance().unwrap();
+
+                        while self.peek().is_some_and(|(_, c)| c.is_ascii_digit()) {
+                            let (i, _) = self.advance().unwrap();
+                            end = i;
+                        }
+                    }
+                    _ => (),
+                }
+                token!(Number, end)
+            }
+
             _ => todo!(),
         };
         dbg!(&tk);
@@ -74,7 +108,7 @@ mod tests {
     fn test_lex_semi() {
         let source = ";=     
 
-       123
+       123.4556
 
            ;;;";
         dbg!(&source);
