@@ -25,7 +25,8 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) {
+    pub fn assign(&mut self, name: &str, value: Value) -> Value {
         self.data.insert(name.to_string(), value);
+        Value::Empty
     }
 }

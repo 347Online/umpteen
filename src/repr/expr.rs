@@ -34,6 +34,11 @@ pub enum Expr<'t, 'e> {
         name: &'t str,
         env: &'e mut Environment,
     },
+    Assign {
+        name: &'t str,
+        env: &'e mut Environment,
+        expr: Box<Expr<'t, 'e>>,
+    },
 }
 
 impl<'t, 'e> Expr<'t, 'e> {
@@ -95,6 +100,7 @@ impl<'t, 'e> Expr<'t, 'e> {
                 }
             },
             Expr::Ident { name, env } => env.get(name),
+            Expr::Assign { name, env, expr } => env.assign(name, expr.eval()?),
         };
         Ok(v)
     }
