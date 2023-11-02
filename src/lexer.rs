@@ -62,7 +62,7 @@ impl<'s> Lexer<'s> {
                 Token::new(TokenType::$t, lexeme!(), self.line)
             };
         }
-        dbg!(c);
+        
         let tk = match c {
             '\n' => {
                 self.line += 1;
@@ -110,6 +110,7 @@ impl<'s> Lexer<'s> {
 
                 match lx {
                     "let" => token!(Let, lx),
+                    "print" => token!(Print, lx),
 
                     _ => token!(Identifier, lx),
                 }
@@ -124,7 +125,6 @@ impl<'s> Lexer<'s> {
         let mut tokens = vec![];
         while !self.finished {
             if let Some(token) = self.scan_token() {
-                dbg!(&token);
                 tokens.push(token);
             }
         }
@@ -141,11 +141,9 @@ mod tests {
     use super::Lexer;
 
     #[test]
-    fn test_lex() {
+    fn lex_let_x_equal_10() {
         let source = "let x = 10;";
-        dbg!(&source);
         let lexer = Lexer::new(source);
-        let tokens = lexer.scan();
-        dbg!(&tokens, tokens.len());
+        let tokens = dbg!(lexer.scan());
     }
 }
