@@ -1,18 +1,12 @@
 use umpteen::{
-    repr::{
-        chunk::{Chunk},
-        instr::Instruction,
-        value::Value,
-        Result,
-    },
+    repr::{chunk::Chunk, value::Value, Result},
     vm::Vm,
 };
 
 fn main() -> Result<Value> {
     let mut chunk = Chunk::new();
     chunk.write_bytes(256_i32.to_be_bytes());
-    let bytes = chunk.load_bytes(4)?;
-    let num = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+    let num = i32::from_be_bytes(chunk.load_bytes::<4>()?);
     println!("{:?}", num);
     println!("{:?}", chunk);
     let mut vm = Vm::new();
