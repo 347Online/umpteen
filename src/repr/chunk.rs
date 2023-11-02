@@ -36,7 +36,7 @@ impl Chunk {
         self.data.get(addr).cloned().ok_or(Error::CorruptedChunk)
     }
 
-    pub fn load_bytes<const N: usize>(&mut self) -> Result<[u8; N]> {
+    fn load_bytes<const N: usize>(&mut self) -> Result<[u8; N]> {
         let mut bytes = [0; N];
 
         for byte in bytes.iter_mut() {
@@ -48,18 +48,12 @@ impl Chunk {
         Ok(bytes)
     }
 
-    pub fn load_byte(&mut self) -> Result<u8> {
+    fn load_byte(&mut self) -> Result<u8> {
         Ok(self.load_bytes::<1>()?[0])
     }
 
     pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
         let code = *std::mem::take(&mut self.code);
-
-        macro_rules! pop {
-            () => {
-                Ok(Value::from(stack.pop()))
-            };
-        }
 
         for instr in code {
             match instr {
@@ -69,9 +63,9 @@ impl Chunk {
                     stack.push(val);
                 }
                 Instruction::Print => {
-                    println!("{}", pop!()?);
+                    println!("{}", Value::from(stack.pop()));
                 }
-                Instruction::Return => return pop!(),
+                Instruction::Return => return Ok(stack.pop().into()),
             }
         }
 
