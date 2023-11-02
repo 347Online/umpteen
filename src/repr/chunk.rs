@@ -1,4 +1,6 @@
-use super::{error::Error, instr::Instruction, value::Value, Result};
+use crate::Result;
+
+use super::{error::Error, instr::Instruction, value::Value, AsBytes};
 
 #[derive(Debug, Default)]
 pub struct Chunk {
@@ -13,7 +15,7 @@ impl Chunk {
         Self::default()
     }
 
-    pub fn write_val(&mut self, val: Value) -> usize {
+    pub fn write_value(&mut self, val: Value) -> usize {
         self.data.push(val);
         self.data.len() - 1
     }
@@ -22,27 +24,30 @@ impl Chunk {
         self.code.push(instr)
     }
 
-    pub fn write_byte(&mut self, byte: u8) {
-        self.bytes.push(byte)
+    pub fn write_arg<const N: usize, A: AsBytes<N>>(&mut self, arg: A) {
+        self.store_bytes(arg.to_bytes());
     }
 
-    pub fn write_bytes<const N: usize>(&mut self, bytes: [u8; N]) {
+    fn store_bytes<const N: usize>(&mut self, bytes: [u8; N]) {
         for byte in bytes {
-            self.write_byte(byte);
+            self.bytes.push(byte);
         }
     }
 
-    fn read_val(&self, addr: usize) -> Result<Value> {
+    fn load_value(&self, addr: usize) -> Result<Value> {
         self.data.get(addr).cloned().ok_or(Error::CorruptedChunk)
     }
 
     fn load_bytes<const N: usize>(&mut self) -> Result<[u8; N]> {
         let mut bytes = [0; N];
 
-        for byte in bytes.iter_mut() {
-            let b = self.bytes.get(self.offset).ok_or(Error::CorruptedChunk)?;
+        for b in bytes.iter_mut() {
             self.offset += 1;
-            *byte = *b;
+            let byte = self
+                .bytes
+                .get(self.offset - 1)
+                .ok_or(Error::CorruptedChunk)?;
+            *b = *byte;
         }
 
         Ok(bytes)
@@ -59,7 +64,7 @@ impl Chunk {
             match instr {
                 Instruction::Constant => {
                     let addr = self.load_byte()? as usize;
-                    let val = self.read_val(addr)?;
+                    let val = self.load_value(addr)?;
                     stack.push(val);
                 }
                 Instruction::Print => {

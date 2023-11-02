@@ -1,14 +1,13 @@
 use umpteen::{
-    repr::{chunk::Chunk, value::Value, Result},
+    repr::{chunk::Chunk, value::Value},
     vm::Vm,
+    Result,
 };
 
 fn main() -> Result<Value> {
     let mut chunk = Chunk::new();
-    chunk.write_bytes(256_i32.to_be_bytes());
+    chunk.write_arg(256);
     let num = i32::from_be_bytes(chunk.load_bytes::<4>()?);
-    println!("{:?}", num);
-    println!("{:?}", chunk);
     let mut vm = Vm::new();
     vm.write_chunk(chunk);
     vm.exec()

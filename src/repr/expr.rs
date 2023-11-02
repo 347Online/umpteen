@@ -1,4 +1,6 @@
-use super::{value::Value, Result};
+use crate::Result;
+
+use super::value::Value;
 
 pub enum UnaryOp {
     Not,

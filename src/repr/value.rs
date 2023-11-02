@@ -4,10 +4,9 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use super::{
-    error::{Error, RuntimeError},
-    Result,
-};
+use crate::Result;
+
+use super::error::{Error, RuntimeError};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {

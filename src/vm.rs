@@ -1,12 +1,14 @@
 use std::collections::VecDeque;
 
-use crate::repr::{chunk::Chunk, value::Value, Result};
+use crate::{
+    repr::{chunk::Chunk, value::Value},
+    Result,
+};
 
 #[derive(Default)]
 pub struct Vm {
     stack: Vec<Value>, // env: todo!()
     program: VecDeque<Chunk>,
-    // prog_c: usize,
 }
 
 impl Vm {
