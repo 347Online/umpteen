@@ -23,22 +23,14 @@ impl Display for TokenType {
 
 #[derive(Debug)]
 pub struct Token<'t> {
-    kind: TokenType,
-    lexeme: &'t str,
-    line: usize,
+    pub kind: TokenType,
+    pub lexeme: &'t str,
+    pub line: usize,
 }
 
 impl<'t> Token<'t> {
     pub fn new(kind: TokenType, lexeme: &'t str, line: usize) -> Self {
         Self { kind, lexeme, line }
-    }
-
-    pub fn kind(&self) -> TokenType {
-        self.kind
-    }
-
-    pub fn lexeme(&self) -> &'t str {
-        self.lexeme
     }
 }
 

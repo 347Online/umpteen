@@ -2,11 +2,13 @@ use crate::Result;
 
 use super::value::Value;
 
+#[derive(Debug)]
 pub enum UnaryOp {
     Not,
     Negate,
 }
 
+#[derive(Debug)]
 pub enum BinaryOp {
     Add,
     Subtract,
@@ -16,6 +18,7 @@ pub enum BinaryOp {
     And,
 }
 
+#[derive(Debug)]
 pub enum Expr {
     Value(Value),
     UnOp {
