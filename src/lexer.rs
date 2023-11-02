@@ -45,17 +45,22 @@ impl<'s> Lexer<'s> {
         };
         let (i, c) = self.advance().unwrap();
 
+        macro_rules! lexeme {
+            () => {
+                &self.source[start..=i]
+            };
+            ($end:expr) => {
+                &self.source[start..=$end]
+            };
+        }
+
         macro_rules! token {
-            ($t:tt, $e:expr) => {{
-                let lx = &self.source[start..=$e];
-                dbg!(&lx);
-                Token::new(TokenType::$t, lx, self.line)
-            }};
-            ($t:tt) => {{
-                let lx = &self.source[start..=i];
-                dbg!(&lx);
-                Token::new(TokenType::$t, lx, self.line)
-            }};
+            ($t:tt, $lx:expr) => {
+                Token::new(TokenType::$t, $lx, self.line)
+            };
+            ($t:tt) => {
+                Token::new(TokenType::$t, lexeme!(), self.line)
+            };
         }
         dbg!(c);
         let tk = match c {
@@ -90,7 +95,8 @@ impl<'s> Lexer<'s> {
                     end = i;
                 }
 
-                token!(Number, end)
+                let lx = lexeme!(end);
+                token!(Number, lx)
             }
 
             c if is_identic(c) => {
@@ -100,7 +106,8 @@ impl<'s> Lexer<'s> {
                     end = i;
                 }
 
-                token!(Identifier, end)
+                let lx = lexeme!(end);
+                token!(Identifier, lx)
             }
 
             _ => todo!(),
