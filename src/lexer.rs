@@ -9,6 +9,7 @@ pub struct Lexer<'s> {
     source: &'s str,
     chars: Peekable<Enumerate<Chars<'s>>>,
     line: usize,
+    finished: bool,
 }
 
 impl<'s> Lexer<'s> {
@@ -19,6 +20,7 @@ impl<'s> Lexer<'s> {
             source,
             chars,
             line: 1,
+            finished: false,
         }
     }
 
@@ -38,6 +40,7 @@ impl<'s> Lexer<'s> {
 
     fn scan_token(&mut self) -> Option<Token<'s>> {
         let Some((start, _)) = self.peek() else {
+            self.finished = true;
             return None;
         };
         let (i, c) = self.advance().unwrap();
@@ -58,43 +61,50 @@ impl<'s> Lexer<'s> {
         let tk = match c {
             '\n' => {
                 self.line += 1;
-                self.scan_token()?
+                return None;
             }
-            c if c.is_whitespace() => self.scan_token()?,
+            c if c.is_whitespace() => return None,
 
             ';' => token!(Semicolon),
             '=' => token!(Equal),
 
             c if c.is_ascii_digit() => {
                 let mut end: usize = i;
-                while self.peek().is_some_and(|(_, c)| c.is_ascii_digit()) {
-                    let (i, _) = self.advance().unwrap();
+                let mut dec = false;
+                while self.peek().is_some_and(|(_, c)| {
+                    c.is_ascii_digit()
+                        || ({
+                            if let (Some((_, '.')), Some((_, y))) =
+                                (self.peek(), self.peek_ahead(1))
+                            {
+                                y.is_ascii_digit()
+                            } else {
+                                false
+                            }
+                        })
+                }) {
+                    let (i, c) = self.advance().unwrap();
+                    if c == '.' {
+                        dec = true;
+                    }
                     end = i;
                 }
-                match (self.peek(), self.peek_ahead(1)) {
-                    (Some((_, '.')), Some((_, y))) if y.is_ascii_digit() => {
-                        self.advance().unwrap();
 
-                        while self.peek().is_some_and(|(_, c)| c.is_ascii_digit()) {
-                            let (i, _) = self.advance().unwrap();
-                            end = i;
-                        }
-                    }
-                    _ => (),
-                }
                 token!(Number, end)
             }
 
             _ => todo!(),
         };
-        dbg!(&tk);
         Some(tk)
     }
 
     pub fn scan(mut self) -> Vec<Token<'s>> {
         let mut tokens = vec![];
-        while let Some(token) = self.scan_token() {
-            tokens.push(token);
+        while !self.finished {
+            if let Some(token) = self.scan_token() {
+                dbg!(&token);
+                tokens.push(token);
+            }
         }
         tokens
     }
@@ -108,12 +118,12 @@ mod tests {
     fn test_lex_semi() {
         let source = ";=     
 
-       123.4556
+        4556.423
 
            ;;;";
         dbg!(&source);
         let lexer = Lexer::new(source);
         let tokens = lexer.scan();
-        dbg!(tokens);
+        dbg!(&tokens, tokens.len());
     }
 }
