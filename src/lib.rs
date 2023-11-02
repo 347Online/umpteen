@@ -1,11 +1,4 @@
-use std::{iter::Peekable, str::Chars};
-
-use repr::{
-    error::Error,
-    token::TokenType,
-    token::{print_tokens, Token},
-    value::Value,
-};
+use repr::error::Error;
 
 pub mod repr;
 pub mod vm;
