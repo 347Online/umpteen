@@ -62,7 +62,7 @@ impl<'s> Lexer<'s> {
                 Token::new(TokenType::$t, lexeme!(), self.line)
             };
         }
-        
+
         let tk = match c {
             '\n' => {
                 self.line += 1;
@@ -144,6 +144,13 @@ mod tests {
     fn lex_let_x_equal_10() {
         let source = "let x = 10;";
         let lexer = Lexer::new(source);
-        let tokens = dbg!(lexer.scan());
+        dbg!(lexer.scan());
+    }
+
+    #[test]
+    fn print_10() {
+        let source = "print 10;";
+        let lexer = Lexer::new(source);
+        dbg!(lexer.scan());
     }
 }
