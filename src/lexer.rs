@@ -107,7 +107,12 @@ impl<'s> Lexer<'s> {
                 }
 
                 let lx = lexeme!(end);
-                token!(Identifier, lx)
+
+                match lx {
+                    "let" => token!(Let, lx),
+
+                    _ => token!(Identifier, lx),
+                }
             }
 
             _ => todo!(),
