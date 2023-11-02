@@ -25,6 +25,7 @@ pub enum Error {
     UnexpectedToken(char),
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
+    IllegalDeclare,
     Runtime(RuntimeError),
 }
 
@@ -44,6 +45,7 @@ impl Display for Error {
             Error::Runtime(r) => match r {
                 RuntimeError::Illegal => "illegal operation".to_string(),
             },
+            Error::IllegalDeclare => "illegal declaration".to_string(),
         };
         write!(f, "{desc}")
     }

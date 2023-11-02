@@ -5,8 +5,11 @@ use crate::{
     Result,
 };
 
+use super::env::Environment;
+
 #[derive(Default)]
 pub struct Vm {
+    env: Environment,
     stack: Vec<Value>, // env: todo!()
     program: VecDeque<Chunk>,
 }

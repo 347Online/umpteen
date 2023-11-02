@@ -55,6 +55,11 @@ impl Display for Value {
     }
 }
 
+impl From<Option<&Value>> for Value {
+    fn from(value: Option<&Value>) -> Self {
+        value.cloned().unwrap_or_default()
+    }
+}
 impl From<Option<Value>> for Value {
     fn from(value: Option<Value>) -> Self {
         value.unwrap_or_default()

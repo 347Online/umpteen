@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{exec::env::Environment, Result};
 
 use super::value::Value;
 
@@ -19,25 +19,29 @@ pub enum BinaryOp {
 }
 
 #[derive(Debug)]
-pub enum Expr {
+pub enum Expr<'t, 'e> {
     Value(Value),
     UnOp {
-        expr: Box<Expr>,
+        expr: Box<Expr<'t, 'e>>,
         op: UnaryOp,
     },
     BinOp {
-        left: Box<Expr>,
-        right: Box<Expr>,
+        left: Box<Expr<'t, 'e>>,
+        right: Box<Expr<'t, 'e>>,
         op: BinaryOp,
+    },
+    Ident {
+        name: &'t str,
+        env: &'e mut Environment,
     },
 }
 
-impl Expr {
-    pub fn unary(expr: Expr, op: UnaryOp) -> Expr {
+impl<'t, 'e> Expr<'t, 'e> {
+    pub fn unary(expr: Expr<'t, 'e>, op: UnaryOp) -> Expr<'t, 'e> {
         let expr = Box::new(expr);
         Expr::UnOp { expr, op }
     }
-    pub fn binary(left: Expr, right: Expr, op: BinaryOp) -> Expr {
+    pub fn binary(left: Expr<'t, 'e>, right: Expr<'t, 'e>, op: BinaryOp) -> Expr<'t, 'e> {
         let (left, right) = (Box::new(left), Box::new(right));
         Expr::BinOp { left, right, op }
     }
@@ -90,6 +94,7 @@ impl Expr {
                     }
                 }
             },
+            Expr::Ident { name, env } => env.get(name),
         };
         Ok(v)
     }
