@@ -47,6 +47,6 @@ mod tests {
         let tokens = Lexer::new("\"Hello world 23423421 \"").scan();
         let parser = Parser::new(&tokens);
         let result = parser.parse().eval().unwrap();
-        println!("{} ({:?})", result, result);
+        println!("Result: {} ({:?})", result, result);
     }
 }
