@@ -7,7 +7,6 @@ use umpteen::{
 fn main() -> Result<Value> {
     let mut chunk = Chunk::new();
     chunk.write_arg(256);
-    let num = i32::from_be_bytes(chunk.load_bytes::<4>()?);
     let mut vm = Vm::new();
     vm.write_chunk(chunk);
     vm.exec()
