@@ -93,18 +93,14 @@ impl<'s> Lexer<'s> {
                 token!(Number, end)
             }
 
-            c if c == '_' || c.is_ascii_alphabetic() => {
+            c if is_identic(c) => {
                 let mut end: usize = i;
-                while self
-                    .peek()
-                    .is_some_and(|(_, c)| c == '_' || c.is_ascii_alphanumeric())
-                {
-                    let (i, c) = self.advance().unwrap();
-                    if c == '.' {}
+                while self.peek().is_some_and(|(_, c)| is_identic(c)) {
+                    let (i, _) = self.advance().unwrap();
                     end = i;
                 }
 
-                token!(Number, end)
+                token!(Identifier, end)
             }
 
             _ => todo!(),
@@ -134,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_lex() {
-        let source = "10.10.10";
+        let source = "let x = 10;";
         dbg!(&source);
         let lexer = Lexer::new(source);
         let tokens = lexer.scan();
