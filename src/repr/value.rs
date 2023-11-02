@@ -8,7 +8,7 @@ use crate::Result;
 
 use super::{
     error::{Error, RuntimeError},
-    object::{self, Object},
+    object::Object,
 };
 
 #[derive(Default, Debug, Clone, PartialEq)]

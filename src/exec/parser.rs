@@ -1,6 +1,5 @@
 use crate::repr::{
     expr::Expr,
-    object::Object,
     token::{Token, TokenType},
     value::Value,
 };
@@ -14,7 +13,7 @@ impl<'t> Parser<'t> {
         Parser { tokens }
     }
 
-    pub fn parse(mut self) -> Expr {
+    pub fn parse(&self) -> Expr {
         // for tk in self.tokens {
         //     Self::parse_token(tk);
         // }
@@ -47,6 +46,7 @@ mod tests {
     fn parse_let_x_equal_10() {
         let tokens = Lexer::new("\"Hello world 23423421 \"").scan();
         let parser = Parser::new(&tokens);
-        println!("{:?}", parser.parse().eval().unwrap());
+        let result = parser.parse().eval().unwrap();
+        println!("{} ({:?})", result, result);
     }
 }

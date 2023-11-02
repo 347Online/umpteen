@@ -17,7 +17,6 @@ impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Object::String(x) => write!(f, "{}", x),
-            _ => write!(f, "{:?}", self),
         }
     }
 }
