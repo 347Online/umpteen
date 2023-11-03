@@ -6,35 +6,47 @@ use crate::repr::{
 
 use super::env::Environment;
 
-pub struct Parser<'t, 'e> {
-    tokens: &'t Vec<Token<'t>>,
-    globals: &'e mut Environment,
+pub struct Parser<'t> {
+    tokens: &'t [Token<'t>],
+    index: usize,
+    len: usize,
 }
 
-impl<'t, 'e> Parser<'t, 'e> {
-    pub fn new(tokens: &'t Vec<Token<'t>>, globals: &'e mut Environment) -> Self {
-        Parser { tokens, globals }
+impl<'t> Parser<'t> {
+    pub fn new(tokens: &'t [Token<'t>]) -> Self {
+        Parser {
+            tokens,
+            index: 0,
+            len: tokens.len(),
+        }
     }
 
-    pub fn parse(&'e mut self) -> Expr {
-        // for tk in self.tokens {
-        //     Self::parse_token(tk);
-        // }
-        // Expr::Value(Value::Empty)
-        self.parse_token(&self.tokens[0])
+    pub fn parse(mut self, globals: &Environment) -> Expr<'t, '_> {
+        let len = self.tokens.len();
+        while self.index < len {
+            let token = &self.tokens[self.index];
+            self.parse_token(token, globals);
+        }
+
+        todo!()
     }
 
-    fn parse_token(&'e mut self, tk: &Token<'t>) -> Expr<'t, 'e> {
+    fn parse_token<'e>(&'e mut self, tk: &Token<'t>, env: &Environment) -> Box<Expr<'t, '_>> {
         use TokenType as TT;
         match tk.kind {
             TT::Number => Expr::Value(Value::Number(tk.lexeme.parse().unwrap())),
             TT::String => Expr::Value(tk.lexeme.into()),
             TT::Identifier => Expr::Ident {
                 name: tk.lexeme,
-                env: self.globals,
+                env: &mut env,
             },
             TT::Let => {
-                todo!()
+                let expr = self.parse_token(tk, &env);
+                Expr::Assign {
+                    name: tk.lexeme,
+                    env: &mut env,
+                    expr,
+                }
             }
             TT::Print => todo!(),
             TT::Equal => todo!(),
@@ -53,11 +65,11 @@ mod tests {
 
     #[test]
     fn parse_let_x_equal_10() {
-        let mut globals = Environment::default();
+        let globals = &mut Environment::default();
         let tokens = dbg!(Lexer::new("x = 10").scan());
-        let mut parser = Parser::new(&tokens, &mut globals);
-        let result = parser.parse().eval().unwrap();
+        let mut parser = Parser::new(&tokens);
+        let result = parser.parse(&globals);
         dbg!(globals);
-        println!("Result: {} ({:?})", result, result);
+        println!("Result: ({:?})", result);
     }
 }

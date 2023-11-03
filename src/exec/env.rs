@@ -14,6 +14,7 @@ impl Environment {
     pub fn new(data: HashMap<String, Value>) -> Self {
         Self { data }
     }
+
     pub fn get(&self, name: &str) -> Value {
         self.data.get(name).into()
     }
