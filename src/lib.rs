@@ -1,6 +1,33 @@
-use repr::error::Error;
+pub mod core {
+    pub mod prelude;
+}
 
-pub mod exec;
-pub mod repr;
+pub mod umpteen {
+    pub mod ast {
+        pub mod expr;
+        pub mod ops;
+        pub mod stmt;
+    }
 
-pub type Result<T> = std::result::Result<T, Error>;
+    pub mod bytecode {
+        pub mod chunk;
+        pub mod compiler;
+        pub mod instruction;
+    }
+
+    pub mod error {
+        pub mod error;
+    }
+
+    pub mod token {
+        pub mod lexer;
+        pub mod token;
+        pub mod token_type;
+    }
+
+    pub mod value {
+        pub mod object;
+        pub mod value;
+    }
+    pub mod runtime;
+}

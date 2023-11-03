@@ -1,9 +1,7 @@
-use crate::{
-    repr::{chunk::Chunk, value::Value},
-    Result,
-};
+use crate::{Program, Result, Value};
 
-use super::{Program, Stack};
+pub type Stack = Vec<Value>;
+pub type Program = Vec<Chunk>;
 
 #[derive(Default)]
 pub struct Runtime {

@@ -1,6 +1,14 @@
 use std::{fmt::Display, mem::size_of};
 
-use super::error::Error;
+pub trait AsBytes<const N: usize>
+where
+    Self: Sized,
+{
+    type Error;
+
+    fn to_bytes(self) -> [u8; N];
+    fn try_from_bytes(bytes: [u8; N]) -> Result<Self, Self::Error>;
+}
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]

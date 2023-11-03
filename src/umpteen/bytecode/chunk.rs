@@ -1,6 +1,6 @@
-use crate::Result;
+use crate::{prelude::*, datatype::repr::AsBytes};
 
-use super::{error::Error, instr::Instruction, value::Value, AsBytes};
+use super::instruction::Instruction;
 
 #[derive(Debug, Default)]
 pub struct Chunk {

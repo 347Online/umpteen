@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "umpteen"
+name = "umpteen_language"
 version = "0.1.0"

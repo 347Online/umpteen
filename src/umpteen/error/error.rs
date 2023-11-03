@@ -1,5 +1,16 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
+pub enum Error {
+    UnexpectedEof,
+    CorruptedChunk,
+    UnexpectedToken(char),
+    InvalidInstruction(u8),
+    WrongNumberArguments(usize, usize, String),
+    IllegalDeclare,
+    Runtime(RuntimeError),
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);
 
@@ -16,17 +27,6 @@ impl Display for Line {
 #[derive(Debug)]
 pub enum RuntimeError {
     Illegal,
-}
-
-#[derive(Debug)]
-pub enum Error {
-    UnexpectedEof,
-    CorruptedChunk,
-    UnexpectedToken(char),
-    InvalidInstruction(u8),
-    WrongNumberArguments(usize, usize, String),
-    IllegalDeclare,
-    Runtime(RuntimeError),
 }
 
 impl std::error::Error for Error {}

@@ -1,6 +1,4 @@
-use crate::repr::{chunk::Chunk, expr::Expr};
 
-use super::Program;
 
 #[derive(Debug, Default)]
 pub struct Compiler {
