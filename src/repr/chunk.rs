@@ -8,6 +8,7 @@ pub struct Chunk {
     pub code: Box<Vec<Instruction>>,
     pub bytes: Box<Vec<u8>>,
     offset: usize,
+    packed: bool,
 }
 
 impl Chunk {
@@ -70,7 +71,14 @@ impl Chunk {
                 Instruction::Print => {
                     println!("{}", Value::from(stack.pop()));
                 }
-                Instruction::Return => return Ok(stack.pop().into()),
+                Instruction::Return => {
+                    let x = stack.pop();
+                    if let Some(val) = x {
+                        return Ok(val);
+                    } else {
+                        panic!("what?");
+                    }
+                }
             }
         }
 

@@ -1,5 +1,5 @@
-use umpteen::Runtime;
+use umpteen::{repr::value::Value, Result};
 
-fn main() {
-    let runtime = Runtime::new();
+fn main() -> Result<Value> {
+    todo!();
 }
