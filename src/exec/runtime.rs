@@ -7,17 +7,17 @@ use super::{Program, Stack};
 
 #[derive(Default)]
 pub struct Runtime {
-    program: Program,
     stack: Stack,
-    index: usize,
+    program: Program,
+    program_counter: usize,
 }
 
 impl Runtime {
     pub fn new(program: Program) -> Self {
         Runtime {
-            program,
             stack: vec![],
-            index: 0,
+            program,
+            program_counter: 0,
         }
     }
 
