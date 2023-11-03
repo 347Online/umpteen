@@ -3,11 +3,11 @@ use crate::Result;
 use super::expr::Expr;
 
 #[derive(Debug)]
-pub enum Stmt<'t, 'e> {
-    Expr(Expr<'t, 'e>),
+pub enum Stmt<'t> {
+    Expr(Expr<'t>),
 }
 
-impl<'t, 'e> Stmt<'t, 'e> {
+impl<'t> Stmt<'t> {
     pub fn eval(self) -> Result<()> {
         match self {
             Stmt::Expr(expr) => expr.eval()?,

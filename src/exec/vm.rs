@@ -5,11 +5,8 @@ use crate::{
     Result,
 };
 
-use super::env::Environment;
-
 #[derive(Default)]
 pub struct Vm {
-    env: Environment,
     stack: Vec<Value>,
     program: VecDeque<Chunk>,
 }
@@ -17,7 +14,6 @@ pub struct Vm {
 impl Vm {
     pub fn new(program: VecDeque<Chunk>) -> Self {
         Vm {
-            env: Environment::default(),
             stack: vec![],
             program,
         }
