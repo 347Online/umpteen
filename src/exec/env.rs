@@ -5,9 +5,22 @@ use crate::{
     Result,
 };
 
+pub type EnvKey = String;
+
+#[derive(Debug)]
+pub struct Env {
+    values: HashMap<String, Value>,
+}
+
 #[derive(Debug, Default)]
 pub struct Environment {
-    data: HashMap<String, Value>,
+    data: HashMap<EnvKey, Env>,
+}
+
+impl Environment {
+    pub fn new() -> Self{
+        Self::default()
+    }
 }
 
 impl Environment {
