@@ -7,7 +7,7 @@ pub type Stack = Vec<Value>;
 pub struct Runtime {
     stack: Stack,
     program: Program,
-    program_counter: usize,
+    index: usize,
 }
 
 impl Runtime {
@@ -15,15 +15,19 @@ impl Runtime {
         Runtime {
             stack: vec![],
             program,
-            program_counter: 0,
+            index: 0,
         }
     }
 
     pub fn exec(mut self) -> Result<Value> {
-        for chunk in self.program {
-            chunk.exec(&mut self.stack);
-        }
+        let mut program = std::mem::take(&mut self.program).into_iter();
 
-        Ok(Value::Empty)
+        let value = loop {
+            let Some(chunk) = program.next() else {
+                break Value::Empty;
+            };
+        };
+
+        Ok(value)
     }
 }
