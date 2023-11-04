@@ -21,10 +21,12 @@ impl AddrMode {
     }
 }
 
+pub type Bytecode = Vec<u8>;
+
 #[derive(Debug)]
 pub struct Chunk {
     addr_mode: AddrMode,
-    bytes: Vec<u8>,
+    bytes: Bytecode,
 }
 
 impl Chunk {
@@ -55,5 +57,10 @@ impl Chunk {
             AddrMode::Word => self.write_arg(addr as u16),
             AddrMode::Long => self.write_arg(addr as u32),
         };
+    }
+
+    pub fn consume(self) -> (AddrMode, Bytecode) {
+        let Chunk { addr_mode, bytes } = self;
+        (addr_mode, bytes)
     }
 }

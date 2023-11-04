@@ -101,25 +101,4 @@ impl Compiler {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::{
-        ast::Expr,
-        value::{Object, Value},
-    };
 
-    use super::Compiler;
-
-    #[test]
-    fn some_fn() {
-        let string = String::from("Hello world");
-        let boxed_str = Box::new(string);
-        let obj = Object::String(boxed_str);
-        let val = Value::Object(obj);
-        let ast = Expr::Value(val);
-
-        let mut cp = Compiler::new();
-        let chunk = cp.compile_expr(ast).unwrap();
-        dbg!(chunk);
-    }
-}
