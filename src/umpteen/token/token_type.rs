@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy)]
 pub enum TokenType {
     Semicolon,

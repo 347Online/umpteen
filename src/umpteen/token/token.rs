@@ -1,5 +1,7 @@
 use std::fmt::{Display, Write};
 
+use super::TokenType;
+
 #[derive(Debug)]
 pub struct Token<'t> {
     pub kind: TokenType,

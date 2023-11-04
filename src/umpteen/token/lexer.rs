@@ -3,6 +3,10 @@ use std::{
     str::Chars,
 };
 
+use crate::token::TokenType;
+
+use super::Token;
+
 pub struct Lexer<'s> {
     source: &'s str,
     chars: Peekable<Enumerate<Chars<'s>>>,

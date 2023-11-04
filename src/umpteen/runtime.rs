@@ -1,3 +1,8 @@
+use crate::{bytecode::Chunk, value::Value, Result};
+
+pub type Program = Vec<Chunk>;
+pub type Stack = Vec<Value>;
+
 #[derive(Default)]
 pub struct Runtime {
     stack: Stack,

@@ -29,6 +29,8 @@ pub mod umpteen {
         pub use error::*;
     }
 
+    pub use error::*;
+
     pub mod token {
         pub mod lexer;
         pub mod token;
@@ -56,11 +58,4 @@ pub mod umpteen {
 
 pub use umpteen::*;
 
-pub mod prelude {
-    use crate::{bytecode::Chunk, error::Error};
-
-    pub type Program = Vec<Chunk>;
-    pub type Result<T> = std::result::Result<T, Error>;
-}
-
-pub use prelude::*;
+pub type Result<T> = std::result::Result<T, Error>;

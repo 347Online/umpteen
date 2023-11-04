@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::error::Error;
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
