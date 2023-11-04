@@ -1,31 +1,15 @@
 use crate::{error::Error, value::Value, Result};
 
-use super::{AsBytes, Instruction};
-enum Size {
-    Tiny,
-    Small,
-    Medium,
-    Large,
-    X1,
-    X2,
+use super::{AsBytes, Instruction, MemoryPage};
+
+#[derive(Debug)]
+pub struct Chunk<'m> {
+    mem: &'m mut MemoryPage,
 }
 
-#[derive(Debug, Default)]
-pub struct Chunk {
-    pub data: Box<Vec<Value>>,
-    pub code: Box<Vec<Instruction>>,
-    pub bytes: Box<Vec<u8>>,
-    offset: usize,
-}
-
-impl Chunk {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
+impl<'m> Chunk<'m> {
     pub fn write_value(&mut self, val: Value) -> usize {
-        self.data.push(val);
-        self.data.len() - 1
+        self.mem.set(val)
     }
 
     pub fn write_instr(&mut self, instr: Instruction) {
