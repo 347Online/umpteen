@@ -1,191 +1,104 @@
-use std::{
-    array::from_fn,
-    ops::{Deref, DerefMut},
-};
+use std::ops::{Deref, DerefMut};
 
-use crate::{
-    ast::{Expr, Unary},
-    bytecode::{chunk, Args, Bytes},
-    value::Value,
-    Result,
-};
+use crate::{ast::Expr, value::Value, Result};
 
-use super::{Chunk, Instruction};
+use super::{AddrMode, Chunk, Instruction};
+
+pub type Bytecode<const N: usize> = [Chunk; N];
+
+pub type Address = usize;
 
 #[derive(Debug, Default)]
-pub struct CompilerMemory(Vec<MemoryPage>);
+pub struct Memory(Vec<Value>);
 
-pub type Memory<const N: usize> = [MemoryPage; N];
+impl Memory {
+    pub fn offset(&self) -> usize {
+        self.0.len()
+    }
 
-const BYTE: usize = u8::MAX as usize + 1;
-const WORD: usize = u16::MAX as usize + 1;
-const LONG: usize = u32::MAX as usize + 1;
-
-#[derive(Debug, Clone, Copy)]
-pub enum AddrSize {
-    Byte,
-    Word,
-    Long,
-}
-
-impl AddrSize {
-    const fn size(&self) -> &usize {
-        match self {
-            AddrSize::Byte => &BYTE,
-            AddrSize::Word => &WORD,
-            AddrSize::Long => &LONG,
-        }
+    pub fn store(&mut self, value: Value) -> usize {
+        let addr = self.offset();
+        self.0.push(value);
+        addr
     }
 }
 
-impl Deref for AddrSize {
-    type Target = usize;
+impl Deref for Memory {
+    type Target = Vec<Value>;
 
     fn deref(&self) -> &Self::Target {
-        self.size()
+        &self.0
     }
 }
 
-pub struct MemAddr(AddrSize, usize);
-
-#[derive(Debug)]
-enum MemData {
-    Small(Box<[Option<Value>; BYTE]>),
-    Medium(Box<[Option<Value>; WORD]>),
-    Large(Box<[Option<Value>; LONG]>),
-}
-
-#[derive(Debug)]
-pub struct MemoryPage {
-    offset: usize,
-    data: MemData,
-}
-
-impl MemoryPage {
-    pub fn new(size: AddrSize) -> Self {
-        let f = |_| None;
-
-        MemoryPage {
-            offset: 0,
-            data: match size {
-                AddrSize::Byte => MemData::Small(Box::new(from_fn(f))),
-                AddrSize::Word => MemData::Medium(Box::new(from_fn(f))),
-                AddrSize::Long => MemData::Large(Box::new(from_fn(f))),
-            },
-        }
-    }
-
-    pub const fn size(&self) -> AddrSize {
-        match self.data {
-            MemData::Small(_) => AddrSize::Byte,
-            MemData::Medium(_) => AddrSize::Word,
-            MemData::Large(_) => AddrSize::Long,
-        }
-    }
-
-    pub fn read_value(&self, addr: usize) -> Option<&Value> {
-        todo!()
-    }
-
-    pub fn write_value(&mut self, value: Value) -> usize {
-        todo!()
+impl DerefMut for Memory {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
 #[derive(Debug)]
-pub struct Compiler<'c> {
-    mem: MemoryPage,
-    values: Vec<Value>,
-    code: Vec<Chunk<'c>>,
+pub struct Compiler {
+    mem: Memory,
 }
 
-impl<'c> Compiler<'c> {
-    fn new() -> Self {
+impl Compiler {
+    pub fn new() -> Self {
         Compiler {
-            mem: MemoryPage::new(AddrSize::Byte),
-            values: vec![],
-            code: vec![],
+            mem: Memory::default(),
         }
     }
 
-    fn store(&mut self, value: Value) -> usize {
-        self.values.push(value);
-        self.values.len() - 1
-    }
-
-    pub fn compile_expr(&mut self, expr: Expr<'_>) -> Result<MemoryPage> {
-        let mut largest_addr = 0;
-        let mut bytes = Bytes::new();
-        let mut code = vec![];
+    pub fn compile_expr(&mut self, expr: Expr) -> Result<Chunk> {
+        let mut instr_buf = vec![];
+        let mut arg_buf = vec![];
 
         match expr {
-            Expr::Value(val) => {
-                let addr = self.store(val);
-                largest_addr = std::cmp::max(addr, largest_addr);
-                code.push((Instruction::Load, Some(Args::Constant(addr))));
+            Expr::Value(value) => {
+                if value != Value::Empty {
+                    let addr = self.mem.store(value);
 
-                let addr_size = match largest_addr {
-                    x if x < BYTE => AddrSize::Byte,
-                    x if x < WORD => AddrSize::Word,
-                    x if x < LONG => AddrSize::Long,
-                    _ => panic!("out of memory"),
-                };
-
-                let mut mem = MemoryPage::new(addr_size);
-                for val in std::mem::take(&mut self.values) {
-                    mem.write_value(val);
+                    instr_buf.push(Instruction::Constant);
+                    arg_buf.push(addr);
                 }
-
-                // Memory allocated
-
-                for (instr, args) in code.into_iter() {
-                    match instr {
-                        Instruction::Load => {
-                            let Args::Constant(addr) = args.unwrap();
-                        }
-
-                        Instruction::Print => todo!(),
-                        Instruction::Return => todo!(),
-                    }
-                }
-
-                todo!()
             }
-            Expr::UnOp { expr, op } => {
-                match op {
-                    Unary::Not => !expr.eval()?,
-                    Unary::Negate => {
-                        let val = expr.eval()?;
-                        (-val)?
-                    }
-                };
-            }
+            Expr::UnOp { expr, op } => todo!(),
             Expr::BinOp { left, right, op } => todo!(),
             Expr::Ident { name } => todo!(),
             Expr::Assign { name, expr } => todo!(),
+        }
+
+        let addr_mode = match arg_buf.len() {
+            x if x < AddrMode::BYTE => AddrMode::Byte,
+            x if x < AddrMode::WORD => AddrMode::Word,
+            x if x < AddrMode::LONG => AddrMode::Long,
+            _ => panic!("out of memory somehow, incredible"),
         };
 
-        todo!()
+        instr_buf.push(Instruction::Return);
+        let mut chunk = Chunk::new(addr_mode);
+
+        let mut arg_pos = 0;
+
+        let mut read_arg = || {
+            let arg = arg_buf[arg_pos];
+            arg_pos += 1;
+            arg
+        };
+
+        for instr in instr_buf {
+            chunk.write_instr(instr);
+            match instr {
+                Instruction::Constant => {
+                    let addr = read_arg();
+                    chunk.write_addr(addr);
+                }
+                _ => (),
+            }
+        }
+
+        Ok(chunk)
     }
-
-    // pub fn compile<const N: usize>(mut self, ast: Expr<'c>) -> Result<Program<N>> {
-    //     let memory = self
-    //         .memory
-    //         .0
-    //         .try_into()
-    //         .unwrap_or_else(|v: Vec<MemoryPage>| panic!("Ack!"));
-
-    //     let code = (self.code)
-    //         .try_into()
-    //         .unwrap_or_else(|v: Vec<Chunk<'c>>| panic!("Ack!"));
-
-    //     Ok(Program { memory, code })
-    // }
-}
-
-pub struct Program<'p, const N: usize> {
-    memory: Memory<N>,
-    code: [Chunk<'p>; N],
 }
 
 #[cfg(test)]
@@ -197,19 +110,16 @@ mod tests {
 
     use super::Compiler;
 
-    
     #[test]
-    fn test() {
-        let mut compiler = Compiler::new();
-        let ast = Expr::Value(Value::Object(Object::String(Box::new(String::from(
-            "Hello World",
-        )))));
+    fn some_fn() {
+        let string = String::from("Hello world");
+        let boxed_str = Box::new(string);
+        let obj = Object::String(boxed_str);
+        let val = Value::Object(obj);
+        let ast = Expr::Value(val);
 
-        let page = match compiler.compile_expr(ast) {
-            Ok(page) => page,
-            Err(e) => panic!("{}", e),
-        };
-        
-        dbg!(page);
+        let mut cp = Compiler::new();
+        let chunk = cp.compile_expr(ast).unwrap();
+        dbg!(chunk);
     }
 }
