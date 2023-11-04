@@ -4,7 +4,7 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use crate::{Result, error::{Error, RuntimeError}};
+use crate::{Error, Result, RuntimeError};
 
 use super::Object;
 
@@ -49,17 +49,6 @@ impl Display for Value {
         };
 
         write!(f, "{repr}")
-    }
-}
-
-impl From<Option<&Value>> for Value {
-    fn from(value: Option<&Value>) -> Self {
-        value.cloned().unwrap_or_default()
-    }
-}
-impl From<Option<Value>> for Value {
-    fn from(value: Option<Value>) -> Self {
-        value.unwrap_or_default()
     }
 }
 

@@ -1,6 +1,14 @@
-use crate::{value::Value, Result, error::Error};
+use crate::{error::Error, value::Value, Result};
 
-use super::{Instruction, AsBytes};
+use super::{AsBytes, Instruction};
+enum Size {
+    Tiny,
+    Small,
+    Medium,
+    Large,
+    X1,
+    X2,
+}
 
 #[derive(Debug, Default)]
 pub struct Chunk {
@@ -8,7 +16,6 @@ pub struct Chunk {
     pub code: Box<Vec<Instruction>>,
     pub bytes: Box<Vec<u8>>,
     offset: usize,
-    packed: bool,
 }
 
 impl Chunk {
@@ -59,9 +66,9 @@ impl Chunk {
     }
 
     pub fn exec(mut self, stack: &mut Vec<Value>) -> Result<Value> {
-        let code = *std::mem::take(&mut self.code);
+        let code = std::mem::take(&mut self.code);
 
-        for instr in code {
+        for instr in *code {
             match instr {
                 Instruction::Constant => {
                     let addr = self.load_byte()? as usize;
@@ -69,7 +76,8 @@ impl Chunk {
                     stack.push(val);
                 }
                 Instruction::Print => {
-                    println!("{}", Value::from(stack.pop()));
+                    let value = stack.pop().unwrap_or(Value::Empty);
+                    println!("{}", value);
                 }
                 Instruction::Return => {
                     let x = stack.pop();
@@ -83,5 +91,16 @@ impl Chunk {
         }
 
         Ok(Value::Empty)
+    }
+}
+
+fn write<const N: usize, T>(values: [T; N], store: &mut Vec<T>) -> Option<usize> {
+    if store.len() + values.len() >= u8::MAX as usize {
+        None
+    } else {
+        for value in values {
+            store.push(value);
+        }
+        Some(store.len() - 1)
     }
 }

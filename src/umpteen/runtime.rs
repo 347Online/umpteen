@@ -19,13 +19,15 @@ impl Runtime {
         }
     }
 
-    pub fn exec(mut self) -> Result<Value> {
+    pub fn exec(mut self, stack: &mut Stack) -> Result<Value> {
         let mut program = std::mem::take(&mut self.program).into_iter();
 
         let value = loop {
-            let Some(chunk) = program.next() else {
+            if let Some(chunk) = program.next() {
+                chunk.exec(stack)?;
+            } else {
                 break Value::Empty;
-            };
+            }
         };
 
         Ok(value)
