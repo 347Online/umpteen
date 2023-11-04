@@ -5,15 +5,19 @@ use crate::Error;
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
-    Constant,
+    Load,
     Print,
     Return,
+}
+
+pub enum Args {
+    Constant(usize)
 }
 
 impl Instruction {
     pub fn size(&self) -> usize {
         match self {
-            Instruction::Constant => 1,
+            Instruction::Load => 1,
             _ => 0,
         }
     }
