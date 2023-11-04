@@ -1,14 +1,4 @@
-use std::{fmt::Display, mem::size_of};
-
-pub trait AsBytes<const N: usize>
-where
-    Self: Sized,
-{
-    type Error;
-
-    fn to_bytes(self) -> [u8; N];
-    fn try_from_bytes(bytes: [u8; N]) -> Result<Self, Self::Error>;
-}
+use std::fmt::Display;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
@@ -21,7 +11,7 @@ pub enum Instruction {
 impl Instruction {
     pub fn size(&self) -> usize {
         match self {
-            Instruction::Constant => size_of::<u8>(),
+            Instruction::Constant => 1,
             _ => 0,
         }
     }

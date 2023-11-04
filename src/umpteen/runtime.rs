@@ -1,8 +1,3 @@
-use crate::{Program, Result, Value};
-
-pub type Stack = Vec<Value>;
-pub type Program = Vec<Chunk>;
-
 #[derive(Default)]
 pub struct Runtime {
     stack: Stack,
