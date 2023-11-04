@@ -2,16 +2,18 @@ use crate::{value::Value, Result};
 
 use super::{Unary, Binary};
 
+pub type SubExpr<'t> = Box<Expr<'t>>;
+
 #[derive(Debug)]
 pub enum Expr<'t> {
     Value(Value),
     UnOp {
-        expr: Box<Expr<'t>>,
+        expr: SubExpr<'t>,
         op: Unary,
     },
     BinOp {
-        left: Box<Expr<'t>>,
-        right: Box<Expr<'t>>,
+        left: SubExpr<'t>,
+        right: SubExpr<'t>,
         op: Binary,
     },
     Ident {
@@ -19,7 +21,7 @@ pub enum Expr<'t> {
     },
     Assign {
         name: &'t str,
-        expr: Box<Expr<'t>>,
+        expr: SubExpr<'t>,
     },
 }
 
