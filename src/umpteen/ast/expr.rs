@@ -1,4 +1,4 @@
-use crate::{value::Value, error::ParseError};
+use crate::{error::SyntaxError, value::Value};
 
 use super::{Binary, Unary};
 
@@ -34,7 +34,7 @@ impl<'t> Expr<'t> {
         let (left, right) = (Box::new(left), Box::new(right));
         Expr::BinOp { left, right, op }
     }
-    pub fn eval(self) -> Result<Value, ParseError> {
+    pub fn eval(self) -> Result<Value, SyntaxError> {
         let v = match self {
             Expr::Value(v) => v,
             Expr::UnOp { expr, op } => match op {

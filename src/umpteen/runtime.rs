@@ -59,7 +59,7 @@ impl Runtime {
         let lexer = Lexer::new(src);
         let tokens = lexer.scan();
 
-        let parser = Parser::new(tokens);
+        let mut parser = Parser::new(tokens);
         let ast = dbg!(parser.parse()?);
 
         // let compiler = Compiler::new(&mut self.mem, ast);

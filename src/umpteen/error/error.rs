@@ -8,7 +8,6 @@ use crate::{
 #[derive(Debug)]
 pub enum UmpteenError {
     SyntaxError(SyntaxError),
-    ParseError(ParseError),
     CompilerError(CompilerError),
     RuntimeError(RuntimeError),
     Other(Box<dyn std::error::Error>),
@@ -16,9 +15,15 @@ pub enum UmpteenError {
 
 #[derive(Debug)]
 pub enum SyntaxError {
+    ExpectedExpression,
+    ExpectedStatement,
     IllegalDeclare,
     UnexpectedToken(char),
     UnexpectedEof,
+    IllegalBinaryOperation(Value, Value, Binary),
+    IllegalUnaryOperation(Value, Unary),
+    Lexeme(String),
+    Other(Box<dyn Error>),
 }
 
 impl Display for SyntaxError {
@@ -31,42 +36,27 @@ impl Display for SyntaxError {
             }
             SyntaxError::UnexpectedEof => "unexpected end of file",
             SyntaxError::IllegalDeclare => "illegal declaration",
-        };
-        write!(f, "{}", desc)
-    }
-}
-
-#[derive(Debug)]
-pub enum ParseError {
-    IllegalBinaryOperation(Value, Value, Binary),
-    IllegalUnaryOperation(Value, Unary),
-    Lexeme(String),
-    Other(Box<dyn Error>),
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let tmp: String;
-        let desc = match self {
-            ParseError::IllegalBinaryOperation(lhs, rhs, op) => {
+            SyntaxError::IllegalBinaryOperation(lhs, rhs, op) => {
                 tmp = format!(
                     "cannot apply binary {} operation to {} and {}",
                     op, lhs, rhs
                 );
                 &tmp
             }
-            ParseError::IllegalUnaryOperation(val, op) => {
+            SyntaxError::IllegalUnaryOperation(val, op) => {
                 tmp = format!("cannot apply unary {} operation to {}", op, val);
                 &tmp
             }
-            ParseError::Lexeme(lexeme) => {
+            SyntaxError::Lexeme(lexeme) => {
                 tmp = format!("parse error near {}", lexeme);
                 &tmp
             }
-            ParseError::Other(e) => {
+            SyntaxError::Other(e) => {
                 tmp = format!("{}", e);
                 &tmp
             }
+            SyntaxError::ExpectedExpression => "expected expression",
+            SyntaxError::ExpectedStatement => "expected statement",
         };
         write!(f, "{}", desc)
     }
@@ -82,7 +72,6 @@ pub enum CompilerError {
 impl std::error::Error for UmpteenError {}
 impl std::error::Error for RuntimeError {}
 impl std::error::Error for CompilerError {}
-impl std::error::Error for ParseError {}
 impl std::error::Error for SyntaxError {}
 
 impl Display for UmpteenError {
@@ -90,7 +79,6 @@ impl Display for UmpteenError {
         match self {
             UmpteenError::RuntimeError(e) => write!(f, "{}", e),
             UmpteenError::SyntaxError(e) => write!(f, "{}", e),
-            UmpteenError::ParseError(e) => write!(f, "{}", e),
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
             UmpteenError::Other(e) => write!(f, "{}", e),
         }
@@ -112,12 +100,6 @@ impl From<RuntimeError> for UmpteenError {
 impl From<SyntaxError> for UmpteenError {
     fn from(value: SyntaxError) -> Self {
         UmpteenError::SyntaxError(value)
-    }
-}
-
-impl From<ParseError> for UmpteenError {
-    fn from(value: ParseError) -> Self {
-        UmpteenError::ParseError(value)
     }
 }
 

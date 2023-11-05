@@ -4,7 +4,7 @@ use crate::error::Line;
 
 use super::TokenType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Token<'t> {
     pub kind: TokenType,
     pub lexeme: &'t str,
