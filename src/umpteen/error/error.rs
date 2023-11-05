@@ -2,6 +2,7 @@ use std::{error::Error, f32::consts::E, fmt::Display};
 
 use crate::{
     ast::{Binary, Unary},
+    token::TokenType,
     value::Value,
 };
 
@@ -15,14 +16,15 @@ pub enum UmpteenError {
 
 #[derive(Debug)]
 pub enum SyntaxError {
+    UnexpectedSymbol(char),
+    UnexpectedToken(TokenType),
     ExpectedExpression,
-    ExpectedStatement,
+    ExpectedStatement(TokenType),
     IllegalDeclare,
-    UnexpectedToken(char),
     UnexpectedEof,
     IllegalBinaryOperation(Value, Value, Binary),
     IllegalUnaryOperation(Value, Unary),
-    Lexeme(String),
+    ExpectedToken(TokenType),
     Other(Box<dyn Error>),
 }
 
@@ -30,8 +32,8 @@ impl Display for SyntaxError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let tmp: String;
         let desc = match self {
-            SyntaxError::UnexpectedToken(c) => {
-                tmp = format!("unexpected token `{}`", c);
+            SyntaxError::UnexpectedSymbol(c) => {
+                tmp = format!("unexpected symbol `{}`", c);
                 &tmp
             }
             SyntaxError::UnexpectedEof => "unexpected end of file",
@@ -47,16 +49,27 @@ impl Display for SyntaxError {
                 tmp = format!("cannot apply unary {} operation to {}", op, val);
                 &tmp
             }
-            SyntaxError::Lexeme(lexeme) => {
-                tmp = format!("parse error near {}", lexeme);
-                &tmp
-            }
+            // SyntaxError::Lexeme(lexeme) => {
+            //     tmp = format!("parse error near {}", lexeme);
+            //     &tmp
+            // }
             SyntaxError::Other(e) => {
                 tmp = format!("{}", e);
                 &tmp
             }
             SyntaxError::ExpectedExpression => "expected expression",
-            SyntaxError::ExpectedStatement => "expected statement",
+            SyntaxError::ExpectedStatement(kind) => {
+                tmp = format!("expected statement but got {}", kind);
+                &tmp
+            }
+            SyntaxError::ExpectedToken(exp) => {
+                tmp = format!("expected {}", exp);
+                &tmp
+            }
+            SyntaxError::UnexpectedToken(kind) => {
+                tmp = format!("unexpected token {}", kind);
+                &tmp
+            }
         };
         write!(f, "{}", desc)
     }

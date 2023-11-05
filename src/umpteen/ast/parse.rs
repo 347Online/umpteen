@@ -26,36 +26,58 @@ impl<'p> Parser<'p> {
         loop {
             let stmt = self.parse_stmt()?;
             ast.push(stmt);
+            if self.index == self.tokens.len() {
+                break;
+            }
         }
 
         Ok(ast)
     }
 
-    fn get_token<E>(&mut self, err: E) -> Result<Token<'p>, E> {
-        let token = self.tokens.get(self.index).ok_or(err)?;
+    fn consume(&mut self) -> Result<Token<'p>, SyntaxError> {
+        let tk = self
+            .tokens
+            .get(self.index)
+            .ok_or(SyntaxError::UnexpectedEof)?;
         self.index += 1;
-        Ok(*token)
+        Ok(*tk)
+    }
+
+    fn consume_if(&mut self, kind: TokenType) -> Result<Token<'p>, SyntaxError> {
+        match self.tokens.get(self.index) {
+            Some(tk) => {
+                if tk.kind == kind {
+                    self.index += 1;
+                    Ok(*tk)
+                } else {
+                    Err(SyntaxError::ExpectedToken(kind))?
+                }
+            }
+            None => Err(SyntaxError::UnexpectedEof),
+        }
     }
 
     fn parse_stmt(&mut self) -> Result<Stmt<'p>, SyntaxError> {
-        let token = self.get_token(SyntaxError::UnexpectedEof)?;
+        let token = self.consume()?;
 
-        match token.kind {
+        let stmt = match token.kind {
             TokenType::Print => {
                 let expr = self.parse_expr()?;
-                Ok(Stmt::Print(expr))
+                Stmt::Print(expr)
             }
             TokenType::Let => todo!(),
             TokenType::Identifier => todo!(),
 
             TokenType::Error => todo!(),
 
-            _ => Err(SyntaxError::ExpectedStatement),
-        }
+            kind => Err(SyntaxError::ExpectedStatement(kind))?,
+        };
+        let semi = self.consume_if(TokenType::Semicolon)?;
+        Ok(stmt)
     }
 
     fn parse_expr(&mut self) -> Result<Expr<'p>, SyntaxError> {
-        let token = self.get_token(SyntaxError::UnexpectedEof)?;
+        let token = self.consume()?;
 
         match token.kind {
             TokenType::Number => {
