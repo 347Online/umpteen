@@ -187,29 +187,3 @@ pub struct Program<'p, const N: usize> {
     memory: Memory<N>,
     code: [Chunk<'p>; N],
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        ast::Expr,
-        value::{Object, Value},
-    };
-
-    use super::Compiler;
-
-    
-    #[test]
-    fn test() {
-        let mut compiler = Compiler::new();
-        let ast = Expr::Value(Value::Object(Object::String(Box::new(String::from(
-            "Hello World",
-        )))));
-
-        let page = match compiler.compile_expr(ast) {
-            Ok(page) => page,
-            Err(e) => panic!("{}", e),
-        };
-        
-        dbg!(page);
-    }
-}

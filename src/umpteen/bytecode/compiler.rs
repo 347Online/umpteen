@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{
     ast::{Ast, Expr, Stmt},
-    value::Value,
+    value::{Object, Value},
     Memory, Result,
 };
 
@@ -43,15 +43,14 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    pub fn compile(mut self) {
-        // let string = String::from("Hello world");
-        // let boxed_str = Box::new(string);
-        // let obj = Object::String(boxed_str);
-        // let val = Value::Object(obj);
-        // let ast = Expr::Value(val);
+    pub fn compile(mut self, ast: Stmt) -> Result<Program> {
+        self.compile_stmt(ast);
+        let chunk = self.flush()?;
+        let program = vec![chunk];
+        Ok(program)
     }
 
-    pub fn compile_stmt(&mut self, stmt: Stmt) {
+    fn compile_stmt(&mut self, stmt: Stmt) {
         match stmt {
             Stmt::Expr(expr) => self.compile_expr(expr),
             Stmt::Print(expr) => {
@@ -61,7 +60,7 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    pub fn compile_expr(&mut self, expr: Expr) {
+    fn compile_expr(&mut self, expr: Expr) {
         match expr {
             Expr::Value(value) => {
                 if value != Value::Empty {

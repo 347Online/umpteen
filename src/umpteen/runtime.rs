@@ -9,7 +9,7 @@ use crate::{
 
 pub type Stack = Vec<Value>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Memory(Vec<Value>);
 
 impl Memory {
@@ -42,6 +42,7 @@ impl DerefMut for Memory {
     }
 }
 
+#[derive(Default)]
 pub struct Runtime {
     mem: Memory,
     stack: Stack,
@@ -49,15 +50,11 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn new(mem: Memory) -> Self {
-        Runtime {
-            mem,
-            stack: vec![],
-            program: vec![],
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub fn load_source(&mut self, src: &str) {
+    pub fn load_source(&mut self, src: &str) -> Result<Program> {
         let string = String::from("Hello world");
         let boxed_str = Box::new(string);
         let obj = Object::String(boxed_str);
@@ -65,8 +62,8 @@ impl Runtime {
         let expr = Expr::Value(val);
         let stmt = Stmt::Expr(expr);
 
-        let mut cp = Compiler::new(&mut self.mem);
-        // cp.
+        let cp = Compiler::new(&mut self.mem);
+        cp.compile(stmt)
     }
 
     pub fn load_program(&mut self, mut prog: Program) {
@@ -131,35 +128,5 @@ impl Runtime {
         };
 
         Ok(return_value)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        ast::Expr,
-        bytecode::Compiler,
-        value::{Object, Value},
-        Runtime,
-    };
-
-    #[test]
-    fn some_fn() {
-        // let string = String::from("Hello world");
-        // let boxed_str = Box::new(string);
-        // let obj = Object::String(boxed_str);
-        // let val = Value::Object(obj);
-        // let ast = Expr::Value(val);
-
-        // let mut cp = Compiler::new();
-        // let chunk = cp.compile_expr(ast).unwrap();
-        // dbg!(&chunk);
-        // let mem = std::mem::take(&mut cp.mem);
-
-        // let mut vm = Runtime::new(mem);
-        // vm.load_program(vec![chunk]);
-        // let result = vm.run().unwrap();
-        // println!("{}", result);
-        // dbg!(&vm.mem);
     }
 }
