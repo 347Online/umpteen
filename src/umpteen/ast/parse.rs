@@ -1,21 +1,16 @@
 use crate::{
     error::ParseError,
     token::{Token, TokenType},
-    value::Value,
+    value::{Value, self},
 };
 
 use super::{Expr, Stmt};
 
 pub enum AstNode<'a> {
     Syntax(TokenType),
+    Constant(Value),
     Stmt(Stmt<'a>),
     Expr(Expr<'a>),
-}
-
-impl<'a> AstNode<'a> {
-    pub fn value(value: Value) -> Self {
-        AstNode::Expr(Expr::Value(value))
-    }
 }
 
 pub struct Parser<'p> {
@@ -40,8 +35,8 @@ impl<'p> Parser<'p> {
         let kind = token.kind;
         let node = match token.kind {
             TokenType::Semicolon => AstNode::Syntax(kind),
-            TokenType::Print => todo!(),
-            TokenType::String => todo!(),
+            TokenType::Print => AstNode::Syntax(TokenType::Print),
+            TokenType::String => AstNode::Constant(Value::from(token.lexeme)),
 
             TokenType::Identifier => todo!(),
             TokenType::Equal => todo!(),

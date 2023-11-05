@@ -4,9 +4,12 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use crate::{error::ParseError, ast::{Unary, Binary}};
+use crate::{
+    ast::{Binary, Unary},
+    error::ParseError,
+};
 
-use super::Object;
+use super::{Object, ObjectData};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
@@ -25,6 +28,10 @@ impl Value {
             Value::Number(x) => *x > 0.0,
             Value::Object(obj) => !obj.is_empty(),
         }
+    }
+
+    pub fn string(string: String) -> Self {
+        Value::Object(Object(Box::new(ObjectData::String(string))))
     }
 }
 
@@ -58,32 +65,21 @@ impl From<bool> for Value {
     }
 }
 
-impl From<Value> for bool {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::Empty => false,
-            Value::Boolean(x) => x,
-            Value::Number(x) => x > 0.0,
-            Value::Object(x) => !x.is_empty(),
-        }
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Value::string(value.to_string())
     }
 }
 
-impl From<&str> for Value {
-    fn from(value: &str) -> Self {
-        Value::Object(Object::String(Box::new(value.to_string())))
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Value::string(value.to_string())
     }
 }
 
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
         Value::Number(value)
-    }
-}
-
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Value::Object(Object::String(Box::new(value)))
     }
 }
 
@@ -111,12 +107,9 @@ impl Add for Value {
 
     fn add(self, rhs: Self) -> Self::Output {
         let lhs = self;
-        let val = match(lhs, rhs) {
+        let val = match (lhs.clone(), rhs.clone()) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
-            (Value::Object(Object::String(mut a)), Value::Object(Object::String(ref b))) => {
-                a.push_str(b);
-                Value::from(*a)
-            }
+
             (a, b) => Err(ParseError::IllegalBinaryOperation(a, b, Binary::Add))?,
         };
         Ok(val)
@@ -129,7 +122,11 @@ impl Sub for Value {
     fn sub(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
-            _ => Err(ParseError::IllegalBinaryOperation(self, rhs, Binary::Subtract))?,
+            _ => Err(ParseError::IllegalBinaryOperation(
+                self,
+                rhs,
+                Binary::Subtract,
+            ))?,
         };
         Ok(val)
     }
@@ -141,7 +138,11 @@ impl Mul for Value {
     fn mul(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
-            _ => Err(ParseError::IllegalBinaryOperation(self, rhs, Binary::Multiply))?,
+            _ => Err(ParseError::IllegalBinaryOperation(
+                self,
+                rhs,
+                Binary::Multiply,
+            ))?,
         };
         Ok(val)
     }
@@ -153,7 +154,11 @@ impl Div for Value {
     fn div(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
-            _ => Err(ParseError::IllegalBinaryOperation(self, rhs, Binary::Divide))?,
+            _ => Err(ParseError::IllegalBinaryOperation(
+                self,
+                rhs,
+                Binary::Divide,
+            ))?,
         };
         Ok(val)
     }
@@ -165,7 +170,11 @@ impl Rem for Value {
     fn rem(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a % b),
-            _ => Err(ParseError::IllegalBinaryOperation(self, rhs, Binary::Modulo))?,
+            _ => Err(ParseError::IllegalBinaryOperation(
+                self,
+                rhs,
+                Binary::Modulo,
+            ))?,
         };
         Ok(val)
     }
