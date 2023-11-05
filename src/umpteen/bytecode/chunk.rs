@@ -68,9 +68,8 @@ impl Chunk {
 
     pub fn read_instr(&self, offset: usize) -> Result<Instr> {
         // Attempts to read one bytecode instruction
-        let byte = self.bytes.get(offset).ok_or(Error::CorruptedChunk)?;
-
-        Instr::try_from_bytes([*byte])
+        let bytes = self.read_bytes(offset)?;
+        Instr::try_from_bytes(bytes)
     }
 
     pub fn read_arg<const N: usize, T: AsBytes<N>>(&self, offset: usize) -> Result<T> {
@@ -85,7 +84,8 @@ impl Chunk {
         let addr = match self.addr_mode {
             AddrMode::Byte => {
                 let bytes = self.read_bytes::<1>(offset)?;
-                Address::Byte(bytes[0])
+                let addr_byte = u8::try_from_bytes(bytes).unwrap();
+                Address::Byte(addr_byte)
             }
             AddrMode::Word => {
                 let bytes = self.read_bytes::<2>(offset)?;

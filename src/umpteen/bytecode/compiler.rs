@@ -45,6 +45,7 @@ impl<'m> Compiler<'m> {
 
     pub fn compile(mut self, ast: Stmt) -> Result<Program> {
         self.compile_stmt(ast);
+        self.compile_stmt(Stmt::Return(None)); // TODO: make this part of the parsed ast
         let chunk = self.flush()?;
         let program = vec![chunk];
         Ok(program)
@@ -56,6 +57,12 @@ impl<'m> Compiler<'m> {
             Stmt::Print(expr) => {
                 self.compile_expr(expr);
                 self.compile_instr(Instr::Print);
+            }
+            Stmt::Return(x) => {
+                if let Some(expr) = x {
+                    self.compile_expr(expr);
+                };
+                self.compile_instr(Instr::Return);
             }
         }
     }
@@ -77,11 +84,6 @@ impl<'m> Compiler<'m> {
 
     fn compile_instr(&mut self, instr: Instr) {
         self.instr_buf.push(instr);
-        match instr {
-            Instr::Constant => {}
-            Instr::Print => todo!(),
-            Instr::Return => todo!(),
-        }
     }
 
     fn compile_value(&mut self, value: Value) {
@@ -110,7 +112,7 @@ impl<'m> Compiler<'m> {
                     arg_pos += 1;
                     chunk.write_addr(addr);
                 }
-                _ => panic!(),
+                _ => (),
             }
         }
 

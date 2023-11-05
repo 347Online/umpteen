@@ -60,7 +60,7 @@ impl Runtime {
         let obj = Object::String(boxed_str);
         let val = Value::Object(obj);
         let expr = Expr::Value(val);
-        let stmt = Stmt::Expr(expr);
+        let stmt = Stmt::Print(expr);
 
         let cp = Compiler::new(&mut self.mem);
         cp.compile(stmt)
@@ -71,9 +71,9 @@ impl Runtime {
     }
 
     pub fn run(&mut self) -> Result<Value> {
-        let program = std::mem::take(&mut self.program);
+        let program = self.load_source("")?; //std::mem::take(&mut self.program);
         for chunk in program {
-            self.exec(chunk)?;
+            self.exec(dbg!(chunk))?;
         }
 
         Ok(Value::Empty)
@@ -114,6 +114,7 @@ impl Runtime {
 
         let return_value = loop {
             let instr = chunk.read_instr(offset)?;
+            offset += 1;
             match instr {
                 Instr::Constant => {
                     let addr = read_addr!();
@@ -123,7 +124,13 @@ impl Runtime {
                 Instr::Print => {
                     println!("{}", pop!());
                 }
-                Instr::Return => break pop!(e),
+                Instr::Return => {
+                    break (if self.stack.is_empty() {
+                        Value::Empty
+                    } else {
+                        pop!()
+                    });
+                }
             }
         };
 

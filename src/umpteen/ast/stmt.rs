@@ -2,19 +2,11 @@ use crate::Result;
 
 use super::Expr;
 
+pub type SubStmt<'t> = Box<Stmt<'t>>;
+
 #[derive(Debug)]
 pub enum Stmt<'t> {
     Expr(Expr<'t>),
     Print(Expr<'t>),
+    Return(Option<Expr<'t>>),
 }
-
-// impl<'t> Stmt<'t> {
-//     pub fn eval(self) -> Result<()> {
-//         match self {
-//             Stmt::Expr(expr) => expr.eval()?,
-//             Stmt::Print(_) => todo!(),
-//         };
-
-//         Ok(())
-//     }
-// }
