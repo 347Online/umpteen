@@ -1,6 +1,6 @@
 use crate::{value::Value, Result};
 
-use super::{Unary, Binary};
+use super::{Binary, Unary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 

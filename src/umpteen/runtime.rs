@@ -17,9 +17,7 @@ impl Runtime {
     }
 
     pub fn exec(mut self, stack: &mut Stack) -> Result<Value> {
-        for chunk in self.program {
-            
-        }
+        for chunk in self.program {}
 
         todo!();
         // Ok(value)

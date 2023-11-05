@@ -100,5 +100,3 @@ impl Compiler {
         Ok(chunk)
     }
 }
-
-
