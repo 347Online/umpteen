@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 
-use super::{AsBytes, Instruction};
+use super::{Address, AsBytes, Instruction};
 
 #[derive(Debug, Clone, Copy)]
 pub enum AddrMode {
@@ -61,24 +61,44 @@ impl Chunk {
         };
     }
 
-    pub fn consume(self) -> (AddrMode, Bytecode) {
-        let Chunk { addr_mode, bytes } = self;
-        (addr_mode, bytes)
-    }
+    // pub fn consume(self) -> (AddrMode, Bytecode) {
+    //     let Chunk { addr_mode, bytes } = self;
+    //     (addr_mode, bytes)
+    // }
 
-    pub fn read_instr(&self, index: usize) -> Result<Instruction> {
+    pub fn read_instr(&self, offset: usize) -> Result<Instruction> {
         // Attempts to read one bytecode instruction
-        let byte = self.bytes.get(index).ok_or(Error::CorruptedChunk)?;
+        let byte = self.bytes.get(offset).ok_or(Error::CorruptedChunk)?;
 
         Instruction::try_from_bytes([*byte])
     }
 
-    pub fn read_arg<const N: usize, T: AsBytes<N>>(&self, index: usize) -> Result<T> {
-        let bytes = self.read_bytes::<N>(index)?;
+    pub fn read_arg<const N: usize, T: AsBytes<N>>(&self, offset: usize) -> Result<T> {
+        let bytes = self.read_bytes::<N>(offset)?;
         T::try_from_bytes(bytes).map_err(|e| {
             eprintln!("{}", e);
             Error::CorruptedChunk
         })
+    }
+
+    pub fn read_addr(&self, offset: usize) -> Result<Address> {
+        let addr = match self.addr_mode {
+            AddrMode::Byte => {
+                let bytes = self.read_bytes::<1>(offset)?;
+                Address::Byte(bytes[0])
+            }
+            AddrMode::Word => {
+                let bytes = self.read_bytes::<2>(offset)?;
+                let addr_word = u16::try_from_bytes(bytes).unwrap();
+                Address::Word(addr_word)
+            }
+            AddrMode::Long => {
+                let bytes = self.read_bytes::<4>(offset)?;
+                let addr_long = u32::try_from_bytes(bytes).unwrap();
+                Address::Long(addr_long)
+            }
+        };
+        Ok(addr)
     }
 
     fn read_bytes<const N: usize>(&self, start: usize) -> Result<[u8; N]> {
@@ -92,38 +112,7 @@ impl Chunk {
         Ok(bytes)
     }
 
-    fn read_byte(&self, index: usize) -> Option<&u8> {
-        self.bytes.get(index)
+    fn read_byte(&self, offset: usize) -> Option<&u8> {
+        self.bytes.get(offset)
     }
-
-    // fn read_word(&self, index: usize) -> Result<[u8; 2]> {
-    //     self.read_bytes::<2>(index)
-    // }
-
-    // fn read_long(&self, index: usize) -> Result<[u8; 4]> {
-    //     self.read_bytes::<4>(index)
-    // }
 }
-
-// pub struct ChunkIntoIterator {
-//     chunk: Chunk,
-//     offset: usize,
-// }
-
-// impl Iterator for ChunkIntoIterator {
-//     type Item = Instruction;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.chunk.read_byte()
-//     }
-// }
-
-// impl IntoIterator for Chunk {
-//     type Item = Instruction;
-
-//     type IntoIter = ChunkIntoIterator;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         todo!()
-//     }
-// }

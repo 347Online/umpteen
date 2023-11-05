@@ -6,7 +6,21 @@ use super::{AddrMode, Chunk, Instruction};
 
 pub type Bytecode<const N: usize> = [Chunk; N];
 
-pub type Address = usize;
+pub enum Address {
+    Byte(u8),
+    Word(u16),
+    Long(u32),
+}
+
+impl Address {
+    pub fn read(&self) -> usize {
+        match self {
+            Address::Byte(b) => *b as usize,
+            Address::Word(w) => *w as usize,
+            Address::Long(l) => *l as usize,
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct Memory(Vec<Value>);

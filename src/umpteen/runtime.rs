@@ -1,4 +1,8 @@
-use crate::{bytecode::Chunk, value::Value, Result};
+use crate::{
+    bytecode::{Chunk, Instruction},
+    value::Value,
+    Result,
+};
 
 pub type Stack = Vec<Value>;
 pub type Program = Vec<Chunk>;
@@ -16,11 +20,18 @@ impl Runtime {
         }
     }
 
-    pub fn exec(mut self, stack: &mut Stack) -> Result<Value> {
-        for chunk in self.program {}
-
-        todo!();
-        // Ok(value)
+    pub fn exec(&mut self, chunk: Chunk) -> Result<Value> {
+        let mut offset = 0;
+        loop {
+            let instr = chunk.read_instr(offset)?;
+            match instr {
+                Instruction::Constant => {
+                    let addr = chunk.read_addr(offset);
+                }
+                Instruction::Print => todo!(),
+                Instruction::Return => todo!(),
+            }
+        }
     }
 }
 
