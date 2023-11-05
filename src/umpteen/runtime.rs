@@ -1,8 +1,9 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    ast::{Expr, Stmt},
+    ast::{Expr, Parser, Stmt},
     bytecode::{Chunk, Compiler, Instr, Program},
+    token::Lexer,
     value::{Object, Value},
     Error, Result, RuntimeError,
 };
@@ -54,24 +55,19 @@ impl Runtime {
         Self::default()
     }
 
-    pub fn sample_program(&mut self) -> Result<()> {
-        let string = String::from("Hello world");
-        let boxed_str = Box::new(string);
-        let obj = Object::String(boxed_str);
-        let val = Value::Object(obj);
-        let expr = Expr::Value(val);
-        let stmt = Stmt::Print(expr);
+    pub fn load_source(&mut self, src: &str) -> Result<()> {
+        let lexer = Lexer::new(src);
+        let tokens = lexer.scan();
 
-        let cp = Compiler::new(&mut self.mem);
-        let program = cp.compile(vec![stmt, Stmt::Return(None)])?;
+        let parser = Parser::new(tokens);
+        let ast = parser.parse();
+
+        let compiler = Compiler::new(&mut self.mem, ast);
+        let program = compiler.compile()?;
+
         self.load_program(program);
-        self.run()?;
 
         Ok(())
-    }
-
-    pub fn load_program(&mut self, mut prog: Program) {
-        self.program.append(&mut prog)
     }
 
     pub fn run(&mut self) -> Result<Value> {
@@ -81,6 +77,10 @@ impl Runtime {
         }
 
         Ok(Value::Empty)
+    }
+
+    fn load_program(&mut self, mut prog: Program) {
+        self.program.append(&mut prog)
     }
 
     fn exec(&mut self, chunk: Chunk) -> Result<Value> {

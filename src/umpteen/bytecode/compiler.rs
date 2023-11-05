@@ -28,21 +28,24 @@ impl Address {
 pub struct Compiler<'m> {
     pub mem: &'m mut Memory,
 
+    ast: Vec<Stmt<'m>>,
+
     instr_buf: Vec<Instr>,
     arg_buf: Vec<usize>, // TODO: This type should not be this specific
 }
 
 impl<'m> Compiler<'m> {
-    pub fn new(mem: &'m mut Memory) -> Self {
+    pub fn new(mem: &'m mut Memory, ast: Vec<Stmt<'m>>) -> Self {
         Compiler {
             mem,
+            ast,
             instr_buf: vec![],
             arg_buf: vec![],
         }
     }
 
-    pub fn compile(mut self, ast: Vec<Stmt>) -> Result<Program> {
-        for stmt in ast {
+    pub fn compile(mut self) -> Result<Program> {
+        for stmt in self.ast {
             self.compile_stmt(stmt);
         }
         let chunk = self.flush()?;

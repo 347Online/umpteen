@@ -1,6 +1,7 @@
-use umpteen::{report, Runtime};
+use umpteen::Runtime;
 
 fn main() {
     let mut vm = Runtime::new();
-    vm.sample_program().unwrap();
+    vm.load_source(r#"print "Hello World""#);
+    vm.run()
 }

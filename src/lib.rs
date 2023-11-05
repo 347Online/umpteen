@@ -1,13 +1,13 @@
 mod umpteen {
     pub mod ast {
-        mod ast;
         mod expr;
         mod ops;
+        mod parse;
         mod stmt;
 
-        pub use ast::*;
         pub use expr::*;
         pub use ops::*;
+        pub use parse::*;
         pub use stmt::*;
     }
 
