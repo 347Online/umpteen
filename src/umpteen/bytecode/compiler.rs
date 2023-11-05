@@ -1,7 +1,5 @@
-use std::ops::{Deref, DerefMut};
-
 use crate::{
-    ast::{Ast, Expr, Stmt},
+    ast::{Expr, Stmt},
     value::{Object, Value},
     Memory, Result,
 };
@@ -43,9 +41,10 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    pub fn compile(mut self, ast: Stmt) -> Result<Program> {
-        self.compile_stmt(ast);
-        self.compile_stmt(Stmt::Return(None)); // TODO: make this part of the parsed ast
+    pub fn compile(mut self, ast: Vec<Stmt>) -> Result<Program> {
+        for stmt in ast {
+            self.compile_stmt(stmt);
+        }
         let chunk = self.flush()?;
         let program = vec![chunk];
         Ok(program)

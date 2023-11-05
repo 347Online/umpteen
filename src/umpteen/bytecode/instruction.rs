@@ -20,7 +20,7 @@ impl Instr {
     pub fn arg_count(&self) -> usize {
         // Returns the number of arguments the specified instruction requires
         // Note that this is the number of distinct arguments to read, NOT the number of bytes
-        
+
         match self {
             Instr::Constant => 1,
             Instr::Print => 0,

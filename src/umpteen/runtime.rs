@@ -54,7 +54,7 @@ impl Runtime {
         Self::default()
     }
 
-    pub fn load_source(&mut self, src: &str) -> Result<Program> {
+    pub fn sample_program(&mut self) -> Result<()> {
         let string = String::from("Hello world");
         let boxed_str = Box::new(string);
         let obj = Object::String(boxed_str);
@@ -63,7 +63,11 @@ impl Runtime {
         let stmt = Stmt::Print(expr);
 
         let cp = Compiler::new(&mut self.mem);
-        cp.compile(stmt)
+        let program = cp.compile(vec![stmt, Stmt::Return(None)])?;
+        self.load_program(program);
+        self.run()?;
+
+        Ok(())
     }
 
     pub fn load_program(&mut self, mut prog: Program) {
@@ -71,7 +75,7 @@ impl Runtime {
     }
 
     pub fn run(&mut self) -> Result<Value> {
-        let program = self.load_source("")?; //std::mem::take(&mut self.program);
+        let program = std::mem::take(&mut self.program);
         for chunk in program {
             self.exec(dbg!(chunk))?;
         }

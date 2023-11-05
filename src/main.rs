@@ -1,9 +1,6 @@
-use umpteen::{Runtime, report};
+use umpteen::{report, Runtime};
 
 fn main() {
     let mut vm = Runtime::new();
-    match vm.run() {
-        Ok(value) => println!("Result: {}", value),
-        Err(e) => report(e),
-    }
+    vm.sample_program().unwrap();
 }

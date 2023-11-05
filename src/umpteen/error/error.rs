@@ -60,7 +60,7 @@ impl From<RuntimeError> for Error {
 pub enum RuntimeError {
     Illegal, // TODO: Make this better
     OutOfBoundsMemoryAccess,
-    StackMissingValue
+    StackMissingValue,
 }
 
 impl Display for RuntimeError {
