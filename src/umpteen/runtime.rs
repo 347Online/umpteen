@@ -51,8 +51,12 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(mem: Memory) -> Self {
+        Runtime {
+            mem,
+            stack: vec![],
+            program: vec![],
+        }
     }
 
     pub fn load_source(&mut self, src: &str) -> Result<(), UmpteenError> {
@@ -60,12 +64,12 @@ impl Runtime {
         let tokens = lexer.scan();
 
         let mut parser = Parser::new(tokens);
-        let ast = dbg!(parser.parse()?);
+        let ast = parser.parse()?;
 
-        // let compiler = Compiler::new(&mut self.mem, ast);
-        // let program = compiler.compile()?;
+        let mut compiler = Compiler::new(&mut self.mem);
+        let program = compiler.compile(ast)?;
 
-        // self.load_program(program);
+        self.load_program(program);
 
         Ok(())
     }
@@ -73,7 +77,10 @@ impl Runtime {
     pub fn run(&mut self) -> Result<Value, UmpteenError> {
         let program = std::mem::take(&mut self.program);
         for chunk in program {
-            self.exec(dbg!(chunk))?;
+            #[cfg(debug_assertions)]
+            dbg!(&chunk);
+
+            self.exec(chunk)?;
         }
 
         Ok(Value::Empty)

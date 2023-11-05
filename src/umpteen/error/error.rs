@@ -19,7 +19,7 @@ pub enum SyntaxError {
     UnexpectedSymbol(char),
     UnexpectedToken(TokenType),
     ExpectedExpression,
-    ExpectedStatement(TokenType),
+    ExpectedStatement,
     IllegalDeclare,
     UnexpectedEof,
     IllegalBinaryOperation(Value, Value, Binary),
@@ -58,10 +58,7 @@ impl Display for SyntaxError {
                 &tmp
             }
             SyntaxError::ExpectedExpression => "expected expression",
-            SyntaxError::ExpectedStatement(kind) => {
-                tmp = format!("expected statement but got {}", kind);
-                &tmp
-            }
+            SyntaxError::ExpectedStatement => "expected statement",
             SyntaxError::ExpectedToken(exp) => {
                 tmp = format!("expected {}", exp);
                 &tmp

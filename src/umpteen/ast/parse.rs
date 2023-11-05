@@ -31,14 +31,20 @@ impl<'p> Parser<'p> {
             }
         }
 
+        ast.push(Stmt::Return(None));
+
+        #[cfg(debug_assertions)]
+        dbg!(&ast);
+
         Ok(ast)
     }
 
     fn consume(&mut self) -> Result<Token<'p>, SyntaxError> {
-        let tk = self
-            .tokens
-            .get(self.index)
-            .ok_or(SyntaxError::UnexpectedEof)?;
+        self.consume_or(SyntaxError::UnexpectedEof)
+    }
+
+    fn consume_or(&mut self, err: SyntaxError) -> Result<Token<'p>, SyntaxError> {
+        let tk = self.tokens.get(self.index).ok_or(err)?;
         self.index += 1;
         Ok(*tk)
     }
@@ -58,26 +64,35 @@ impl<'p> Parser<'p> {
     }
 
     fn parse_stmt(&mut self) -> Result<Stmt<'p>, SyntaxError> {
-        let token = self.consume()?;
+        let token = self.consume_or(SyntaxError::ExpectedStatement)?;
 
         let stmt = match token.kind {
             TokenType::Print => {
                 let expr = self.parse_expr()?;
                 Stmt::Print(expr)
             }
-            TokenType::Let => todo!(),
+            TokenType::Let => {
+                let ident = self.consume_if(TokenType::Identifier)?;
+                self.consume_if(TokenType::Equal)?;
+                let expr = Box::new(self.parse_expr()?);
+                let assign = Expr::Assign {
+                    name: ident.lexeme,
+                    expr,
+                };
+                Stmt::Expr(assign)
+            }
             TokenType::Identifier => todo!(),
 
             TokenType::Error => todo!(),
 
-            kind => Err(SyntaxError::ExpectedStatement(kind))?,
+            kind => Err(SyntaxError::UnexpectedToken(kind))?,
         };
-        let semi = self.consume_if(TokenType::Semicolon)?;
+        self.consume_if(TokenType::Semicolon)?;
         Ok(stmt)
     }
 
     fn parse_expr(&mut self) -> Result<Expr<'p>, SyntaxError> {
-        let token = self.consume()?;
+        let token = self.consume_or(SyntaxError::ExpectedExpression)?;
 
         match token.kind {
             TokenType::Number => {
@@ -90,7 +105,7 @@ impl<'p> Parser<'p> {
             TokenType::String => Ok(Expr::Value(Value::from(token.lexeme))),
             TokenType::Identifier => todo!(),
 
-            _ => Err(SyntaxError::ExpectedExpression),
+            kind => Err(SyntaxError::UnexpectedToken(kind)),
         }
     }
 }

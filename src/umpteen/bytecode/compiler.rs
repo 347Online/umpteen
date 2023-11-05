@@ -28,23 +28,22 @@ impl Address {
 pub struct Compiler<'m> {
     pub mem: &'m mut Memory,
 
-    ast: Vec<Stmt<'m>>,
+    // ast: Vec<Stmt<'m>>,
 
     instr_buf: Vec<Instr>,
     arg_buf: Vec<usize>, // TODO: This type should not be this specific
 }
 
 impl<'m> Compiler<'m> {
-    pub fn new(mem: &'m mut Memory, ast: Vec<Stmt<'m>>) -> Self {
+    pub fn new(mem: &'m mut Memory) -> Self {
         Compiler {
             mem,
-            ast,
             instr_buf: vec![],
             arg_buf: vec![],
         }
     }
 
-    pub fn compile(mut self, ast: Vec<Stmt<'m>>) -> Result<Program, CompilerError> {
+    pub fn compile(&mut self, ast: Vec<Stmt<'m>>) -> Result<Program, CompilerError> {
         for stmt in ast {
             self.compile_stmt(stmt);
         }
