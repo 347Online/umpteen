@@ -1,8 +1,12 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::{ast::Expr, value::Value, Result};
+use crate::{
+    ast::{Expr, Stmt},
+    value::Value,
+    Result,
+};
 
-use super::{AddrMode, Chunk, Instruction};
+use super::{AddrMode, Chunk, Instr};
 
 pub type Bytecode<const N: usize> = [Chunk; N];
 
@@ -13,11 +17,11 @@ pub enum Address {
 }
 
 impl Address {
-    pub fn read(&self) -> usize {
+    pub fn read(&self) -> (usize, usize) {
         match self {
-            Address::Byte(b) => *b as usize,
-            Address::Word(w) => *w as usize,
-            Address::Long(l) => *l as usize,
+            Address::Byte(b) => (*b as usize, 1),
+            Address::Word(w) => (*w as usize, 2),
+            Address::Long(l) => (*l as usize, 4),
         }
     }
 }
@@ -26,11 +30,15 @@ impl Address {
 pub struct Memory(Vec<Value>);
 
 impl Memory {
-    pub fn offset(&self) -> usize {
+    pub fn get(&self, addr: usize) -> Option<Value> {
+        self.0.get(addr).cloned()
+    }
+
+    fn offset(&self) -> usize {
         self.0.len()
     }
 
-    pub fn store(&mut self, value: Value) -> usize {
+    fn store(&mut self, value: Value) -> usize {
         let addr = self.offset();
         self.0.push(value);
         addr
@@ -52,28 +60,40 @@ impl DerefMut for Memory {
 }
 
 #[derive(Debug)]
-pub struct Compiler {
-    mem: Memory,
+pub struct Compiler<'m> {
+    pub mem: &'m mut Memory,
+
+    instr_buf: Vec<Instr>,
+    arg_buf: Vec<usize>, // TODO: This type should not be this specific
 }
 
-impl Compiler {
-    pub fn new() -> Self {
+impl<'m> Compiler<'m> {
+    pub fn new(mem: &'m mut Memory) -> Self {
         Compiler {
-            mem: Memory::default(),
+            mem,
+            instr_buf: vec![],
+            arg_buf: vec![],
         }
     }
 
-    pub fn compile_expr(&mut self, expr: Expr) -> Result<Chunk> {
-        let mut instr_buf = vec![];
-        let mut arg_buf = vec![];
+    pub fn compile(mut self) {
+        self.push_instr(Instr::Return);
+    }
 
+    pub fn compile_stmt(&mut self, stmt: Stmt) {
+        match stmt {
+            Stmt::Expr(expr) => self.compile_expr(expr),
+        }
+    }
+
+    pub fn compile_expr(&mut self, expr: Expr) {
         match expr {
             Expr::Value(value) => {
                 if value != Value::Empty {
                     let addr = self.mem.store(value);
 
-                    instr_buf.push(Instruction::Constant);
-                    arg_buf.push(addr);
+                    self.instr_buf.push(Instr::Constant);
+                    self.arg_buf.push(addr);
                 }
             }
             Expr::UnOp { expr, op } => todo!(),
@@ -81,33 +101,34 @@ impl Compiler {
             Expr::Ident { name } => todo!(),
             Expr::Assign { name, expr } => todo!(),
         }
+    }
 
-        let addr_mode = match arg_buf.len() {
+    fn push_instr(&mut self, instr: Instr) {
+        self.instr_buf.push(instr);
+    }
+
+    fn flush(&mut self) -> Result<Chunk> {
+        let addr_mode = match self.arg_buf.len() {
             x if x < AddrMode::BYTE => AddrMode::Byte,
             x if x < AddrMode::WORD => AddrMode::Word,
             x if x < AddrMode::LONG => AddrMode::Long,
             _ => panic!("out of memory somehow, incredible"),
         };
 
-        instr_buf.push(Instruction::Return);
         let mut chunk = Chunk::new(addr_mode);
 
         let mut arg_pos = 0;
 
-        let mut read_arg = || {
-            let arg = arg_buf[arg_pos];
-            arg_pos += 1;
-            arg
-        };
-
+        let instr_buf = std::mem::take(&mut self.instr_buf);
         for instr in instr_buf {
             chunk.write_instr(instr);
             match instr {
-                Instruction::Constant => {
-                    let addr = read_arg();
+                Instr::Constant => {
+                    let addr = self.arg_buf[arg_pos];
+                    arg_pos += 1;
                     chunk.write_addr(addr);
                 }
-                _ => (),
+                _ => panic!(),
             }
         }
 

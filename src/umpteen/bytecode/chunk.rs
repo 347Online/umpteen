@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 
-use super::{Address, AsBytes, Instruction};
+use super::{Address, AsBytes, Instr};
 
 #[derive(Debug, Clone, Copy)]
 pub enum AddrMode {
@@ -39,7 +39,7 @@ impl Chunk {
         }
     }
 
-    pub fn write_instr(&mut self, instr: Instruction) {
+    pub fn write_instr(&mut self, instr: Instr) {
         self.write_arg(instr)
     }
 
@@ -66,11 +66,11 @@ impl Chunk {
     //     (addr_mode, bytes)
     // }
 
-    pub fn read_instr(&self, offset: usize) -> Result<Instruction> {
+    pub fn read_instr(&self, offset: usize) -> Result<Instr> {
         // Attempts to read one bytecode instruction
         let byte = self.bytes.get(offset).ok_or(Error::CorruptedChunk)?;
 
-        Instruction::try_from_bytes([*byte])
+        Instr::try_from_bytes([*byte])
     }
 
     pub fn read_arg<const N: usize, T: AsBytes<N>>(&self, offset: usize) -> Result<T> {
