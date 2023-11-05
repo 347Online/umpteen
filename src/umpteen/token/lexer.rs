@@ -3,14 +3,14 @@ use std::{
     str::Chars,
 };
 
-use crate::token::TokenType;
+use crate::{token::TokenType, error::Line};
 
 use super::Token;
 
 pub struct Lexer<'s> {
     source: &'s str,
     chars: Peekable<Enumerate<Chars<'s>>>,
-    line: usize,
+    line: Line,
     finished: bool,
 }
 
@@ -21,7 +21,7 @@ impl<'s> Lexer<'s> {
         Lexer {
             source,
             chars,
-            line: 1,
+            line: Line::default(),
             finished: false,
         }
     }
@@ -81,7 +81,7 @@ impl<'s> Lexer<'s> {
 
         let tk = match c {
             '\n' => {
-                self.line += 1;
+                self.line.newline();
                 return None;
             }
             c if c.is_whitespace() => return None,

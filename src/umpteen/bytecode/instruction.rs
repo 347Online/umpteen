@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::Error;
+use crate::error::CompilerError;
 
 use super::{Address, AsBytes};
 
@@ -30,7 +30,7 @@ impl Instr {
 }
 
 impl AsBytes<1> for Instr {
-    type Error = Error;
+    type Error = CompilerError;
 
     fn to_bytes(self) -> [u8; 1] {
         [self as u8]
@@ -43,7 +43,7 @@ impl AsBytes<1> for Instr {
             1 => Instr::Print,
             255 => Instr::Return,
 
-            x => return Err(Error::InvalidInstruction(x)),
+            x => return Err(CompilerError::InvalidInstruction(x)),
         };
 
         Ok(instr)

@@ -25,11 +25,18 @@ mod umpteen {
     }
 
     pub mod error {
-        mod error;
-        pub use error::*;
-    }
+        mod compiler_error;
+        pub mod error;
+        mod parse_error;
+        mod runtime_error;
+        mod syntax_error;
 
-    pub use error::*;
+        pub use compiler_error::*;
+        pub use error::*;
+        pub use parse_error::*;
+        pub use runtime_error::*;
+        pub use syntax_error::*;
+    }
 
     pub mod token {
         mod lexer;
@@ -57,5 +64,3 @@ mod umpteen {
 }
 
 pub use umpteen::*;
-
-pub type Result<T> = std::result::Result<T, Error>;

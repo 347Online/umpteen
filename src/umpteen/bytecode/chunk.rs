@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::error::CompilerError;
 
 use super::{Address, AsBytes, Instr};
 
@@ -66,21 +66,24 @@ impl Chunk {
     //     (addr_mode, bytes)
     // }
 
-    pub fn read_instr(&self, offset: usize) -> Result<Instr> {
+    pub fn read_instr(&self, offset: usize) -> Result<Instr, CompilerError> {
         // Attempts to read one bytecode instruction
         let bytes = self.read_bytes(offset)?;
         Instr::try_from_bytes(bytes)
     }
 
-    pub fn read_arg<const N: usize, T: AsBytes<N>>(&self, offset: usize) -> Result<T> {
+    pub fn read_arg<const N: usize, T: AsBytes<N>>(
+        &self,
+        offset: usize,
+    ) -> Result<T, CompilerError> {
         let bytes = self.read_bytes::<N>(offset)?;
         T::try_from_bytes(bytes).map_err(|e| {
             eprintln!("{}", e);
-            Error::CorruptedChunk
+            CompilerError::CorruptedChunk
         })
     }
 
-    pub fn read_addr(&self, offset: usize) -> Result<Address> {
+    pub fn read_addr(&self, offset: usize) -> Result<Address, CompilerError> {
         let addr = match self.addr_mode {
             AddrMode::Byte => {
                 let bytes = self.read_bytes::<1>(offset)?;
@@ -101,11 +104,11 @@ impl Chunk {
         Ok(addr)
     }
 
-    fn read_bytes<const N: usize>(&self, start: usize) -> Result<[u8; N]> {
+    fn read_bytes<const N: usize>(&self, start: usize) -> Result<[u8; N], CompilerError> {
         let mut bytes = [0; N];
         let mut i = start;
         for byte in bytes.iter_mut() {
-            *byte = *self.read_byte(i).ok_or(Error::CorruptedChunk)?;
+            *byte = *self.read_byte(i).ok_or(CompilerError::CorruptedChunk)?;
             i += 1;
         }
 

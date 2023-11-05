@@ -3,9 +3,9 @@ use std::ops::{Deref, DerefMut};
 use crate::{
     ast::{Expr, Parser, Stmt},
     bytecode::{Chunk, Compiler, Instr, Program},
+    error::{RuntimeError, UmpteenError},
     token::Lexer,
     value::{Object, Value},
-    Error, Result, RuntimeError,
 };
 
 pub type Stack = Vec<Value>;
@@ -55,22 +55,22 @@ impl Runtime {
         Self::default()
     }
 
-    pub fn load_source(&mut self, src: &str) -> Result<()> {
+    pub fn load_source(&mut self, src: &str) -> Result<(), UmpteenError> {
         let lexer = Lexer::new(src);
         let tokens = lexer.scan();
 
         let parser = Parser::new(tokens);
-        let ast = parser.parse();
+        let ast = dbg!(parser.parse()?);
 
-        let compiler = Compiler::new(&mut self.mem, ast);
-        let program = compiler.compile()?;
+        // let compiler = Compiler::new(&mut self.mem, ast);
+        // let program = compiler.compile()?;
 
-        self.load_program(program);
+        // self.load_program(program);
 
         Ok(())
     }
 
-    pub fn run(&mut self) -> Result<Value> {
+    pub fn run(&mut self) -> Result<Value, UmpteenError> {
         let program = std::mem::take(&mut self.program);
         for chunk in program {
             self.exec(dbg!(chunk))?;
@@ -83,7 +83,7 @@ impl Runtime {
         self.program.append(&mut prog)
     }
 
-    fn exec(&mut self, chunk: Chunk) -> Result<Value> {
+    fn exec(&mut self, chunk: Chunk) -> Result<Value, UmpteenError> {
         let mut offset = 0;
 
         macro_rules! read_addr {

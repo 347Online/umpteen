@@ -1,64 +1,150 @@
-use std::fmt::Display;
+use std::{error::Error, f32::consts::E, fmt::Display};
+
+use crate::{
+    ast::{Binary, Unary},
+    value::Value,
+};
 
 #[derive(Debug)]
-pub enum Error {
-    UnexpectedEof,
-    CorruptedChunk,
-    UnexpectedToken(char),
-    InvalidInstruction(u8),
-    WrongNumberArguments(usize, usize, String),
-    IllegalDeclare,
-    Runtime(RuntimeError),
+pub enum UmpteenError {
+    SyntaxError(SyntaxError),
+    ParseError(ParseError),
+    CompilerError(CompilerError),
+    RuntimeError(RuntimeError),
+    Other(Box<dyn std::error::Error>),
 }
 
-impl std::error::Error for Error {}
-impl std::error::Error for RuntimeError {}
+#[derive(Debug)]
+pub enum SyntaxError {
+    IllegalDeclare,
+    UnexpectedToken(char),
+    UnexpectedEof,
+}
 
-impl Display for Error {
+impl Display for SyntaxError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let tmp: String;
-
         let desc = match self {
-            Error::CorruptedChunk => "encountered corrupted chunk",
-            Error::UnexpectedEof => "unexpected end of file",
-            Error::IllegalDeclare => "illegal declaration",
-
-            Error::UnexpectedToken(c) => {
+            SyntaxError::UnexpectedToken(c) => {
                 tmp = format!("unexpected token `{}`", c);
                 &tmp
             }
+            SyntaxError::UnexpectedEof => "unexpected end of file",
+            SyntaxError::IllegalDeclare => "illegal declaration",
+        };
+        write!(f, "{}", desc)
+    }
+}
 
-            Error::InvalidInstruction(byte) => {
+#[derive(Debug)]
+pub enum ParseError {
+    IllegalBinaryOperation(Value, Value, Binary),
+    IllegalUnaryOperation(Value, Unary),
+    Lexeme(String),
+    Other(Box<dyn Error>),
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let tmp: String;
+        let desc = match self {
+            ParseError::IllegalBinaryOperation(lhs, rhs, op) => {
+                tmp = format!(
+                    "cannot apply binary {} operation to {} and {}",
+                    op, lhs, rhs
+                );
+                &tmp
+            }
+            ParseError::IllegalUnaryOperation(val, op) => {
+                tmp = format!("cannot apply unary {} operation to {}", op, val);
+                &tmp
+            }
+            ParseError::Lexeme(lexeme) => {
+                tmp = format!("parse error near {}", lexeme);
+                &tmp
+            }
+            ParseError::Other(e) => {
+                tmp = format!("{}", e);
+                &tmp
+            }
+        };
+        write!(f, "{}", desc)
+    }
+}
+
+#[derive(Debug)]
+pub enum CompilerError {
+    CorruptedChunk,
+    InvalidInstruction(u8),
+    WrongNumberArguments(usize, usize, String),
+}
+
+impl std::error::Error for UmpteenError {}
+impl std::error::Error for RuntimeError {}
+impl std::error::Error for CompilerError {}
+impl std::error::Error for ParseError {}
+impl std::error::Error for SyntaxError {}
+
+impl Display for UmpteenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UmpteenError::RuntimeError(e) => write!(f, "{}", e),
+            UmpteenError::SyntaxError(e) => write!(f, "{}", e),
+            UmpteenError::ParseError(e) => write!(f, "{}", e),
+            UmpteenError::CompilerError(e) => write!(f, "{}", e),
+            UmpteenError::Other(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl From<CompilerError> for UmpteenError {
+    fn from(value: CompilerError) -> Self {
+        UmpteenError::CompilerError(value)
+    }
+}
+
+impl From<RuntimeError> for UmpteenError {
+    fn from(value: RuntimeError) -> Self {
+        UmpteenError::RuntimeError(value)
+    }
+}
+
+impl From<SyntaxError> for UmpteenError {
+    fn from(value: SyntaxError) -> Self {
+        UmpteenError::SyntaxError(value)
+    }
+}
+
+impl From<ParseError> for UmpteenError {
+    fn from(value: ParseError) -> Self {
+        UmpteenError::ParseError(value)
+    }
+}
+
+impl Display for CompilerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let tmp: String;
+        let desc = match self {
+            CompilerError::CorruptedChunk => "encountered corrupted chunk",
+            CompilerError::InvalidInstruction(byte) => {
                 tmp = format!("invalid Instruction `{}`", byte);
                 &tmp
             }
 
-            Error::WrongNumberArguments(exp, got, call) => {
+            CompilerError::WrongNumberArguments(exp, got, call) => {
                 tmp = format!(
                     "wrong number of arguments for {}, expected {} but got {}",
                     call, exp, got
                 );
                 &tmp
             }
-
-            Error::Runtime(r) => {
-                tmp = format!("{}", r);
-                &tmp
-            }
         };
-        write!(f, "{desc}")
-    }
-}
-
-impl From<RuntimeError> for Error {
-    fn from(value: RuntimeError) -> Self {
-        Error::Runtime(value)
+        write!(f, "{}", desc)
     }
 }
 
 #[derive(Debug)]
 pub enum RuntimeError {
-    Illegal, // TODO: Make this better
     OutOfBoundsMemoryAccess,
     StackMissingValue,
 }
@@ -66,16 +152,26 @@ pub enum RuntimeError {
 impl Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let desc = match self {
-            RuntimeError::Illegal => "illegal operation",
             RuntimeError::OutOfBoundsMemoryAccess => "out of bounds memory access",
             RuntimeError::StackMissingValue => "popped when stack was empty",
         };
+
         write!(f, "{}", desc)
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Line(usize, usize);
+
+impl Line {
+    pub fn new(ln: usize) -> Self {
+        Self(ln, 0)
+    }
+
+    pub fn newline(&mut self) {
+        self.0 += 1;
+    }
+}
 
 impl Display for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -87,10 +183,9 @@ impl Display for Line {
     }
 }
 
-pub fn report(e: Error) {
-    eprintln!("ERR: {e}");
+pub fn report_line<E: std::error::Error>(error: E, line: Line) {
+    eprintln!("ERR: {} on line {}", error, line);
 }
-
-pub fn report_line(e: Error, line: usize, col: usize) {
-    eprintln!("ERR: {} on line {}:{}", e, line, col);
+pub fn report<E: std::error::Error>(error: E) {
+    eprintln!("ERR: {}", error);
 }

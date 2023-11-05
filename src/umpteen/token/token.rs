@@ -1,16 +1,18 @@
 use std::fmt::{Display, Write};
 
+use crate::error::Line;
+
 use super::TokenType;
 
 #[derive(Debug)]
 pub struct Token<'t> {
     pub kind: TokenType,
     pub lexeme: &'t str,
-    pub line: usize,
+    pub line: Line,
 }
 
 impl<'t> Token<'t> {
-    pub fn new(kind: TokenType, lexeme: &'t str, line: usize) -> Self {
+    pub fn new(kind: TokenType, lexeme: &'t str, line: Line) -> Self {
         Self { kind, lexeme, line }
     }
 }
@@ -37,7 +39,7 @@ pub fn print_tokens(tokens: &Vec<Token>) -> std::fmt::Result {
     write!(
         &mut buffer,
         "] — EOF line {}",
-        tokens.last().map_or(0, |x| { x.line })
+        tokens.last().map_or(Line::new(0), |x| { x.line })
     )?;
     println!("{}", buffer);
 

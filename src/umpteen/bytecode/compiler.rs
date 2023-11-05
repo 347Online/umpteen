@@ -1,7 +1,7 @@
 use crate::{
     ast::{Expr, Stmt},
-    value::{Object, Value},
-    Memory, Result,
+    value::Value,
+    Memory, error::CompilerError,
 };
 
 use super::{AddrMode, Chunk, Instr};
@@ -44,8 +44,8 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    pub fn compile(mut self) -> Result<Program> {
-        for stmt in self.ast {
+    pub fn compile(mut self, ast: Vec<Stmt<'m>>) -> Result<Program, CompilerError> {
+        for stmt in ast {
             self.compile_stmt(stmt);
         }
         let chunk = self.flush()?;
@@ -93,7 +93,7 @@ impl<'m> Compiler<'m> {
         self.arg_buf.push(addr);
     }
 
-    fn flush(&mut self) -> Result<Chunk> {
+    fn flush(&mut self) -> Result<Chunk, CompilerError> {
         let addr_mode = match self.arg_buf.len() {
             x if x < AddrMode::BYTE => AddrMode::Byte,
             x if x < AddrMode::WORD => AddrMode::Word,
