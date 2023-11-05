@@ -40,27 +40,32 @@ impl<'p> Parser<'p> {
     }
 
     fn consume(&mut self) -> Result<Token<'p>, SyntaxError> {
-        self.consume_or(SyntaxError::UnexpectedEof)
+        let tk = self.peek()?;
+        self.index += 1;
+        Ok(tk)
     }
 
     fn consume_or(&mut self, err: SyntaxError) -> Result<Token<'p>, SyntaxError> {
-        let tk = self.tokens.get(self.index).ok_or(err)?;
+        let tk = self.peek().map_err(|_| err)?;
         self.index += 1;
-        Ok(*tk)
+        Ok(tk)
     }
 
     fn consume_if(&mut self, kind: TokenType) -> Result<Token<'p>, SyntaxError> {
-        match self.tokens.get(self.index) {
-            Some(tk) => {
-                if tk.kind == kind {
-                    self.index += 1;
-                    Ok(*tk)
-                } else {
-                    Err(SyntaxError::ExpectedToken(kind))?
-                }
-            }
-            None => Err(SyntaxError::UnexpectedEof),
+        let next = self.peek()?;
+        if next.kind == kind {
+            self.consume()
+        } else {
+            Err(SyntaxError::ExpectedToken(kind))?
         }
+    }
+
+    fn peek(&self) -> Result<Token<'p>, SyntaxError> {
+        let index = self.index;
+        self.tokens
+            .get(index)
+            .copied()
+            .ok_or(SyntaxError::UnexpectedEof)
     }
 
     fn parse_stmt(&mut self) -> Result<Stmt<'p>, SyntaxError> {
