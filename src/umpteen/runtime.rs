@@ -1,9 +1,12 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
 
 use crate::{
     ast::{Expr, Parser, Stmt},
     bytecode::{Chunk, Compiler, Instr, Program},
-    error::{RuntimeError, UmpteenError},
+    error::{CompilerError, RuntimeError, UmpteenError},
     token::Lexer,
     value::{Object, Value},
 };
@@ -11,47 +14,84 @@ use crate::{
 pub type Stack = Vec<Value>;
 
 #[derive(Debug, Default)]
-pub struct Memory(Vec<Value>);
+pub struct Memory<'m> {
+    values: Vec<Option<Value>>,
+    names: HashMap<&'m str, usize>,
+}
 
-impl Memory {
-    pub fn get(&self, addr: usize) -> Option<Value> {
-        self.0.get(addr).cloned()
-    }
-
-    pub fn store(&mut self, value: Value) -> usize {
+impl<'m> Memory<'m> {
+    pub fn declare_constant(&mut self, value: Value) -> usize {
         let addr = self.offset();
-        self.0.push(value);
+        self.values.push(Some(value));
         addr
     }
 
+    pub fn declare(&mut self, name: &'m str) -> Result<usize, RuntimeError> {
+        if self.names.contains_key(name) {
+            panic!("variable already declared") // TODO: Create an error variant instead of panic
+        } else {
+            let addr = self.offset();
+            self.values.push(None);
+            self.names.insert(name, addr);
+            Ok(addr)
+        }
+    }
+
+    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), UmpteenError> {
+        let addr = self.retrieve(name)?;
+        self.values[addr] = Some(value);
+
+        Ok(())
+    }
+
+    pub fn get(&self, addr: usize) -> Result<Value, UmpteenError> {
+        let value = self
+            .values
+            .get(addr)
+            .cloned()
+            .flatten()
+            .expect(&format!("invalid reference {:#}", addr)); // TODO: Create an error variant instead of expect
+
+        Ok(value)
+    }
+
     fn offset(&self) -> usize {
-        self.0.len()
+        self.values.len()
+    }
+
+    fn retrieve(&self, name: &str) -> Result<usize, UmpteenError> {
+        let addr = *self
+            .names
+            .get(name)
+            .expect(&format!("unknown identifier {}", name));
+
+        Ok(addr)
     }
 }
 
-impl Deref for Memory {
-    type Target = Vec<Value>;
+impl<'m> Deref for Memory<'m> {
+    type Target = Vec<Option<Value>>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.values
     }
 }
 
-impl DerefMut for Memory {
+impl<'m> DerefMut for Memory<'m> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.values
     }
 }
 
 #[derive(Default)]
-pub struct Runtime {
-    mem: Memory,
+pub struct Runtime<'r> {
+    mem: Memory<'r>,
     stack: Stack,
     program: Program,
 }
 
-impl Runtime {
-    pub fn new(mem: Memory) -> Self {
+impl<'r> Runtime<'r> {
+    pub fn new(mem: Memory<'r>) -> Self {
         Runtime {
             mem,
             stack: vec![],
@@ -59,23 +99,23 @@ impl Runtime {
         }
     }
 
-    pub fn load_source(&mut self, src: &str) -> Result<(), UmpteenError> {
+    pub fn compile_source<'c>(&mut self, src: &'c str) -> Result<Program, UmpteenError> {
         let lexer = Lexer::new(src);
         let tokens = lexer.scan();
 
         let mut parser = Parser::new(tokens);
         let ast = parser.parse()?;
-
         let mut compiler = Compiler::new(&mut self.mem);
+
         let program = compiler.compile(ast)?;
 
-        self.load_program(program);
-
-        Ok(())
+        Ok(program)
     }
 
-    pub fn run(&mut self) -> Result<Value, UmpteenError> {
-        let program = std::mem::take(&mut self.program);
+    pub fn run<'rr, 'x: 'rr>(&mut self, src: &str) -> Result<Value, UmpteenError> {
+        // let program = std::mem::take(&mut self.program);
+        let program = self.compile_source(src)?;
+
         for chunk in program {
             #[cfg(debug_assertions)]
             dbg!(&chunk);
@@ -86,7 +126,7 @@ impl Runtime {
         Ok(Value::Empty)
     }
 
-    fn load_program(&mut self, mut prog: Program) {
+    fn load_program(&'r mut self, mut prog: Program) {
         self.program.append(&mut prog)
     }
 
@@ -115,21 +155,13 @@ impl Runtime {
             };
         }
 
-        macro_rules! mem_get {
-            ($addr:expr) => {
-                self.mem
-                    .get($addr)
-                    .ok_or(RuntimeError::OutOfBoundsMemoryAccess)?
-            };
-        }
-
         let return_value = loop {
             let instr = chunk.read_instr(offset)?;
             offset += 1;
             match instr {
                 Instr::Constant => {
                     let addr = read_addr!();
-                    let val = mem_get!(addr);
+                    let val = self.mem.get(addr)?;
                     self.stack.push(val);
                 }
                 Instr::Print => {

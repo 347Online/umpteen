@@ -14,13 +14,23 @@ pub enum UmpteenError {
     Other(Box<dyn std::error::Error>),
 }
 
+impl Display for UmpteenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UmpteenError::RuntimeError(e) => write!(f, "{}", e),
+            UmpteenError::SyntaxError(e) => write!(f, "{}", e),
+            UmpteenError::CompilerError(e) => write!(f, "{}", e),
+            UmpteenError::Other(e) => write!(f, "{}", e),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum SyntaxError {
     UnexpectedSymbol(char),
     UnexpectedToken(TokenType),
     ExpectedExpression,
     ExpectedStatement,
-    IllegalDeclare,
     UnexpectedEof,
     IllegalBinaryOperation(Value, Value, Binary),
     IllegalUnaryOperation(Value, Unary),
@@ -37,7 +47,6 @@ impl Display for SyntaxError {
                 &tmp
             }
             SyntaxError::UnexpectedEof => "unexpected end of file",
-            SyntaxError::IllegalDeclare => "illegal declaration",
             SyntaxError::IllegalBinaryOperation(lhs, rhs, op) => {
                 tmp = format!(
                     "cannot apply binary {} operation to {} and {}",
@@ -77,22 +86,7 @@ pub enum CompilerError {
     CorruptedChunk,
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
-}
-
-impl std::error::Error for UmpteenError {}
-impl std::error::Error for RuntimeError {}
-impl std::error::Error for CompilerError {}
-impl std::error::Error for SyntaxError {}
-
-impl Display for UmpteenError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UmpteenError::RuntimeError(e) => write!(f, "{}", e),
-            UmpteenError::SyntaxError(e) => write!(f, "{}", e),
-            UmpteenError::CompilerError(e) => write!(f, "{}", e),
-            UmpteenError::Other(e) => write!(f, "{}", e),
-        }
-    }
+    IllegalDeclare,
 }
 
 impl From<CompilerError> for UmpteenError {
@@ -122,6 +116,7 @@ impl Display for CompilerError {
                 tmp = format!("invalid Instruction `{}`", byte);
                 &tmp
             }
+            CompilerError::IllegalDeclare => "illegal declaration",
 
             CompilerError::WrongNumberArguments(exp, got, call) => {
                 tmp = format!(

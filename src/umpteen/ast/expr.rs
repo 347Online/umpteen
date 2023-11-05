@@ -6,7 +6,7 @@ pub type SubExpr<'t> = Box<Expr<'t>>;
 
 #[derive(Debug)]
 pub enum Expr<'t> {
-    Value(Value),
+    Constant(Value),
     UnOp {
         expr: SubExpr<'t>,
         op: Unary,
@@ -36,7 +36,7 @@ impl<'t> Expr<'t> {
     }
     pub fn eval(self) -> Result<Value, SyntaxError> {
         let v = match self {
-            Expr::Value(v) => v,
+            Expr::Constant(value) => value,
             Expr::UnOp { expr, op } => match op {
                 Unary::Not => {
                     let x = expr.eval()?;

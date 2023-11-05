@@ -1,7 +1,8 @@
 use crate::{
     ast::{Expr, Stmt},
+    error::{CompilerError, UmpteenError},
     value::Value,
-    Memory, error::CompilerError,
+    Memory,
 };
 
 use super::{AddrMode, Chunk, Instr};
@@ -26,16 +27,14 @@ impl Address {
 
 #[derive(Debug)]
 pub struct Compiler<'m> {
-    pub mem: &'m mut Memory,
-
-    // ast: Vec<Stmt<'m>>,
+    pub mem: &'m mut Memory<'m>,
 
     instr_buf: Vec<Instr>,
     arg_buf: Vec<usize>, // TODO: This type should not be this specific
 }
 
-impl<'m> Compiler<'m> {
-    pub fn new(mem: &'m mut Memory) -> Self {
+impl<'c> Compiler<'c> {
+    pub fn new(mem: &'c mut Memory<'c>) -> Self {
         Compiler {
             mem,
             instr_buf: vec![],
@@ -43,7 +42,7 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    pub fn compile(&mut self, ast: Vec<Stmt<'m>>) -> Result<Program, CompilerError> {
+    pub fn compile(&mut self, ast: Vec<Stmt<'c>>) -> Result<Program, CompilerError> {
         for stmt in ast {
             self.compile_stmt(stmt);
         }
@@ -52,7 +51,7 @@ impl<'m> Compiler<'m> {
         Ok(program)
     }
 
-    fn compile_stmt(&mut self, stmt: Stmt) {
+    fn compile_stmt(&mut self, stmt: Stmt<'c>) {
         match stmt {
             Stmt::Expr(expr) => self.compile_expr(expr),
             Stmt::Print(expr) => {
@@ -68,18 +67,21 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    fn compile_expr(&mut self, expr: Expr) {
+    fn compile_expr(&mut self, expr: Expr<'c>) {
         match expr {
-            Expr::Value(value) => {
+            Expr::Constant(value) => {
                 if value != Value::Empty {
                     self.compile_instr(Instr::Constant);
-                    self.compile_value(value);
+                    self.compile_constant(value);
                 }
             }
             Expr::UnOp { expr, op } => todo!(),
             Expr::BinOp { left, right, op } => todo!(),
             Expr::Ident { name } => todo!(),
-            Expr::Assign { name, expr } => todo!(),
+            Expr::Assign { name, expr } => {
+                self.compile_declare(name);
+                self.compile_expr(*expr)
+            }
         }
     }
 
@@ -87,8 +89,14 @@ impl<'m> Compiler<'m> {
         self.instr_buf.push(instr);
     }
 
-    fn compile_value(&mut self, value: Value) {
-        let addr = self.mem.store(value);
+    fn compile_declare(&mut self, name: &'c str) -> Result<(), UmpteenError> {
+        let addr = self.mem.declare(name)?;
+        self.arg_buf.push(addr);
+        Ok(())
+    }
+
+    fn compile_constant(&mut self, value: Value) {
+        let addr = self.mem.declare_constant(value);
         self.arg_buf.push(addr);
     }
 

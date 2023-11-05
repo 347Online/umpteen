@@ -105,9 +105,9 @@ impl<'p> Parser<'p> {
                     .lexeme
                     .parse()
                     .map_err(|e| SyntaxError::Other(Box::new(e)))?;
-                Ok(Expr::Value(Value::Number(num)))
+                Ok(Expr::Constant(Value::Number(num)))
             }
-            TokenType::String => Ok(Expr::Value(Value::from(token.lexeme))),
+            TokenType::String => Ok(Expr::Constant(Value::from(token.lexeme))),
             TokenType::Identifier => todo!(),
 
             kind => Err(SyntaxError::UnexpectedToken(kind)),
