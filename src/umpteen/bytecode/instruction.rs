@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{convert::Infallible, fmt::Display};
 
 use crate::Error;
 
@@ -69,11 +69,5 @@ impl TryFrom<u8> for Instruction {
         } else {
             Err(Error::InvalidInstruction(value))
         }
-    }
-}
-
-impl From<Instruction> for u8 {
-    fn from(value: Instruction) -> Self {
-        value as u8
     }
 }
