@@ -1,12 +1,46 @@
+use std::ops::{Deref, DerefMut};
+
 use crate::{
     ast::{Expr, Stmt},
-    bytecode::{Chunk, Compiler, Instr, Memory},
+    bytecode::{Chunk, Compiler, Instr, Program},
     value::{Object, Value},
     Error, Result, RuntimeError,
 };
 
 pub type Stack = Vec<Value>;
-pub type Program = Vec<Chunk>;
+
+#[derive(Debug)]
+pub struct Memory(Vec<Value>);
+
+impl Memory {
+    pub fn get(&self, addr: usize) -> Option<Value> {
+        self.0.get(addr).cloned()
+    }
+
+    pub fn store(&mut self, value: Value) -> usize {
+        let addr = self.offset();
+        self.0.push(value);
+        addr
+    }
+
+    fn offset(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl Deref for Memory {
+    type Target = Vec<Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Memory {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 pub struct Runtime {
     mem: Memory,
@@ -104,7 +138,7 @@ impl Runtime {
 mod tests {
     use crate::{
         ast::Expr,
-        bytecode::{Compiler, Memory},
+        bytecode::Compiler,
         value::{Object, Value},
         Runtime,
     };

@@ -1,14 +1,14 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    ast::{Expr, Stmt},
+    ast::{Ast, Expr, Stmt},
     value::Value,
-    Result,
+    Memory, Result,
 };
 
 use super::{AddrMode, Chunk, Instr};
 
-pub type Bytecode<const N: usize> = [Chunk; N];
+pub type Program = Vec<Chunk>;
 
 pub enum Address {
     Byte(u8),
@@ -23,39 +23,6 @@ impl Address {
             Address::Word(w) => (*w as usize, 2),
             Address::Long(l) => (*l as usize, 4),
         }
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct Memory(Vec<Value>);
-
-impl Memory {
-    pub fn get(&self, addr: usize) -> Option<Value> {
-        self.0.get(addr).cloned()
-    }
-
-    fn offset(&self) -> usize {
-        self.0.len()
-    }
-
-    fn store(&mut self, value: Value) -> usize {
-        let addr = self.offset();
-        self.0.push(value);
-        addr
-    }
-}
-
-impl Deref for Memory {
-    type Target = Vec<Value>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Memory {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -77,12 +44,20 @@ impl<'m> Compiler<'m> {
     }
 
     pub fn compile(mut self) {
-        self.push_instr(Instr::Return);
+        // let string = String::from("Hello world");
+        // let boxed_str = Box::new(string);
+        // let obj = Object::String(boxed_str);
+        // let val = Value::Object(obj);
+        // let ast = Expr::Value(val);
     }
 
     pub fn compile_stmt(&mut self, stmt: Stmt) {
         match stmt {
             Stmt::Expr(expr) => self.compile_expr(expr),
+            Stmt::Print(expr) => {
+                self.compile_expr(expr);
+                self.compile_instr(Instr::Print);
+            }
         }
     }
 
@@ -90,10 +65,8 @@ impl<'m> Compiler<'m> {
         match expr {
             Expr::Value(value) => {
                 if value != Value::Empty {
-                    let addr = self.mem.store(value);
-
-                    self.instr_buf.push(Instr::Constant);
-                    self.arg_buf.push(addr);
+                    self.compile_instr(Instr::Constant);
+                    self.compile_value(value);
                 }
             }
             Expr::UnOp { expr, op } => todo!(),
@@ -103,8 +76,18 @@ impl<'m> Compiler<'m> {
         }
     }
 
-    fn push_instr(&mut self, instr: Instr) {
+    fn compile_instr(&mut self, instr: Instr) {
         self.instr_buf.push(instr);
+        match instr {
+            Instr::Constant => {}
+            Instr::Print => todo!(),
+            Instr::Return => todo!(),
+        }
+    }
+
+    fn compile_value(&mut self, value: Value) {
+        let addr = self.mem.store(value);
+        self.arg_buf.push(addr);
     }
 
     fn flush(&mut self) -> Result<Chunk> {
