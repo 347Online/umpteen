@@ -26,9 +26,9 @@ impl Display for UmpteenError {
     }
 }
 
-impl Error for UmpteenError {}
+use std::{error::Error, fmt::Display};
 
-use std::fmt::Display;
+use super::{CompilerError, ParseError, RuntimeError, SyntaxError};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Line(usize, usize);
@@ -76,3 +76,5 @@ impl From<RuntimeError> for UmpteenError {
         UmpteenError::RuntimeError(value)
     }
 }
+
+impl Error for UmpteenError {}

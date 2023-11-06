@@ -2,11 +2,7 @@ use std::fmt::Display;
 
 use crate::error::CompilerError;
 
-use super::{Address, AsBytes};
-
-pub enum Arg {
-    Address(Address),
-}
+use super::serialize::AsBytes;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]

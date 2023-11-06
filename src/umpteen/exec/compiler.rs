@@ -1,28 +1,8 @@
-use crate::{
-    ast::{Expr, Stmt},
-    error::{CompilerError, UmpteenError},
-    value::Value,
-};
+use crate::{repr::{bytecode::{chunk::{Chunk, AddrMode}, instruction::Instr}, ast::{stmt::Stmt, expr::Expr}, value::Value}, error::{CompilerError, UmpteenError}};
 
-use super::{AddrMode, Chunk, Instr};
+use super::env::Memory;
 
 pub type Program = Vec<Chunk>;
-
-pub enum Address {
-    Byte(u8),
-    Word(u16),
-    Long(u32),
-}
-
-impl Address {
-    pub fn read(&self) -> (usize, usize) {
-        match self {
-            Address::Byte(b) => (*b as usize, 1),
-            Address::Word(w) => (*w as usize, 2),
-            Address::Long(l) => (*l as usize, 4),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Compiler<'m> {

@@ -4,6 +4,10 @@ use std::{
     process::{ExitCode, Termination},
 };
 
+use crate::error::ParseError;
+
+use super::ast::ops::{Unary, Binary};
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectData {
     String(String),
@@ -112,37 +116,37 @@ impl Not for Value {
 }
 
 impl Neg for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn neg(self) -> Self::Output {
         match self {
             Value::Number(x) => Ok(Value::Number(-x)),
-            _ => Err(SyntaxError::IllegalUnaryOperation(self, Unary::Negate))?,
+            _ => Err(ParseError::IllegalUnaryOperation(self, Unary::Negate))?,
         }
     }
 }
 
 impl Add for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn add(self, rhs: Self) -> Self::Output {
         let lhs = self;
         let val = match (lhs.clone(), rhs.clone()) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
 
-            (a, b) => Err(SyntaxError::IllegalBinaryOperation(a, b, Binary::Add))?,
+            (a, b) => Err(ParseError::IllegalBinaryOperation(a, b, Binary::Add))?,
         };
         Ok(val)
     }
 }
 
 impl Sub for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
-            _ => Err(SyntaxError::IllegalBinaryOperation(
+            _ => Err(ParseError::IllegalBinaryOperation(
                 self,
                 rhs,
                 Binary::Subtract,
@@ -153,12 +157,12 @@ impl Sub for Value {
 }
 
 impl Mul for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn mul(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
-            _ => Err(SyntaxError::IllegalBinaryOperation(
+            _ => Err(ParseError::IllegalBinaryOperation(
                 self,
                 rhs,
                 Binary::Multiply,
@@ -169,12 +173,12 @@ impl Mul for Value {
 }
 
 impl Div for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn div(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
-            _ => Err(SyntaxError::IllegalBinaryOperation(
+            _ => Err(ParseError::IllegalBinaryOperation(
                 self,
                 rhs,
                 Binary::Divide,
@@ -185,12 +189,12 @@ impl Div for Value {
 }
 
 impl Rem for Value {
-    type Output = Result<Value, SyntaxError>;
+    type Output = Result<Value, ParseError>;
 
     fn rem(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a % b),
-            _ => Err(SyntaxError::IllegalBinaryOperation(
+            _ => Err(ParseError::IllegalBinaryOperation(
                 self,
                 rhs,
                 Binary::Modulo,

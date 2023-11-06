@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
 pub enum CompilerError {
@@ -30,3 +30,5 @@ impl Display for CompilerError {
         write!(f, "{}", desc)
     }
 }
+
+impl Error for CompilerError {}

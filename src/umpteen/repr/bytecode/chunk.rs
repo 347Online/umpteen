@@ -1,6 +1,6 @@
 use crate::error::CompilerError;
 
-use super::{Address, AsBytes, Instr};
+use super::{instruction::Instr, serialize::AsBytes};
 
 #[derive(Debug, Clone, Copy)]
 pub enum AddrMode {
@@ -19,6 +19,22 @@ impl AddrMode {
             AddrMode::Byte => Self::BYTE,
             AddrMode::Word => Self::WORD,
             AddrMode::Long => Self::LONG,
+        }
+    }
+}
+
+pub enum Address {
+    Byte(u8),
+    Word(u16),
+    Long(u32),
+}
+
+impl Address {
+    pub fn read(&self) -> (usize, usize) {
+        match self {
+            Address::Byte(b) => (*b as usize, 1),
+            Address::Word(w) => (*w as usize, 2),
+            Address::Long(l) => (*l as usize, 4),
         }
     }
 }

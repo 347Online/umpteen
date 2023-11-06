@@ -1,6 +1,6 @@
-use crate::{error::SyntaxError, value::Value};
+use crate::{repr::value::Value, error::ParseError};
 
-use super::{Binary, Unary};
+use super::ops::{Unary, Binary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 
@@ -34,7 +34,7 @@ impl<'t> Expr<'t> {
         let (left, right) = (Box::new(left), Box::new(right));
         Expr::BinOp { left, right, op }
     }
-    pub fn eval(self) -> Result<Value, SyntaxError> {
+    pub fn eval(self) -> Result<Value, ParseError> {
         let v = match self {
             Expr::Constant(value) => value,
             Expr::UnOp { expr, op } => match op {

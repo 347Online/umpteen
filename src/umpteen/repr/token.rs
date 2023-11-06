@@ -1,5 +1,7 @@
 use std::fmt::{Display, Write};
 
+use crate::error::Line;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
     Semicolon,

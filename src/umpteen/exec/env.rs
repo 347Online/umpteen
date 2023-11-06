@@ -1,12 +1,16 @@
+use std::{collections::HashMap, ops::{Deref, DerefMut}};
+
+use crate::{repr::value::Value, error::RuntimeError};
+
 #[derive(Debug, Default)]
-pub struct Environment<'m> {
+pub struct Memory<'m> {
     values: Vec<Option<Value>>,
     names: HashMap<&'m str, usize>,
 }
 
 pub type Stack = Vec<Value>;
 
-impl<'m> Environment<'m> {
+impl<'m> Memory<'m> {
     pub fn declare_constant(&mut self, value: Value) -> usize {
         let addr = self.offset();
         self.values.push(Some(value));
@@ -24,14 +28,14 @@ impl<'m> Environment<'m> {
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), UmpteenError> {
+    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), RuntimeError> {
         let addr = self.retrieve(name)?;
         self.values[addr] = Some(value);
 
         Ok(())
     }
 
-    pub fn get(&self, addr: usize) -> Result<Value, UmpteenError> {
+    pub fn get(&self, addr: usize) -> Result<Value, RuntimeError> {
         let value = self
             .values
             .get(addr)
@@ -46,7 +50,7 @@ impl<'m> Environment<'m> {
         self.values.len()
     }
 
-    fn retrieve(&self, name: &str) -> Result<usize, UmpteenError> {
+    fn retrieve(&self, name: &str) -> Result<usize, RuntimeError> {
         let addr = *self
             .names
             .get(name)
@@ -56,7 +60,7 @@ impl<'m> Environment<'m> {
     }
 }
 
-impl<'m> Deref for Environment<'m> {
+impl<'m> Deref for Memory<'m> {
     type Target = Vec<Option<Value>>;
 
     fn deref(&self) -> &Self::Target {
@@ -64,7 +68,7 @@ impl<'m> Deref for Environment<'m> {
     }
 }
 
-impl<'m> DerefMut for Environment<'m> {
+impl<'m> DerefMut for Memory<'m> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.values
     }

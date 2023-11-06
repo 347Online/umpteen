@@ -3,9 +3,10 @@ use std::{
     str::Chars,
 };
 
-use crate::{token::TokenType, error::Line};
-
-use super::Token;
+use crate::{
+    error::Line,
+    repr::token::{Token, TokenType},
+};
 
 pub struct Lexer<'s> {
     source: &'s str,
