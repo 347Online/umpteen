@@ -77,11 +77,6 @@ impl Chunk {
         };
     }
 
-    // pub fn consume(self) -> (AddrMode, Bytecode) {
-    //     let Chunk { addr_mode, bytes } = self;
-    //     (addr_mode, bytes)
-    // }
-
     pub fn read_instr(&self, offset: usize) -> Result<Instr, CompilerError> {
         // Attempts to read one bytecode instruction
         let bytes = self.read_bytes(offset)?;

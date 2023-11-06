@@ -35,12 +35,16 @@ use std::{
 
 use super::{CompilerError, MemoryError, ParseError, RuntimeError, SyntaxError};
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);
 
 impl Line {
     pub fn new(ln: usize) -> Self {
         Self(ln, 0)
+    }
+
+    pub fn advance(&mut self) {
+        self.1 += 1;
     }
 
     pub fn newline(&mut self) {

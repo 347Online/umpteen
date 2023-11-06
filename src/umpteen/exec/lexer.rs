@@ -22,7 +22,7 @@ impl<'s> Lexer<'s> {
         Lexer {
             source,
             chars,
-            line: Line::default(),
+            line: Line::new(1),
             finished: false,
         }
     }
@@ -56,6 +56,7 @@ impl<'s> Lexer<'s> {
             self.finished = true;
             return None;
         };
+        self.line.advance();
         let (i, c) = self.advance().unwrap();
 
         fn is_identic(c: char) -> bool {
@@ -148,6 +149,7 @@ impl<'s> Lexer<'s> {
 
             _ => todo!(),
         };
+
         Some(tk)
     }
 }

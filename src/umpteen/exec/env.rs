@@ -52,17 +52,17 @@ impl<'m> Memory<'m> {
         Ok(value)
     }
 
-    fn offset(&self) -> usize {
-        self.values.len()
-    }
-
-    fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
+    pub fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
         let addr = *self
             .names
             .get(name)
             .unwrap_or_else(|| panic!("unknown identifier {}", name)); // TODO: Create an error variant instead of expect
 
         Ok(addr)
+    }
+
+    fn offset(&self) -> usize {
+        self.values.len()
     }
 }
 

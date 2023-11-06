@@ -1,7 +1,6 @@
 use crate::{
     error::{MemoryError, RuntimeError, UmpteenError},
     repr::{
-        ast::stmt::Stmt,
         bytecode::{chunk::Chunk, instruction::Instr},
         token::Token,
         value::Value,
@@ -45,18 +44,31 @@ impl<'r> Runtime<'r> {
 
     fn scan(src: &str) -> Vec<Token> {
         let lexer = Lexer::new(src);
-        lexer.scan()
+        let tokens = lexer.scan();
+
+        #[cfg(debug_assertions)]
+        dbg!(&tokens);
+
+        tokens
     }
 
     fn parse(tokens: Vec<Token>) -> Result<Ast, UmpteenError> {
         let mut parser = Parser::new(tokens);
         let ast = parser.parse()?;
+
+        #[cfg(debug_assertions)]
+        dbg!(&ast);
+
         Ok(ast)
     }
 
     fn compile(ast: Ast<'r>, mem: Memory<'r>) -> Result<Program<'r>, UmpteenError> {
         let compiler = Compiler::new(mem);
-        let program = compiler.compile(ast)?;
+        let program = compiler.compile(ast);
+
+        #[cfg(debug_assertions)]
+        dbg!(&program);
+
         Ok(program)
     }
 

@@ -19,10 +19,6 @@ pub enum Expr<'t> {
     Ident {
         name: &'t str,
     },
-    Assign {
-        name: &'t str,
-        expr: SubExpr<'t>,
-    },
 }
 
 impl<'t> Expr<'t> {
@@ -84,7 +80,6 @@ impl<'t> Expr<'t> {
                 }
             },
             Expr::Ident { name } => todo!(),
-            Expr::Assign { name, expr } => todo!(),
         };
         Ok(v)
     }

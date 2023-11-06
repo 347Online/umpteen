@@ -7,9 +7,10 @@ use super::serialize::AsBytes;
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Constant,   // LOAD($addr); PUSH1
-    Print,      // POP 1; Print to stdout
-    Exit = 255, // Halts the program
+    Constant,   // LOAD $addr; *PUSH1*
+    Print,      // *POP1 (value)*; Print to stdout
+    // Set,        // *POP2 (addr, val)
+    Exit = 255, // EXIT; Halts the program
 }
 
 impl Instr {

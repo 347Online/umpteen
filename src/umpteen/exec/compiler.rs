@@ -15,6 +15,7 @@ use super::{
     parse::{Ast, AstNode},
 };
 
+#[derive(Debug)]
 pub struct Program<'p> {
     pub chunks: Vec<Chunk>,
     pub mem: Memory<'p>,
@@ -40,73 +41,71 @@ impl<'c> Compiler<'c> {
         }
     }
 
-    pub fn compile(mut self, ast: Ast<'c>) -> Result<Program<'c>, CompilerError> {
+    pub fn compile(mut self, ast: Ast<'c>) -> Program<'c> {
         for stmt in ast {
-            
-            let _ = self.compile_stmt(stmt);
+            self.statment(stmt);
         }
-        let chunk = self.flush()?;
-        let chunks = vec![chunk];
+        self.flush();
+        let chunks = self.chunks;
         let program = Program {
             chunks,
             mem: self.mem,
         };
-        Ok(program)
+
+        program
     }
 
-    fn compile_stmt(&mut self, stmt: Stmt<'c>) -> Result<(), CompilerError> {
+    fn statment(&mut self, stmt: Stmt<'c>) -> Result<(), CompilerError> {
         match stmt {
-            Stmt::Expr(expr) => self.compile_expr(expr)?,
+            Stmt::Expr(expr) => {
+                self.expression(expr);
+            }
             Stmt::Print(expr) => {
-                self.compile_expr(expr)?;
-                self.compile_instr(Instr::Print);
+                self.expression(expr);
+                self.push_instr(Instr::Print);
             }
             Stmt::Exit(x) => {
                 if let Some(expr) = x {
-                    self.compile_expr(expr)?;
+                    self.expression(expr);
                 };
-                self.compile_instr(Instr::Exit);
+                self.push_instr(Instr::Exit);
             }
+            Stmt::Declare(ident, _) => {}
         }
+
         Ok(())
     }
 
-    fn compile_expr(&mut self, expr: Expr<'c>) -> Result<(), CompilerError> {
+    fn expression(&mut self, expr: Expr<'c>) {
         match expr {
             Expr::Constant(value) => {
                 if value != Value::Empty {
-                    self.compile_instr(Instr::Constant);
-                    self.compile_constant(value);
+                    self.push_instr(Instr::Constant);
+                    self.constant(value);
                 }
             }
             Expr::UnOp { expr, op } => todo!(),
             Expr::BinOp { left, right, op } => todo!(),
             Expr::Ident { name } => todo!(),
-            Expr::Assign { name, expr } => {
-                self.compile_declare(name)?;
-                self.compile_expr(*expr)?;
-            }
         }
-
-        Ok(())
     }
 
-    fn compile_instr(&mut self, instr: Instr) {
-        self.instr_buf.push(instr);
-    }
-
-    fn compile_declare(&mut self, name: &'c str) -> Result<(), CompilerError> {
+    fn declaration(&mut self, name: &'c str) -> Result<usize, CompilerError> {
         let addr = self.mem.declare(name)?;
         self.arg_buf.push(addr);
-        Ok(())
+        Ok(addr)
     }
 
-    fn compile_constant(&mut self, value: Value) {
+    fn constant(&mut self, value: Value) {
         let addr = self.mem.declare_constant(value);
         self.arg_buf.push(addr);
     }
 
-    fn flush(&mut self) -> Result<Chunk, CompilerError> {
+    fn push_instr(&mut self, instr: Instr) {
+        self.instr_buf.push(instr);
+    }
+
+    fn flush(&mut self) {
         let addr_mode = match self.arg_buf.len() {
             x if x < AddrMode::BYTE => AddrMode::Byte,
             x if x < AddrMode::WORD => AddrMode::Word,
@@ -132,6 +131,6 @@ impl<'c> Compiler<'c> {
             }
         }
 
-        Ok(chunk)
+        self.chunks.push(chunk);
     }
 }

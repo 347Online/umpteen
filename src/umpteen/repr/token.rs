@@ -58,7 +58,7 @@ pub fn print_tokens(tokens: &Vec<Token>) -> std::fmt::Result {
     write!(
         &mut buffer,
         "] — EOF line {}",
-        tokens.last().map_or(Line::new(0), |x| { x.line })
+        tokens.last().map_or(Line::new(9999), |x| { x.line })
     )?;
     println!("{}", buffer);
 
