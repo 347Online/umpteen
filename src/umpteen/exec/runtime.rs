@@ -17,26 +17,26 @@ use super::{
 
 #[derive(Default)]
 pub struct Runtime<'r> {
-    mem: Memory<'r>,
+    mem: Option<Memory<'r>>,
     stack: Stack,
-    program: Program,
 }
 
 impl<'r> Runtime<'r> {
-    pub fn new(mem: Memory<'r>) -> Self {
+    pub fn new() -> Self {
         Runtime {
-            mem,
+            mem: None,
             stack: vec![],
-            program: vec![],
         }
     }
 
-    pub fn run(&mut self, src: &str) -> Result<Value, UmpteenError> {
+    pub fn run(&mut self, src: &'r str) -> Result<Value, UmpteenError> {
         let tokens = Self::scan(src);
         let ast = Self::parse(tokens)?;
-        let program = Self::compile(ast, &mut self.mem)?;
+        let mem = self.mem.take().unwrap_or_default();
+        let Program { mem, chunks } = Self::compile(ast, mem)?;
+        self.mem = Some(mem);
 
-        for chunk in program {
+        for chunk in chunks {
             #[cfg(debug_assertions)]
             dbg!(&chunk);
 
@@ -57,14 +57,10 @@ impl<'r> Runtime<'r> {
         Ok(ast)
     }
 
-    fn compile(ast: Ast, mem: &mut Memory) -> Result<Program, UmpteenError> {
+    fn compile(ast: Ast<'r>, mem: Memory<'r>) -> Result<Program<'r>, UmpteenError> {
         let mut compiler = Compiler::new(mem);
         let program = compiler.compile(ast)?;
         Ok(program)
-    }
-
-    fn load_program(&'r mut self, mut prog: Program) {
-        self.program.append(&mut prog)
     }
 
     fn exec(&mut self, chunk: Chunk) -> Result<Value, UmpteenError> {
@@ -98,7 +94,7 @@ impl<'r> Runtime<'r> {
             match instr {
                 Instr::Constant => {
                     let addr = read_addr!();
-                    let val = self.mem.get(addr)?;
+                    let val = self.mem_get(addr)?;
                     self.stack.push(val);
                 }
                 Instr::Print => {
@@ -115,5 +111,13 @@ impl<'r> Runtime<'r> {
         };
 
         Ok(return_value)
+    }
+
+    fn mem_get(&self, addr: usize) -> Result<Value, RuntimeError> {
+        let mem = self
+            .mem
+            .as_ref()
+            .ok_or(RuntimeError::OutOfBoundsMemoryAccess)?;
+        mem.get(addr)
     }
 }

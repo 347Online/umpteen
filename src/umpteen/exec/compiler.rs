@@ -1,32 +1,52 @@
-use crate::{repr::{bytecode::{chunk::{Chunk, AddrMode}, instruction::Instr}, ast::{stmt::Stmt, expr::Expr}, value::Value}, error::{CompilerError, UmpteenError}};
+use crate::{
+    error::{CompilerError, UmpteenError},
+    repr::{
+        ast::{expr::Expr, stmt::Stmt},
+        bytecode::{
+            chunk::{AddrMode, Chunk},
+            instruction::Instr,
+        },
+        value::Value,
+    },
+};
 
-use super::env::Memory;
+use super::{env::Memory, parse::Ast};
 
-pub type Program = Vec<Chunk>;
+pub struct Program<'p> {
+    pub chunks: Vec<Chunk>,
+    pub mem: Memory<'p>,
+}
 
-#[derive(Debug)]
-pub struct Compiler<'m> {
-    pub mem: &'m mut Memory<'m>,
+#[derive(Debug, Default)]
+pub struct Compiler<'a> {
+    mem: Memory<'a>,
+    chunks: Vec<Chunk>,
 
     instr_buf: Vec<Instr>,
     arg_buf: Vec<usize>, // TODO: This type should not be this specific
 }
 
 impl<'c> Compiler<'c> {
-    pub fn new(mem: &'c mut Memory<'c>) -> Self {
+    pub fn new(mem: Memory<'c>) -> Self {
         Compiler {
             mem,
+            chunks: vec![],
+
             instr_buf: vec![],
             arg_buf: vec![],
         }
     }
 
-    pub fn compile(&mut self, ast: Vec<Stmt<'c>>) -> Result<Program, CompilerError> {
+    pub fn compile(mut self, ast: Ast<'c>) -> Result<Program<'c>, CompilerError> {
         for stmt in ast {
             self.compile_stmt(stmt);
         }
         let chunk = self.flush()?;
-        let program = vec![chunk];
+        let chunks = vec![chunk];
+        let program = Program {
+            chunks,
+            mem: self.mem,
+        };
         Ok(program)
     }
 
