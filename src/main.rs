@@ -1,6 +1,9 @@
-use umpteen::{repr::value::Value, error::UmpteenError, exec::runtime::Runtime};
+use umpteen::{exec::runtime::Runtime, error::UmpteenError};
 
-fn main() -> Result<Value, UmpteenError> {
+fn main() {
     let mut vm = Runtime::default();
-    vm.run("let x = 10;")
+    match vm.run("100") {
+        Ok(value) => println!("Result: {}", value),
+        Err(e) => UmpteenError::report(e),
+    }
 }

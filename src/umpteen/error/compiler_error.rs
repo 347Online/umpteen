@@ -1,11 +1,14 @@
 use std::{error::Error, fmt::Display};
 
+use super::MemoryError;
+
 #[derive(Debug)]
 pub enum CompilerError {
     CorruptedChunk,
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
     IllegalDeclare,
+    MemoryError(MemoryError),
 }
 
 impl Display for CompilerError {
@@ -13,11 +16,12 @@ impl Display for CompilerError {
         let tmp: String;
         let desc = match self {
             CompilerError::CorruptedChunk => "encountered corrupted chunk",
+            CompilerError::IllegalDeclare => "illegal declaration",
+
             CompilerError::InvalidInstruction(byte) => {
                 tmp = format!("invalid Instruction `{}`", byte);
                 &tmp
             }
-            CompilerError::IllegalDeclare => "illegal declaration",
 
             CompilerError::WrongNumberArguments(exp, got, call) => {
                 tmp = format!(
@@ -26,8 +30,18 @@ impl Display for CompilerError {
                 );
                 &tmp
             }
+            CompilerError::MemoryError(e) => {
+                tmp = e.to_string();
+                &tmp
+            }
         };
         write!(f, "{}", desc)
+    }
+}
+
+impl From<MemoryError> for CompilerError {
+    fn from(value: MemoryError) -> Self {
+        CompilerError::MemoryError(value)
     }
 }
 

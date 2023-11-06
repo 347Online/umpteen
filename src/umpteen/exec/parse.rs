@@ -34,10 +34,7 @@ impl<'p> Parser<'p> {
             }
         }
 
-        ast.push(Stmt::Return(None));
-
-        #[cfg(debug_assertions)]
-        dbg!(&ast);
+        ast.push(Stmt::Exit(None));
 
         Ok(ast)
     }

@@ -1,4 +1,4 @@
-use crate::error::CompilerError;
+use crate::error::{CompilerError, MemoryError};
 
 use super::{instruction::Instr, serialize::AsBytes};
 

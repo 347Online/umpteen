@@ -1,5 +1,5 @@
 use crate::{
-    error::{RuntimeError, UmpteenError},
+    error::{MemoryError, RuntimeError, UmpteenError},
     repr::{
         ast::stmt::Stmt,
         bytecode::{chunk::Chunk, instruction::Instr},
@@ -37,9 +37,6 @@ impl<'r> Runtime<'r> {
         self.mem = Some(mem);
 
         for chunk in chunks {
-            #[cfg(debug_assertions)]
-            dbg!(&chunk);
-
             self.exec(chunk)?;
         }
 
@@ -58,7 +55,7 @@ impl<'r> Runtime<'r> {
     }
 
     fn compile(ast: Ast<'r>, mem: Memory<'r>) -> Result<Program<'r>, UmpteenError> {
-        let mut compiler = Compiler::new(mem);
+        let compiler = Compiler::new(mem);
         let program = compiler.compile(ast)?;
         Ok(program)
     }
@@ -100,24 +97,18 @@ impl<'r> Runtime<'r> {
                 Instr::Print => {
                     println!("{}", pop!());
                 }
-                Instr::Return => {
-                    break (if self.stack.is_empty() {
-                        Value::Empty
-                    } else {
-                        pop!()
-                    });
-                }
+                Instr::Exit => break Value::Empty,
             }
         };
 
         Ok(return_value)
     }
 
-    fn mem_get(&self, addr: usize) -> Result<Value, RuntimeError> {
+    fn mem_get(&self, addr: usize) -> Result<Value, MemoryError> {
         let mem = self
             .mem
             .as_ref()
-            .ok_or(RuntimeError::OutOfBoundsMemoryAccess)?;
+            .ok_or(MemoryError::OutOfBoundsMemoryAccess)?;
         mem.get(addr)
     }
 }

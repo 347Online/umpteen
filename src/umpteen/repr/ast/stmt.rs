@@ -6,5 +6,5 @@ pub type SubStmt<'t> = Box<Stmt<'t>>;
 pub enum Stmt<'t> {
     Expr(Expr<'t>),
     Print(Expr<'t>),
-    Return(Option<Expr<'t>>),
+    Exit(Option<Expr<'t>>),
 }

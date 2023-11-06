@@ -4,13 +4,14 @@ pub enum UmpteenError {
     ParseError(ParseError),
     CompilerError(CompilerError),
     RuntimeError(RuntimeError),
+    MemoryError(MemoryError),
 }
 
 impl UmpteenError {
-    pub fn report_line<E: std::error::Error>(error: E, line: Line) {
+    pub fn report_line<E: Display>(error: E, line: Line) {
         eprintln!("ERR: {} on line {}", error, line);
     }
-    pub fn report<E: std::error::Error>(error: E) {
+    pub fn report<E: Display>(error: E) {
         eprintln!("ERR: {}", error);
     }
 }
@@ -19,16 +20,20 @@ impl Display for UmpteenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             UmpteenError::SyntaxError(e) => write!(f, "{}", e),
-            UmpteenError::ParseError(_) => todo!(),
+            UmpteenError::ParseError(e) => write!(f, "{}", e),
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
             UmpteenError::RuntimeError(e) => write!(f, "{}", e),
+            UmpteenError::MemoryError(e) => write!(f, "{}", e),
         }
     }
 }
 
-use std::{error::Error, fmt::Display};
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
 
-use super::{CompilerError, ParseError, RuntimeError, SyntaxError};
+use super::{CompilerError, MemoryError, ParseError, RuntimeError, SyntaxError};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Line(usize, usize);
@@ -74,6 +79,12 @@ impl From<CompilerError> for UmpteenError {
 impl From<RuntimeError> for UmpteenError {
     fn from(value: RuntimeError) -> Self {
         UmpteenError::RuntimeError(value)
+    }
+}
+
+impl From<MemoryError> for UmpteenError {
+    fn from(value: MemoryError) -> Self {
+        UmpteenError::MemoryError(value)
     }
 }
 

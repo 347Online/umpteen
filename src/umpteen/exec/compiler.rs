@@ -10,7 +10,10 @@ use crate::{
     },
 };
 
-use super::{env::Memory, parse::Ast};
+use super::{
+    env::Memory,
+    parse::{Ast, AstNode},
+};
 
 pub struct Program<'p> {
     pub chunks: Vec<Chunk>,
@@ -39,7 +42,8 @@ impl<'c> Compiler<'c> {
 
     pub fn compile(mut self, ast: Ast<'c>) -> Result<Program<'c>, CompilerError> {
         for stmt in ast {
-            self.compile_stmt(stmt);
+            
+            let _ = self.compile_stmt(stmt);
         }
         let chunk = self.flush()?;
         let chunks = vec![chunk];
@@ -50,23 +54,24 @@ impl<'c> Compiler<'c> {
         Ok(program)
     }
 
-    fn compile_stmt(&mut self, stmt: Stmt<'c>) {
+    fn compile_stmt(&mut self, stmt: Stmt<'c>) -> Result<(), CompilerError> {
         match stmt {
-            Stmt::Expr(expr) => self.compile_expr(expr),
+            Stmt::Expr(expr) => self.compile_expr(expr)?,
             Stmt::Print(expr) => {
-                self.compile_expr(expr);
+                self.compile_expr(expr)?;
                 self.compile_instr(Instr::Print);
             }
-            Stmt::Return(x) => {
+            Stmt::Exit(x) => {
                 if let Some(expr) = x {
-                    self.compile_expr(expr);
+                    self.compile_expr(expr)?;
                 };
-                self.compile_instr(Instr::Return);
+                self.compile_instr(Instr::Exit);
             }
         }
+        Ok(())
     }
 
-    fn compile_expr(&mut self, expr: Expr<'c>) {
+    fn compile_expr(&mut self, expr: Expr<'c>) -> Result<(), CompilerError> {
         match expr {
             Expr::Constant(value) => {
                 if value != Value::Empty {
@@ -78,17 +83,19 @@ impl<'c> Compiler<'c> {
             Expr::BinOp { left, right, op } => todo!(),
             Expr::Ident { name } => todo!(),
             Expr::Assign { name, expr } => {
-                self.compile_declare(name);
-                self.compile_expr(*expr)
+                self.compile_declare(name)?;
+                self.compile_expr(*expr)?;
             }
         }
+
+        Ok(())
     }
 
     fn compile_instr(&mut self, instr: Instr) {
         self.instr_buf.push(instr);
     }
 
-    fn compile_declare(&mut self, name: &'c str) -> Result<(), UmpteenError> {
+    fn compile_declare(&mut self, name: &'c str) -> Result<(), CompilerError> {
         let addr = self.mem.declare(name)?;
         self.arg_buf.push(addr);
         Ok(())
@@ -112,6 +119,7 @@ impl<'c> Compiler<'c> {
         let mut arg_pos = 0;
 
         let instr_buf = std::mem::take(&mut self.instr_buf);
+
         for instr in instr_buf {
             chunk.write_instr(instr);
             match instr {

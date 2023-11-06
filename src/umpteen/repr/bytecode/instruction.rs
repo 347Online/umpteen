@@ -7,9 +7,9 @@ use super::serialize::AsBytes;
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Constant,     // LOAD($addr); PUSH1
-    Print,        // POP 1; Print to stdout
-    Return = 255, // POP 1: TBD — Currently halts the program, return the last value on the stack
+    Constant,   // LOAD($addr); PUSH1
+    Print,      // POP 1; Print to stdout
+    Exit = 255, // Halts the program
 }
 
 impl Instr {
@@ -20,7 +20,7 @@ impl Instr {
         match self {
             Instr::Constant => 1,
             Instr::Print => 0,
-            Instr::Return => 0,
+            Instr::Exit => 0,
         }
     }
 }
@@ -37,7 +37,7 @@ impl AsBytes<1> for Instr {
         let instr = match byte {
             0 => Instr::Constant,
             1 => Instr::Print,
-            255 => Instr::Return,
+            255 => Instr::Exit,
 
             x => return Err(CompilerError::InvalidInstruction(x)),
         };

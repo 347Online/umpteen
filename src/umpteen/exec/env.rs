@@ -1,6 +1,12 @@
-use std::{collections::HashMap, ops::{Deref, DerefMut}};
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
 
-use crate::{repr::value::Value, error::RuntimeError};
+use crate::{
+    error::{MemoryError, UmpteenError},
+    repr::value::Value,
+};
 
 #[derive(Debug, Default)]
 pub struct Memory<'m> {
@@ -17,7 +23,7 @@ impl<'m> Memory<'m> {
         addr
     }
 
-    pub fn declare(&mut self, name: &'m str) -> Result<usize, RuntimeError> {
+    pub fn declare(&mut self, name: &'m str) -> Result<usize, MemoryError> {
         if self.names.contains_key(name) {
             panic!("variable already declared") // TODO: Create an error variant instead of panic
         } else {
@@ -28,20 +34,20 @@ impl<'m> Memory<'m> {
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), RuntimeError> {
+    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), MemoryError> {
         let addr = self.retrieve(name)?;
         self.values[addr] = Some(value);
 
         Ok(())
     }
 
-    pub fn get(&self, addr: usize) -> Result<Value, RuntimeError> {
+    pub fn get(&self, addr: usize) -> Result<Value, MemoryError> {
         let value = self
             .values
             .get(addr)
             .cloned()
             .flatten()
-            .expect(&format!("invalid reference {:#}", addr)); // TODO: Create an error variant instead of expect
+            .ok_or(MemoryError::InvalidReference(addr))?;
 
         Ok(value)
     }
@@ -50,11 +56,11 @@ impl<'m> Memory<'m> {
         self.values.len()
     }
 
-    fn retrieve(&self, name: &str) -> Result<usize, RuntimeError> {
+    fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
         let addr = *self
             .names
             .get(name)
-            .expect(&format!("unknown identifier {}", name));
+            .unwrap_or_else(|| panic!("unknown identifier {}", name)); // TODO: Create an error variant instead of expect
 
         Ok(addr)
     }
