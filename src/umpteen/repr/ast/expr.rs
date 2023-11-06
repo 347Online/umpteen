@@ -1,6 +1,6 @@
-use crate::{repr::value::Value, error::ParseError};
+use crate::{error::ParseError, repr::value::Value};
 
-use super::ops::{Unary, Binary};
+use super::ops::{Binary, Unary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 
@@ -18,6 +18,10 @@ pub enum Expr<'t> {
     },
     Ident {
         name: &'t str,
+    },
+    Assign {
+        name: &'t str,
+        expr: SubExpr<'t>,
     },
 }
 
@@ -80,6 +84,7 @@ impl<'t> Expr<'t> {
                 }
             },
             Expr::Ident { name } => todo!(),
+            Expr::Assign { name, expr } => todo!(),
         };
         Ok(v)
     }

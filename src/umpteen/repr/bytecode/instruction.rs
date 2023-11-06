@@ -7,9 +7,11 @@ use super::serialize::AsBytes;
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Constant,   // LOAD $addr; *PUSH1*
-    Print,      // *POP1 (value)*; Print to stdout
-    // Set,        // *POP2 (addr, val)
+    Constant, // LOAD $addr; *PUSH1*
+    Print,    // *POP1 (value)*; Print to stdout
+    Push,     // PUSH $arg; Push value to stack
+    // Pop,        // POP; Pop a value from the stack
+    Assign,     //POP 2 (val, addr) insert value at address
     Exit = 255, // EXIT; Halts the program
 }
 
@@ -20,8 +22,10 @@ impl Instr {
 
         match self {
             Instr::Constant => 1,
+            Instr::Push => 1,
             Instr::Print => 0,
             Instr::Exit => 0,
+            Instr::Assign => 2,
         }
     }
 }

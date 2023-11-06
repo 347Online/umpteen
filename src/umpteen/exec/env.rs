@@ -1,12 +1,10 @@
 use std::{
     collections::HashMap,
+    fmt::Display,
     ops::{Deref, DerefMut},
 };
 
-use crate::{
-    error::{MemoryError, UmpteenError},
-    repr::value::Value,
-};
+use crate::{error::MemoryError, repr::value::Value};
 
 #[derive(Debug, Default)]
 pub struct Memory<'m> {
@@ -14,7 +12,22 @@ pub struct Memory<'m> {
     names: HashMap<&'m str, usize>,
 }
 
-pub type Stack = Vec<Value>;
+#[derive(Debug)]
+pub enum StackItem {
+    Address(usize),
+    Value(Value),
+}
+
+impl Display for StackItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StackItem::Address(addr) => write!(f, "{}", addr),
+            StackItem::Value(val) => write!(f, "{}", val),
+        }
+    }
+}
+
+pub type Stack = Vec<StackItem>;
 
 impl<'m> Memory<'m> {
     pub fn declare_constant(&mut self, value: Value) -> usize {
@@ -53,10 +66,7 @@ impl<'m> Memory<'m> {
     }
 
     pub fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
-        let addr = *self
-            .names
-            .get(name)
-            .unwrap_or_else(|| panic!("unknown identifier {}", name)); // TODO: Create an error variant instead of expect
+        let addr = *self.names.get(name).unwrap();
 
         Ok(addr)
     }

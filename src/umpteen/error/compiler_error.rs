@@ -8,6 +8,7 @@ pub enum CompilerError {
     InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
     IllegalDeclare,
+    InvalidIdentifier,
     MemoryError(MemoryError),
 }
 
@@ -17,6 +18,7 @@ impl Display for CompilerError {
         let desc = match self {
             CompilerError::CorruptedChunk => "encountered corrupted chunk",
             CompilerError::IllegalDeclare => "illegal declaration",
+            CompilerError::InvalidIdentifier => "target is not a valid identifier ",
 
             CompilerError::InvalidInstruction(byte) => {
                 tmp = format!("invalid Instruction `{}`", byte);

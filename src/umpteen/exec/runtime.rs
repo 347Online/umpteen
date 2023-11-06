@@ -1,5 +1,6 @@
 use crate::{
     error::{MemoryError, RuntimeError, UmpteenError},
+    exec::env::StackItem,
     repr::{
         bytecode::{chunk::Chunk, instruction::Instr},
         token::Token,
@@ -104,12 +105,17 @@ impl<'r> Runtime<'r> {
                 Instr::Constant => {
                     let addr = read_addr!();
                     let val = self.mem_get(addr)?;
-                    self.stack.push(val);
+                    self.stack.push(StackItem::Value(val));
                 }
                 Instr::Print => {
                     println!("{}", pop!());
                 }
                 Instr::Exit => break Value::Empty,
+                Instr::Push => {
+                    let addr = read_addr!();
+                    self.stack.push(StackItem::Address(addr))
+                }
+                Instr::Assign => todo!(),
             }
         };
 

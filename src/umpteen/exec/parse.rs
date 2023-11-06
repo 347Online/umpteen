@@ -103,18 +103,20 @@ impl<'p> Parser<'p> {
     }
 
     fn parse_expr(&mut self) -> Result<Expr<'p>, ParseError> {
-        let token = self.consume_or(ParseError::ExpectedExpression)?;
+        let Token { lexeme, kind, line } = self.consume_or(ParseError::ExpectedExpression)?;
 
-        match token.kind {
+        let expr = match kind {
             TokenType::Number => {
-                let num: f64 = token.lexeme.parse()?;
+                let num: f64 = lexeme.parse()?;
                 // .map_err(|e| ParseError::Other(Box::new(e)))?;
-                Ok(Expr::Constant(Value::Number(num)))
+                Expr::Constant(Value::Number(num))
             }
-            TokenType::String => Ok(Expr::Constant(Value::from(token.lexeme))),
-            TokenType::Identifier => todo!(),
+            TokenType::String => Expr::Constant(Value::from(lexeme)),
+            TokenType::Identifier => Expr::Ident { name: lexeme },
 
-            kind => Err(ParseError::UnexpectedToken(kind)),
-        }
+            kind => Err(ParseError::UnexpectedToken(kind))?,
+        };
+
+        Ok(expr)
     }
 }
