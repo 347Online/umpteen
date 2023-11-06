@@ -110,12 +110,15 @@ impl<'r> Runtime<'r> {
                 Instr::Print => {
                     println!("{}", pop!());
                 }
-                Instr::Exit => break Value::Empty,
                 Instr::Push => {
                     let addr = read_addr!();
                     self.stack.push(StackItem::Address(addr))
                 }
+                Instr::Pop => todo!(),
                 Instr::Assign => todo!(),
+                
+                Instr::Return => todo!(),
+                Instr::Exit => break Value::Empty,
             }
         };
 
