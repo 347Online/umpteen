@@ -4,12 +4,32 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-use crate::{
-    ast::{Binary, Unary},
-    error::SyntaxError,
-};
+#[derive(Debug, Clone, PartialEq)]
+pub enum ObjectData {
+    String(String),
+    SomethingElse,
+}
 
-use super::{Object, ObjectData};
+#[derive(Debug, Clone, PartialEq)]
+pub struct Object(pub Box<ObjectData>);
+
+impl Object {
+    pub fn is_empty(&self) -> bool {
+        match self.0.as_ref() {
+            ObjectData::String(x) => x.is_empty(),
+            ObjectData::SomethingElse => todo!(),
+        }
+    }
+}
+
+impl Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0.as_ref() {
+            ObjectData::String(x) => write!(f, "{}", x),
+            ObjectData::SomethingElse => todo!(),
+        }
+    }
+}
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {

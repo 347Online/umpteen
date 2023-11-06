@@ -2,7 +2,6 @@ use crate::{
     ast::{Expr, Stmt},
     error::{CompilerError, UmpteenError},
     value::Value,
-    Memory,
 };
 
 use super::{AddrMode, Chunk, Instr};

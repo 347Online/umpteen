@@ -1,7 +1,3 @@
-use std::{error::Error, fmt::Display};
-
-use super::{CompilerError, ParseError, RuntimeError, SyntaxError};
-
 #[derive(Debug)]
 pub enum UmpteenError {
     SyntaxError(SyntaxError),
@@ -32,29 +28,7 @@ impl Display for UmpteenError {
 
 impl Error for UmpteenError {}
 
-impl From<SyntaxError> for UmpteenError {
-    fn from(value: SyntaxError) -> Self {
-        UmpteenError::SyntaxError(value)
-    }
-}
-
-impl From<ParseError> for UmpteenError {
-    fn from(value: ParseError) -> Self {
-        UmpteenError::ParseError(value)
-    }
-}
-
-impl From<CompilerError> for UmpteenError {
-    fn from(value: CompilerError) -> Self {
-        UmpteenError::CompilerError(value)
-    }
-}
-
-impl From<RuntimeError> for UmpteenError {
-    fn from(value: RuntimeError) -> Self {
-        UmpteenError::RuntimeError(value)
-    }
-}
+use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Line(usize, usize);
@@ -76,5 +50,29 @@ impl Display for Line {
         } else {
             write!(f, "{}:{}", self.0, self.1)
         }
+    }
+}
+
+impl From<SyntaxError> for UmpteenError {
+    fn from(value: SyntaxError) -> Self {
+        UmpteenError::SyntaxError(value)
+    }
+}
+
+impl From<ParseError> for UmpteenError {
+    fn from(value: ParseError) -> Self {
+        UmpteenError::ParseError(value)
+    }
+}
+
+impl From<CompilerError> for UmpteenError {
+    fn from(value: CompilerError) -> Self {
+        UmpteenError::CompilerError(value)
+    }
+}
+
+impl From<RuntimeError> for UmpteenError {
+    fn from(value: RuntimeError) -> Self {
+        UmpteenError::RuntimeError(value)
     }
 }

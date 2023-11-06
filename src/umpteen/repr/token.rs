@@ -1,8 +1,25 @@
 use std::fmt::{Display, Write};
 
-use crate::error::Line;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TokenType {
+    Semicolon,
+    Equal,
 
-use super::TokenType;
+    Let,
+    Print,
+
+    Number,
+    String,
+    Identifier,
+
+    Error,
+}
+
+impl Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Token<'t> {
