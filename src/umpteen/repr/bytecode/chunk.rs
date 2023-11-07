@@ -2,12 +2,9 @@ use crate::error::RuntimeError;
 
 use super::instruction::Instr;
 
-pub type Bytecode = Vec<u8>;
-
 #[derive(Debug)]
-#[repr(packed)]
 pub struct Chunk {
-    bytecode: Bytecode,
+    bytecode: Vec<u8>,
 }
 
 impl Chunk {
