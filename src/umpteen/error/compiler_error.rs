@@ -5,7 +5,6 @@ use super::MemoryError;
 #[derive(Debug)]
 pub enum CompilerError {
     CorruptedChunk,
-    InvalidInstruction(u8),
     WrongNumberArguments(usize, usize, String),
     IllegalDeclare,
     InvalidIdentifier,
@@ -19,11 +18,6 @@ impl Display for CompilerError {
             CompilerError::CorruptedChunk => "encountered corrupted chunk",
             CompilerError::IllegalDeclare => "illegal declaration",
             CompilerError::InvalidIdentifier => "target is not a valid identifier ",
-
-            CompilerError::InvalidInstruction(byte) => {
-                tmp = format!("invalid Instruction `{}`", byte);
-                &tmp
-            }
 
             CompilerError::WrongNumberArguments(exp, got, call) => {
                 tmp = format!(

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::error::{CompilerError, RuntimeError};
+use crate::error::RuntimeError;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
