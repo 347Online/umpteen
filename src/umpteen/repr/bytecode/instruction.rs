@@ -1,66 +1,55 @@
 use std::fmt::Display;
 
-use crate::error::CompilerError;
-
-use super::serialize::AsBytes;
+use crate::error::{CompilerError, RuntimeError};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Constant = 0x00, // LOAD $addr; *PUSH1*
-    Print = 0x01,    // *POP1 (value)*; Print to stdout
-    Push = 0x02,     // PUSH $arg; Push value to stack
-    Pop = 0x03,      // POP; Pop a value from the stack
-    Assign = 0x04,   // POP 2 (val, addr) insert value at address
-
-    Return = 0xFE, // NYI
-    Exit = 0xFF,   // EXIT; Halts the program
+    Load,     // LOAD |  Load a value at ($addr)
+    LoadWide, // NYI
+    Print,    // PRNT | Print to stdout
+    Push,     // PUSH | Push ($val) to stack
+    Pop,      // POP  | Pop a value from the stack
+    Set,      // SET  | Insert ($val) at ($addr)
+    Exit,     // EXIT | Halt the program
 }
 
 impl Instr {
+    const MAX: u8 = Instr::Exit as u8;
+
     pub fn arg_count(&self) -> usize {
-        // Returns the number of arguments the specified instruction requires
-        // Note that this is the number of distinct arguments to read, NOT the number of bytes
+        // Returns the number of byte arguments for the instruction
 
         match self {
-            Instr::Constant => 1,
+            Instr::Load => 1,
             Instr::Push => 1,
 
-            Instr::Assign => 2,
+            Instr::Set => 2,
 
             _ => 0,
         }
     }
 }
 
-impl AsBytes<1> for Instr {
-    type Error = CompilerError;
-
-    fn to_bytes(self) -> [u8; 1] {
-        [self as u8]
-    }
-
-    fn try_from_bytes(bytes: [u8; 1]) -> Result<Self, Self::Error> {
-        let [byte] = bytes;
-        let instr = match byte {
-            0x00 => Instr::Constant,
-            0x01 => Instr::Print,
-            0x02 => Instr::Push,
-            0x03 => Instr::Pop,
-            0x04 => Instr::Assign,
-
-            0xFE => Instr::Return,
-            0xFF => Instr::Exit,
-
-            x => return Err(CompilerError::InvalidInstruction(x)),
-        };
-
-        Ok(instr)
-    }
-}
-
 impl Display for Instr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+
+impl TryFrom<u8> for Instr {
+    type Error = RuntimeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        if (0..=Instr::MAX).contains(&value) {
+            // SAFETY:
+            // MAX_OPCODE is derived from Instr::Exit, the final variant
+            // Since Instr is defined as repr(u8), the variants form a contiguous range
+            // any u8 value less than or equal to Instr::Exit as u8 is a valid instruction
+            let instruction = unsafe { std::mem::transmute(value) };
+            Ok(instruction)
+        } else {
+            Err(RuntimeError::InvalidInstruction(value))
+        }
     }
 }
