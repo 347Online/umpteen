@@ -5,13 +5,13 @@ use crate::error::RuntimeError;
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Load,     // LOAD |  Load a value at ($addr)
-    LoadWide, // NYI
-    Print,    // PRNT | Print to stdout
-    Push,     // PUSH | Push ($val) to stack
-    Pop,      // POP  | Pop a value from the stack
-    Set,      // SET  | Insert ($val) at ($addr)
-    Exit,     // EXIT | Halt the program
+    Let, // LET  | Create a new variable with ($name)
+    Push,    // PUSH | Push 1 $(val) onto the stack
+    Pop,     // POP  | Pop 1 value from the stack, discarding it
+    Set,     // SET  | Set variable ($name) to ($value)
+    Get,     // GET  | Load a value at ($addr)
+    Print,   // PRNT | Pop 1 Print to stdout
+    Exit,    // EXIT | Halt the program
 }
 
 impl Instr {
@@ -21,7 +21,6 @@ impl Instr {
         // Returns the number of byte arguments for the instruction
 
         match self {
-            Instr::Load => 1,
             Instr::Push => 1,
 
             Instr::Set => 2,
