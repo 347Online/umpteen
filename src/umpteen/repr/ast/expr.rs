@@ -6,7 +6,7 @@ pub type SubExpr<'t> = Box<Expr<'t>>;
 
 #[derive(Debug)]
 pub enum Expr<'t> {
-    Constant(Value),
+    Value(Value),
     UnOp {
         expr: SubExpr<'t>,
         op: Unary,
@@ -20,7 +20,7 @@ pub enum Expr<'t> {
         name: &'t str,
     },
     Assign {
-        name: &'t str,
+        target: SubExpr<'t>,
         expr: SubExpr<'t>,
     },
 }
@@ -36,7 +36,7 @@ impl<'t> Expr<'t> {
     }
     pub fn eval(self) -> Result<Value, ParseError> {
         let v = match self {
-            Expr::Constant(value) => value,
+            Expr::Value(value) => value,
             Expr::UnOp { expr, op } => match op {
                 Unary::Not => {
                     let x = expr.eval()?;
@@ -84,7 +84,7 @@ impl<'t> Expr<'t> {
                 }
             },
             Expr::Ident { name } => todo!(),
-            Expr::Assign { name, expr } => todo!(),
+            Expr::Assign { target, expr } => todo!(),
         };
         Ok(v)
     }

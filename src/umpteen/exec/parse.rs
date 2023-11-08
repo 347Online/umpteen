@@ -34,7 +34,7 @@ impl<'p> Parser<'p> {
             }
         }
 
-        ast.push(Stmt::Exit(None));
+        ast.push(Stmt::Exit);
 
         Ok(ast)
     }
@@ -86,9 +86,9 @@ impl<'p> Parser<'p> {
 
                 if self.consume_if(TokenType::Equal).is_ok() {
                     let expr = Box::new(self.parse_expr()?);
-                    Stmt::Declare(Expr::Ident { name }, Some(*expr))
+                    Stmt::Declare(name, Some(*expr))
                 } else if self.check(TokenType::Semicolon) {
-                    Stmt::Declare(Expr::Ident { name }, None)
+                    Stmt::Declare(name, None)
                 } else {
                     Err(ParseError::ExpectedToken(TokenType::Semicolon))?
                 }
@@ -108,10 +108,9 @@ impl<'p> Parser<'p> {
         let expr = match kind {
             TokenType::Number => {
                 let num: f64 = lexeme.parse()?;
-                // .map_err(|e| ParseError::Other(Box::new(e)))?;
-                Expr::Constant(Value::Number(num))
+                Expr::Value(Value::Number(num))
             }
-            TokenType::String => Expr::Constant(Value::from(lexeme)),
+            TokenType::String => Expr::Value(Value::from(lexeme)),
             TokenType::Identifier => Expr::Ident { name: lexeme },
 
             kind => Err(ParseError::UnexpectedToken(kind))?,

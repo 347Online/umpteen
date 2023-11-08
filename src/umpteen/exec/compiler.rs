@@ -66,7 +66,6 @@ impl<'c> Compiler<'c> {
                 self.expression(expr)?;
                 self.push_instr(Instr::Print);
             }
-            Stmt::Exit => self.push_instr(Instr::Exit),
             Stmt::Declare(name, maybe_expr) => {
                 self.push_instr(Instr::Let);
                 self.push_name(name);
@@ -77,6 +76,8 @@ impl<'c> Compiler<'c> {
                     self.expression(expr)?;
                 }
             }
+            Stmt::Return(_) => todo!(),
+            Stmt::Exit => self.push_instr(Instr::Exit),
         }
 
         Ok(())
