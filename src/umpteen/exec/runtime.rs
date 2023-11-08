@@ -1,15 +1,10 @@
 use crate::{
-    error::{MemoryError, RuntimeError, UmpteenError},
-    exec::env::StackItem,
-    repr::{
-        bytecode::{chunk::Chunk, instruction::Instr},
-        token::Token,
-        value::Value,
-    },
+    error::UmpteenError,
+    repr::{bytecode::chunk::Chunk, token::Token, value::Value},
 };
 
 use super::{
-    compiler::{Compiler, Program},
+    compiler::Compiler,
     env::{Memory, Stack},
     lexer::Lexer,
     parse::{Ast, Parser},
@@ -17,26 +12,24 @@ use super::{
 
 #[derive(Default)]
 pub struct Runtime<'r> {
-    mem: Option<Memory<'r>>,
+    mem: Memory<'r>,
     stack: Stack,
 }
 
 impl<'r> Runtime<'r> {
     pub fn new() -> Self {
         Runtime {
-            mem: None,
+            mem: Memory::default(),
             stack: vec![],
         }
     }
 
-    pub fn run(&mut self, src: &'r str) -> Result<Value, UmpteenError> {
+    pub fn run<'m>(&'m mut self, src: &'r str) -> Result<Value, UmpteenError> {
         let tokens = Self::scan(src);
         let ast = Self::parse(tokens)?;
-        let mem = self.mem.take().unwrap_or_default();
-        let Program { mem, chunks } = Self::compile(ast, mem)?;
-        self.mem = Some(mem);
+        let program = Self::compile(ast)?;
 
-        for chunk in chunks {
+        for chunk in program {
             self.exec(chunk)?;
         }
 
@@ -63,9 +56,9 @@ impl<'r> Runtime<'r> {
         Ok(ast)
     }
 
-    fn compile(ast: Ast<'r>, mem: Memory<'r>) -> Result<Program<'r>, UmpteenError> {
-        let compiler = Compiler::new(mem);
-        let program = compiler.compile(ast);
+    fn compile(ast: Ast<'r>) -> Result<Vec<Chunk>, UmpteenError> {
+        let compiler = Compiler::new();
+        let program = compiler.compile(ast)?;
 
         #[cfg(debug_assertions)]
         dbg!(&program);
@@ -76,60 +69,38 @@ impl<'r> Runtime<'r> {
     fn exec(&mut self, chunk: Chunk) -> Result<Value, UmpteenError> {
         let mut offset = 0;
 
-        macro_rules! read_addr {
-            () => {{
-                let (addr, off) = chunk.read_addr(offset)?.read();
-                offset += off;
-                addr
-            }};
-        }
+        // let return_value = loop {
+        //     let instr = chunk.read_instr(offset)?;
+        //     offset += 1;
+        //     match instr {
+        //         Instr::Constant => {
+        //             let addr = read_addr!();
+        //             let val = self.mem_get(addr)?;
+        //             self.stack.push(StackItem::Value(val));
+        //         }
+        //         Instr::Print => {
+        //             println!("{}", pop!());
+        //         }
+        //         Instr::Push => {
+        //             let addr = read_addr!();
+        //             self.stack.push(StackItem::Address(addr))
+        //         }
+        //         Instr::Pop => todo!(),
+        //         Instr::Assign => todo!(),
 
-        macro_rules! pop {
-            (?) => {
-                self.stack.pop()
-            };
+        //         Instr::Return => todo!(),
+        //         Instr::Exit => break Value::Empty,
+        //     }
+        // };
 
-            (e) => {
-                pop!(?).unwrap_or(Value::Empty)
-            };
-
-            () => {
-                pop!(?).ok_or(RuntimeError::StackMissingValue)?
-            };
-        }
-
-        let return_value = loop {
-            let instr = chunk.read_instr(offset)?;
-            offset += 1;
-            match instr {
-                Instr::Constant => {
-                    let addr = read_addr!();
-                    let val = self.mem_get(addr)?;
-                    self.stack.push(StackItem::Value(val));
-                }
-                Instr::Print => {
-                    println!("{}", pop!());
-                }
-                Instr::Push => {
-                    let addr = read_addr!();
-                    self.stack.push(StackItem::Address(addr))
-                }
-                Instr::Pop => todo!(),
-                Instr::Assign => todo!(),
-                
-                Instr::Return => todo!(),
-                Instr::Exit => break Value::Empty,
-            }
-        };
-
-        Ok(return_value)
+        Ok(Value::Empty)
     }
 
-    fn mem_get(&self, addr: usize) -> Result<Value, MemoryError> {
-        let mem = self
-            .mem
-            .as_ref()
-            .ok_or(MemoryError::OutOfBoundsMemoryAccess)?;
-        mem.get(addr)
-    }
+    // fn mem_get(&self, addr: usize) -> Result<Value, MemoryError> {
+    //     let mem = self
+    //         .mem
+    //         .as_ref()
+    //         .ok_or(MemoryError::OutOfBoundsMemoryAccess)?;
+    //     mem.get(addr)
+    // }
 }

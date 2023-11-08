@@ -2,7 +2,7 @@ use crate::error::RuntimeError;
 
 use super::instruction::Instr;
 
-#[derive(Debug)]
+#[derive(Default)]
 pub struct Chunk {
     bytecode: Vec<u8>,
 }
@@ -16,11 +16,11 @@ impl Chunk {
         self.write_byte(instr as u8);
     }
 
-    fn write_byte(&mut self, byte: u8) {
+    pub fn write_byte(&mut self, byte: u8) {
         self.bytecode.push(byte);
     }
 
-    fn write_bytes(&mut self, bytes: &[u8]) {
+    pub fn write_bytes(&mut self, bytes: &[u8]) {
         for byte in bytes {
             self.write_byte(*byte);
         }
@@ -35,7 +35,16 @@ impl Chunk {
     pub fn read_bytes(&self, offset: usize, count: usize) -> Result<&[u8], RuntimeError> {
         let end = offset + count;
         self.bytecode
-            .get(offset..count)
+            .get(offset..end)
             .ok_or(RuntimeError::ChunkReadError)
+    }
+}
+
+impl std::fmt::Debug for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for byte in &self.bytecode {
+            writeln!(f, "{:#04X}", byte)?;
+        }
+        write!(f, "")
     }
 }

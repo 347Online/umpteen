@@ -6,11 +6,10 @@ use std::{
 
 use crate::error::ParseError;
 
-use super::ast::ops::{Unary, Binary};
+use super::ast::ops::{Binary, Unary};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectData {
-    String(String),
     SomethingElse,
 }
 
@@ -20,7 +19,6 @@ pub struct Object(pub Box<ObjectData>);
 impl Object {
     pub fn is_empty(&self) -> bool {
         match self.0.as_ref() {
-            ObjectData::String(x) => x.is_empty(),
             ObjectData::SomethingElse => todo!(),
         }
     }
@@ -29,7 +27,6 @@ impl Object {
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0.as_ref() {
-            ObjectData::String(x) => write!(f, "{}", x),
             ObjectData::SomethingElse => todo!(),
         }
     }
@@ -38,10 +35,23 @@ impl Display for Object {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
     #[default]
-    Empty,
-    Boolean(bool),
-    Number(f64),
-    Object(Object),
+    Empty,               // 000
+    Boolean(bool),       // 001
+    Number(f64),         // 002
+    String(Box<String>), // 020
+    Object(Object),      // 030
+}
+
+impl Value {
+    pub fn designation(&self) -> u8 {
+        match self {
+            Value::Empty => 0,
+            Value::Boolean(_) => 1,
+            Value::Number(_) => 2,
+            Value::String(_) => 20,
+            Value::Object(_) => 30,
+        }
+    } 
 }
 
 impl Value {
@@ -50,36 +60,29 @@ impl Value {
             Value::Empty => false,
             Value::Boolean(x) => *x,
             Value::Number(x) => *x > 0.0,
-            Value::Object(obj) => !obj.is_empty(),
-        }
-    }
+            Value::String(string) => !string.is_empty(),
 
-    pub fn string(string: String) -> Self {
-        Value::Object(Object(Box::new(ObjectData::String(string))))
+            Value::Object(obj) => true,
+        }
     }
 }
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let tmp;
+        macro_rules! write_val {
+            ($x: expr) => {
+                write!(f, "{}", $x)
+            };
+        }
 
-        let repr = match self {
-            Value::Empty => "<Empty>",
-            Value::Boolean(x) => {
-                tmp = x.to_string();
-                &tmp
-            }
-            Value::Number(x) => {
-                tmp = x.to_string();
-                &tmp
-            }
-            Value::Object(x) => {
-                tmp = x.to_string();
-                &tmp
-            }
-        };
+        match self {
+            Value::Empty => write_val!("<Empty>"),
+            Value::Boolean(x) => write_val!(x),
+            Value::Number(x) => write_val!(x),
+            Value::String(string) => write_val!(string),
 
-        write!(f, "{repr}")
+            Value::Object(x) => write_val!(x),
+        }
     }
 }
 
@@ -91,13 +94,13 @@ impl From<bool> for Value {
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::string(value.to_string())
+        Value::String(Box::new(value.to_string()))
     }
 }
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::string(value.to_string())
+        Value::String(Box::new(value))
     }
 }
 
