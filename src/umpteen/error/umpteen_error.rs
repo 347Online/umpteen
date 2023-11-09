@@ -1,3 +1,10 @@
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
+
+use rustyline::error::ReadlineError;
+
 #[derive(Debug)]
 pub enum UmpteenError {
     SyntaxError(SyntaxError),
@@ -5,6 +12,7 @@ pub enum UmpteenError {
     CompilerError(CompilerError),
     RuntimeError(RuntimeError),
     MemoryError(MemoryError),
+    ReplError(ReadlineError),
 }
 
 impl Display for UmpteenError {
@@ -15,14 +23,10 @@ impl Display for UmpteenError {
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
             UmpteenError::RuntimeError(e) => write!(f, "{}", e),
             UmpteenError::MemoryError(e) => write!(f, "{}", e),
+            UmpteenError::ReplError(e) => write!(f, "{}", e),
         }
     }
 }
-
-use std::{
-    error::Error,
-    fmt::{Debug, Display},
-};
 
 use super::{CompilerError, MemoryError, ParseError, RuntimeError, SyntaxError};
 
@@ -80,6 +84,12 @@ impl From<RuntimeError> for UmpteenError {
 impl From<MemoryError> for UmpteenError {
     fn from(value: MemoryError) -> Self {
         UmpteenError::MemoryError(value)
+    }
+}
+
+impl From<ReadlineError> for UmpteenError {
+    fn from(value: ReadlineError) -> Self {
+        UmpteenError::ReplError(value)
     }
 }
 
