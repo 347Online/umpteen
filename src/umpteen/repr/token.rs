@@ -5,11 +5,21 @@ use crate::error::Line;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
     Semicolon,
+
     Equal,
+    Plus,
+    Minus,
+    Asterisk,
+    Slash,
+    Percent,
+    Bang,
 
     Let,
     Print,
 
+    True,
+    False,
+    Empty,
     Number,
     String,
     Identifier,

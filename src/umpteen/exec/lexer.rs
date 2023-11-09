@@ -34,6 +34,10 @@ impl<'s> Lexer<'s> {
                 tokens.push(token);
             }
         }
+
+        #[cfg(debug_assertions)]
+        dbg!(&tokens);
+
         tokens
     }
 
@@ -89,10 +93,16 @@ impl<'s> Lexer<'s> {
             c if c.is_whitespace() => return None,
 
             ';' => token!(Semicolon),
+            '!' => token!(Bang),
+            '+' => token!(Plus),
+            '-' => token!(Minus),
+            '*' => token!(Asterisk),
+            '/' => token!(Slash), // TODO: Comments
+            '%' => token!(Percent),
             '=' => token!(Equal),
 
             '"' => {
-                let mut end: usize = 0;
+                let mut end: usize = i;
                 self.advance();
                 while self.peek().is_some() {
                     let (i, c) = self.advance().unwrap();
@@ -140,8 +150,12 @@ impl<'s> Lexer<'s> {
                 let lx = lexeme!(end);
 
                 match lx {
+                    "Empty" => token!(Empty, lx),
+                    "true" => token!(True, lx),
+                    "false" => token!(False, lx),
+                    
                     "let" => token!(Let, lx),
-                    "print" => token!(Print, lx),
+                    "print" => token!(Print, lx), // TODO: Re-implement as a function
 
                     _ => token!(Identifier, lx),
                 }

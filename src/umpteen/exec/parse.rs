@@ -1,7 +1,7 @@
 use crate::{
     error::ParseError,
     repr::{
-        ast::{expr::Expr, stmt::Stmt},
+        ast::{expr::Expr, ops::Unary, stmt::Stmt},
         token::{Token, TokenType},
         value::Value,
     },
@@ -35,6 +35,9 @@ impl<'p> Parser<'p> {
         }
 
         ast.push(Stmt::Exit);
+
+        #[cfg(debug_assertions)]
+        dbg!(&ast);
 
         Ok(ast)
     }
@@ -106,12 +109,29 @@ impl<'p> Parser<'p> {
         let Token { lexeme, kind, line } = self.consume_or(ParseError::ExpectedExpression)?;
 
         let expr = match kind {
+            TokenType::Empty => Expr::Value(Value::Empty),
+            TokenType::True => Expr::Value(Value::Boolean(true)),
+            TokenType::False => Expr::Value(Value::Boolean(false)),
             TokenType::Number => {
                 let num: f64 = lexeme.parse()?;
                 Expr::Value(Value::Number(num))
             }
             TokenType::String => Expr::Value(Value::from(lexeme)),
+
+            TokenType::Bang => Expr::UnOp {
+                expr: Box::new(self.parse_expr()?),
+                op: Unary::Not,
+            },
+            TokenType::Plus => todo!(),
+            TokenType::Minus => todo!(),
+            TokenType::Asterisk => todo!(),
+            TokenType::Slash => todo!(),
+            TokenType::Percent => todo!(),
+            TokenType::Equal => todo!(),
+
             TokenType::Identifier => Expr::Variable { name: lexeme },
+
+            TokenType::Error => todo!(),
 
             kind => Err(ParseError::UnexpectedToken(kind))?,
         };
