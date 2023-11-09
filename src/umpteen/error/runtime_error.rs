@@ -18,7 +18,7 @@ impl Display for RuntimeError {
             RuntimeError::MemoryError(e) => e.to_string(),
 
             RuntimeError::InvalidInstruction(byte) => {
-                format!("invalid Instruction `{}`", byte)
+                format!("invalid Instruction `{:#04x}`", byte)
             }
         };
 

@@ -7,6 +7,6 @@ pub enum Stmt<'t> {
     Declare(&'t str, Option<Expr<'t>>),
     Expr(Expr<'t>),
     Print(Expr<'t>),
-    Return(Option<Expr<'t>>),
+    Return(Expr<'t>),
     Exit,
 }

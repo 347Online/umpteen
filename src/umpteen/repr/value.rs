@@ -62,7 +62,7 @@ impl Value {
             Value::Number(x) => *x > 0.0,
             Value::String(string) => !string.is_empty(),
 
-            Value::Object(obj) => true,
+            Value::Object(_) => true,
         }
     }
 }

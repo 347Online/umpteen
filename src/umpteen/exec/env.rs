@@ -7,9 +7,9 @@ use std::{
 use crate::{error::MemoryError, repr::value::Value};
 
 #[derive(Debug, Default)]
-pub struct Memory<'m> {
+pub struct Memory {
     values: Vec<Option<Value>>,
-    names: HashMap<&'m str, usize>,
+    names: HashMap<String, usize>,
 }
 
 #[derive(Debug)]
@@ -20,7 +20,7 @@ pub enum StackItem {
 
 impl Display for StackItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match self {  
             StackItem::Address(addr) => write!(f, "{}", addr),
             StackItem::Value(val) => write!(f, "{}", val),
         }
@@ -29,20 +29,20 @@ impl Display for StackItem {
 
 pub type Stack = Vec<StackItem>;
 
-impl<'m> Memory<'m> {
+impl Memory {
     pub fn declare_constant(&mut self, value: Value) -> usize {
         let addr = self.offset();
         self.values.push(Some(value));
         addr
     }
 
-    pub fn declare(&mut self, name: &'m str) -> Result<usize, MemoryError> {
+    pub fn declare(&mut self, name: &str) -> Result<usize, MemoryError> {
         if self.names.contains_key(name) {
             panic!("variable already declared") // TODO: Create an error variant instead of panic
         } else {
             let addr = self.offset();
             self.values.push(None);
-            self.names.insert(name, addr);
+            self.names.insert(name.to_string(), addr);
             Ok(addr)
         }
     }
@@ -54,7 +54,12 @@ impl<'m> Memory<'m> {
         Ok(())
     }
 
-    pub fn get(&self, addr: usize) -> Result<Value, MemoryError> {
+    pub fn get(&self, name: &str) -> Result<Value, MemoryError> {
+        let addr = self.retrieve(name)?;
+        self.get_addr(addr)
+    }
+
+    pub fn get_addr(&self, addr: usize) -> Result<Value, MemoryError> {
         let value = self
             .values
             .get(addr)
@@ -76,7 +81,7 @@ impl<'m> Memory<'m> {
     }
 }
 
-impl<'m> Deref for Memory<'m> {
+impl Deref for Memory {
     type Target = Vec<Option<Value>>;
 
     fn deref(&self) -> &Self::Target {
@@ -84,7 +89,7 @@ impl<'m> Deref for Memory<'m> {
     }
 }
 
-impl<'m> DerefMut for Memory<'m> {
+impl DerefMut for Memory {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.values
     }

@@ -5,11 +5,12 @@ use crate::error::RuntimeError;
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Instr {
-    Let, // LET  | Create a new variable with ($name)
+    Let,     // LET  | Create a new variable with ($name)
     Push,    // PUSH | Push 1 $(val) onto the stack
     Pop,     // POP  | Pop 1 value from the stack, discarding it
+    // Address, // ADDR | Pushes the address of variable ($name)
     Set,     // SET  | Set variable ($name) to ($value)
-    Get,     // GET  | Load a value at ($addr)
+    Get,     // GET  | Load a value at ($addr) and push
     Print,   // PRNT | Pop 1 Print to stdout
     Exit,    // EXIT | Halt the program
 }

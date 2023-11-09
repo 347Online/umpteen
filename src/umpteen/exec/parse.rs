@@ -111,7 +111,7 @@ impl<'p> Parser<'p> {
                 Expr::Value(Value::Number(num))
             }
             TokenType::String => Expr::Value(Value::from(lexeme)),
-            TokenType::Identifier => Expr::Ident { name: lexeme },
+            TokenType::Identifier => Expr::Variable { name: lexeme },
 
             kind => Err(ParseError::UnexpectedToken(kind))?,
         };

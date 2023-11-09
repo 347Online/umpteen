@@ -7,15 +7,6 @@ pub enum UmpteenError {
     MemoryError(MemoryError),
 }
 
-impl UmpteenError {
-    pub fn report_line<E: Display>(error: E, line: Line) {
-        eprintln!("ERR: {} on line {}", error, line);
-    }
-    pub fn report<E: Display>(error: E) {
-        eprintln!("ERR: {}", error);
-    }
-}
-
 impl Display for UmpteenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
