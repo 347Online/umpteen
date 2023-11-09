@@ -7,19 +7,14 @@ pub mod umpteen {
 pub use umpteen::*;
 
 use rustyline::{config::Configurer, error::ReadlineError};
-use umpteen::{exec::interpreter::Interpreter, repr::value::Value};
-
-fn prompt() {
-    let version = env!("CARGO_PKG_VERSION");
-    println!("Umpteen v{} — 2023", version);
-}
+use umpteen::{error::UmpteenError, exec::interpreter::Interpreter, repr::value::Value};
 
 pub fn repl() {
     let mut rl = rustyline::DefaultEditor::new().unwrap();
     let _ = rl.load_history("umpteen_history.txt");
     rl.set_auto_add_history(true);
 
-    let mut interpreter = Interpreter::new();
+    let mut umpteen = Interpreter::new();
     prompt();
 
     let mut interrupt = false;
@@ -28,14 +23,7 @@ pub fn repl() {
         let readline = rl.readline("> ");
 
         match readline {
-            Ok(line) => match interpreter.run(&line) {
-                Ok(x) => {
-                    if x != Value::Empty {
-                        println!("{}", x);
-                    }
-                }
-                Err(e) => eprintln!("{}", e),
-            },
+            Ok(line) => handle(umpteen.run(&line)),
             Err(ReadlineError::Interrupted) => {
                 if interrupt {
                     break;
@@ -54,4 +42,33 @@ pub fn repl() {
     }
 
     let _ = rl.save_history("umpteen_history.txt");
+}
+
+pub fn run_file(path: &str) {
+    let code = match std::fs::read_to_string(path) {
+        Ok(code) => code,
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    };
+
+    let mut umpteen = Interpreter::new();
+    handle(umpteen.run(&code));
+}
+
+fn prompt() {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("Umpteen v{} — 2023", version);
+}
+
+fn handle(result: Result<Value, UmpteenError>) {
+    match result {
+        Ok(value) => {
+            if value != Value::Empty {
+                println!("{}", value);
+            }
+        }
+        Err(e) => eprintln!("{}", e),
+    }
 }
