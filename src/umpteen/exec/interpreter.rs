@@ -6,11 +6,11 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        value::Value,
+        value::Value, token::Token,
     },
 };
 
-use super::{env::Memory, parse::Ast};
+use super::{env::Memory, parse::{Ast, Parser}, lexer::Lexer};
 
 pub enum Eval {
     Value(Value),
@@ -27,7 +27,24 @@ impl Interpreter {
         Self::default()
     }
 
-    pub fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
+    pub fn run(&mut self, src: &str) -> Result<Value, UmpteenError> {
+        let tokens = Self::scan(src);
+        let ast = Self::parse(tokens)?;
+        self.interpret(ast)
+    }
+
+    fn scan(src: &str) -> Vec<Token> {
+        let lexer = Lexer::new(src);
+        lexer.scan()
+    }
+
+    fn parse(tokens: Vec<Token>) -> Result<Ast, UmpteenError> {
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse()?;
+        Ok(ast)
+    }
+
+    fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
         let mut return_value = Value::Empty;
 
         for stmt in ast {

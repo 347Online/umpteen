@@ -1,12 +1,9 @@
 use umpteen::{
-    error::UmpteenError,
-    exec::{interpreter::Interpreter, lexer::Lexer, parse::Parser},
-    repr::value::Value,
-    util::report,
+    error::UmpteenError, exec::interpreter::Interpreter, repr::value::Value, util::report,
 };
 
 fn main() {
-    let src = "let x = \"\"";
+    let src = "let x = \"Hello World\"; print x;";
 
     match run(src) {
         Ok(value) => println!("Result: {}", value),
@@ -15,12 +12,6 @@ fn main() {
 }
 
 fn run(src: &str) -> Result<Value, UmpteenError> {
-    let lexer = Lexer::new(src);
-    let tokens = lexer.scan();
-
-    let mut parser = Parser::new(tokens);
-    let ast = parser.parse()?;
-
     let mut interpreter = Interpreter::new();
-    interpreter.interpret(ast)
+    interpreter.run(src)
 }
