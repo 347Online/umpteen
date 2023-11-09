@@ -99,12 +99,13 @@ impl<'s> Lexer<'s> {
             c if c.is_whitespace() => return None,
 
             ';' => token!(Semicolon),
-            '!' => token!(Bang),
             '+' => token!(Plus),
             '-' => token!(Minus),
             '*' => token!(Asterisk),
             '/' => token!(Slash), // TODO: Comments
             '%' => token!(Percent),
+
+            '!' => token!(Bang),
             '=' => token!(Equal),
 
             '"' => {
@@ -120,34 +121,32 @@ impl<'s> Lexer<'s> {
             }
 
             c if c.is_ascii_digit() => {
-                let mut end: usize = self.offset;
-                let mut dec = false;
-                while self.peek().is_some_and(|x| {
-                    c.is_ascii_digit()
-                        || ({
-                            if let (false, Some('.'), Some(y)) =
-                                (dec, self.peek(), self.peek_ahead(1))
-                            {
-                                y.is_ascii_digit()
-                            } else {
-                                false
-                            }
-                        })
-                }) {
-                    let c = self.advance().unwrap();
-                    if c == '.' {
-                        dec = true;
-                    }
-                    end = self.offset;
+                let mut end = self.offset;
+                macro_rules! digits {
+                    () => {
+                        while self.peek().is_some_and(|c| c.is_ascii_digit()) {
+                            self.advance().unwrap();
+                            end = self.offset;
+                        }
+                    };
+                }
+
+                digits!();
+
+                // Matches a decimal point and at least one additional digit
+                if matches!((self.peek(), self.peek_ahead(1)), (Some('.'), Some(c)) if c.is_ascii_digit())
+                {
+                    self.advance(); // Skip the decimal point
+                    digits!()
                 }
 
                 let lx = lexeme!(end);
-                token!(Number, lx)
+                token!(Number, dbg!(lx))
             }
 
             c if is_identic(c) => {
                 let mut end: usize = self.offset;
-                while self.peek().is_some_and(|c| is_identic(c)) {
+                while self.peek().is_some_and(is_identic) {
                     self.advance().unwrap();
                     end = self.offset;
                 }
