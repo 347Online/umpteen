@@ -10,19 +10,21 @@ use crate::{
 
 pub struct Lexer<'s> {
     source: &'s str,
-    chars: Peekable<Enumerate<Chars<'s>>>,
+    chars: Peekable<Chars<'s>>,
     line: Line,
+    offset: usize,
     finished: bool,
 }
 
 impl<'s> Lexer<'s> {
     pub fn new(source: &'s str) -> Self {
-        let chars = source.chars().enumerate().peekable();
+        let chars = source.chars().peekable();
 
         Lexer {
             source,
             chars,
             line: Line::new(1),
+            offset: 0,
             finished: false,
         }
     }
@@ -41,27 +43,31 @@ impl<'s> Lexer<'s> {
         tokens
     }
 
-    fn peek(&mut self) -> Option<(usize, char)> {
-        let (i, c) = self.chars.peek()?;
-        Some((*i, *c))
+    fn peek(&mut self) -> Option<char> {
+        let c = self.chars.peek()?;
+        Some(*c)
     }
-    fn peek_ahead(&mut self, n: usize) -> Option<(usize, char)> {
+    fn peek_ahead(&mut self, n: usize) -> Option<char> {
         let x = self.chars.clone().nth(n)?;
 
         Some(x)
     }
 
-    fn advance(&mut self) -> Option<(usize, char)> {
+    fn advance(&mut self) -> Option<char> {
+        self.offset += 1;
         self.chars.next()
     }
 
     fn scan_token(&mut self) -> Option<Token<'s>> {
-        let Some((start, _)) = self.peek() else {
+        if self.peek().is_none() {
             self.finished = true;
             return None;
-        };
+        }
+
+        let start = self.offset;
+
         self.line.advance();
-        let (i, c) = self.advance().unwrap();
+        let c = self.advance().unwrap();
 
         fn is_identic(c: char) -> bool {
             c == '_' || c.is_alphanumeric()
@@ -69,10 +75,10 @@ impl<'s> Lexer<'s> {
 
         macro_rules! lexeme {
             () => {
-                &self.source[start..=i]
+                &self.source[start..self.offset]
             };
             ($end:expr) => {
-                &self.source[start..=$end]
+                &self.source[start..$end]
             };
         }
 
@@ -102,11 +108,10 @@ impl<'s> Lexer<'s> {
             '=' => token!(Equal),
 
             '"' => {
-                let mut end: usize = i;
-                self.advance();
+                let mut end: usize = self.offset;
                 while self.peek().is_some() {
-                    let (i, c) = self.advance().unwrap();
-                    end = i;
+                    let c = self.advance().unwrap();
+                    end = self.offset;
                     if c == '"' {
                         break;
                     }
@@ -115,12 +120,12 @@ impl<'s> Lexer<'s> {
             }
 
             c if c.is_ascii_digit() => {
-                let mut end: usize = i;
+                let mut end: usize = self.offset;
                 let mut dec = false;
-                while self.peek().is_some_and(|(_, c)| {
+                while self.peek().is_some_and(|x| {
                     c.is_ascii_digit()
                         || ({
-                            if let (false, Some((_, '.')), Some((_, y))) =
+                            if let (false, Some('.'), Some(y)) =
                                 (dec, self.peek(), self.peek_ahead(1))
                             {
                                 y.is_ascii_digit()
@@ -129,11 +134,11 @@ impl<'s> Lexer<'s> {
                             }
                         })
                 }) {
-                    let (i, c) = self.advance().unwrap();
+                    let c = self.advance().unwrap();
                     if c == '.' {
                         dec = true;
                     }
-                    end = i;
+                    end = self.offset;
                 }
 
                 let lx = lexeme!(end);
@@ -141,10 +146,10 @@ impl<'s> Lexer<'s> {
             }
 
             c if is_identic(c) => {
-                let mut end: usize = i;
-                while self.peek().is_some_and(|(_, c)| is_identic(c)) {
-                    let (i, _) = self.advance().unwrap();
-                    end = i;
+                let mut end: usize = self.offset;
+                while self.peek().is_some_and(|c| is_identic(c)) {
+                    self.advance().unwrap();
+                    end = self.offset;
                 }
 
                 let lx = lexeme!(end);
@@ -153,7 +158,7 @@ impl<'s> Lexer<'s> {
                     "Empty" => token!(Empty, lx),
                     "true" => token!(True, lx),
                     "false" => token!(False, lx),
-                    
+
                     "let" => token!(Let, lx),
                     "print" => token!(Print, lx), // TODO: Re-implement as a function
 
