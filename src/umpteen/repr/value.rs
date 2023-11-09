@@ -25,6 +25,7 @@ impl Object {
 }
 
 impl Display for Object {
+    #[allow(unused)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0.as_ref() {
             ObjectData::SomethingElse => todo!(),
@@ -35,7 +36,7 @@ impl Display for Object {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
     #[default]
-    Empty,               // 000
+    Empty, // 000
     Boolean(bool),       // 001
     Number(f64),         // 002
     String(Box<String>), // 020
@@ -51,7 +52,7 @@ impl Value {
             Value::String(_) => 20,
             Value::Object(_) => 30,
         }
-    } 
+    }
 }
 
 impl Value {

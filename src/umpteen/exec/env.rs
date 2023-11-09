@@ -20,7 +20,7 @@ pub enum StackItem {
 
 impl Display for StackItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {  
+        match self {
             StackItem::Address(addr) => write!(f, "{}", addr),
             StackItem::Value(val) => write!(f, "{}", val),
         }

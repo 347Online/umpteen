@@ -1,6 +1,10 @@
 use std::{error::Error, fmt::Display, num::ParseFloatError};
 
-use crate::repr::{token::TokenType, value::Value, ast::ops::{Binary, Unary}};
+use crate::repr::{
+    ast::ops::{Binary, Unary},
+    token::TokenType,
+    value::Value,
+};
 
 #[derive(Debug)]
 pub enum ParseError {
