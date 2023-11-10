@@ -1,7 +1,11 @@
 use crate::{
     error::ParseError,
     repr::{
-        ast::{expr::Expr, ops::Unary, stmt::Stmt},
+        ast::{
+            expr::Expr,
+            ops::{Binary, Unary},
+            stmt::Stmt,
+        },
         token::{Token, TokenType},
         value::Value,
     },
@@ -84,16 +88,15 @@ impl<'p> Parser<'p> {
                 let expr = self.parse_expr()?;
                 Stmt::Print(expr)
             }
+
             TokenType::Let => {
                 let name = self.consume_if(TokenType::Identifier)?.lexeme;
 
                 if self.consume_if(TokenType::Equal).is_ok() {
                     let expr = Box::new(self.parse_expr()?);
                     Stmt::Declare(name, Some(*expr))
-                } else if self.check(TokenType::Semicolon) {
-                    Stmt::Declare(name, None)
                 } else {
-                    Err(ParseError::ExpectedToken(TokenType::Semicolon))?
+                    Stmt::Declare(name, None)
                 }
             }
 
@@ -122,14 +125,35 @@ impl<'p> Parser<'p> {
                 expr: Box::new(self.parse_expr()?),
                 op: Unary::Not,
             },
-            TokenType::Plus => todo!(),
-            TokenType::Minus => todo!(),
-            TokenType::Asterisk => todo!(),
-            TokenType::Slash => todo!(),
-            TokenType::Percent => todo!(),
-            TokenType::Equal => todo!(),
+            TokenType::Plus => Expr::BinOp {
+                left: Box::new(self.parse_expr()?),
+                right: Box::new(self.parse_expr()?),
+                op: Binary::Add,
+            },
+            TokenType::Minus => Expr::BinOp {
+                left: Box::new(self.parse_expr()?),
+                right: Box::new(self.parse_expr()?),
+                op: Binary::Subtract,
+            },
+            TokenType::Asterisk => Expr::BinOp {
+                right: Box::new(self.parse_expr()?),
+                left: Box::new(self.parse_expr()?),
+                op: Binary::Multiply,
+            },
+            TokenType::Slash => Expr::BinOp {
+                right: Box::new(self.parse_expr()?),
+                left: Box::new(self.parse_expr()?),
+                op: Binary::Divide,
+            },
+            TokenType::Percent => Expr::BinOp {
+                right: Box::new(self.parse_expr()?),
+                left: Box::new(self.parse_expr()?),
+                op: Binary::Modulo,
+            },
 
             TokenType::Identifier => Expr::Variable { name: lexeme },
+
+            TokenType::Equal => todo!(),
 
             TokenType::Error => todo!(),
 

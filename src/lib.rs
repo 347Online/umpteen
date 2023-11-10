@@ -12,7 +12,6 @@ use umpteen::{error::UmpteenError, exec::interpreter::Interpreter, repr::value::
 pub fn repl() {
     let mut rl = rustyline::DefaultEditor::new().unwrap();
     let _ = rl.load_history("umpteen_history.txt");
-    rl.set_auto_add_history(true);
 
     let mut umpteen = Interpreter::new();
     prompt();
@@ -23,7 +22,10 @@ pub fn repl() {
         let readline = rl.readline("> ");
 
         match readline {
-            Ok(line) => handle(umpteen.run(&line)),
+            Ok(line) => {
+                let _ = rl.add_history_entry(&line);
+                handle(umpteen.run(&line))
+            }
             Err(ReadlineError::Interrupted) => {
                 if interrupt {
                     break;

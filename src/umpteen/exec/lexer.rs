@@ -80,6 +80,9 @@ impl<'s> Lexer<'s> {
             ($end:expr) => {
                 &self.source[start..$end]
             };
+            ($start:expr, $end:expr) => {
+                &self.source[$start..$end]
+            };
         }
 
         macro_rules! token {
@@ -111,13 +114,13 @@ impl<'s> Lexer<'s> {
             '"' => {
                 let mut end: usize = self.offset;
                 while self.peek().is_some() {
-                    let c = self.advance().unwrap();
                     end = self.offset;
+                    let c = self.advance().unwrap();
                     if c == '"' {
                         break;
                     }
                 }
-                token!(String, lexeme!(end))
+                token!(String, lexeme!(start + 1, end))
             }
 
             c if c.is_ascii_digit() => {
