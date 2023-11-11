@@ -109,7 +109,7 @@ loop {
 ```
 
 ## Functions
-Declare a function with the `fnc` keyword. Parameters require type annotations. Annotations for types are required, unless the function returns `Empty`
+Declare a function with the `fnc` keyword. Parameters require type annotations. Annotations for return types are required, unless the function returns `Empty`
 
 ```umpteen
 fnc fib(n: Number) -> Number {
