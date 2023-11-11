@@ -129,12 +129,6 @@ TBD! Currently implemented types include
 * `String`: A series of characters
 * `Object`: TBD!
 
-# Roadmap
-- [ ] Turing Complete
-- [ ] Finalize Data Types
-- [ ] Self-Hosting implementation
-- [ ] v1.0.x
-
 ***
 
 ***WARNING: Umpteen is still in active development and frequent breaking changes are expected until v1.0.x. Not recommended for production.***
