@@ -6,11 +6,16 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        value::Value, token::Token,
+        token::Token,
+        value::Value,
     },
 };
 
-use super::{env::Memory, parse::{Ast, Parser}, lexer::Lexer};
+use super::{
+    env::Memory,
+    lexer::Lexer,
+    parse::{Ast, Parser},
+};
 
 pub enum Eval {
     Value(Value),
@@ -40,7 +45,7 @@ impl Interpreter {
 
     fn parse(tokens: Vec<Token>) -> Result<Ast, UmpteenError> {
         let mut parser = Parser::new(tokens);
-        let ast = parser.parse()?;
+        let ast = parser.parse();
         Ok(ast)
     }
 
@@ -77,7 +82,7 @@ impl Interpreter {
 
     fn eval(&mut self, expr: Expr) -> Result<Value, UmpteenError> {
         let result = match expr {
-            Expr::Value(value) => value,
+            Expr::Literal(value) => value,
             Expr::UnOp { expr, op } => {
                 let value = self.eval(*expr)?;
                 match op {
@@ -108,11 +113,17 @@ impl Interpreter {
                             self.eval(*right)?
                         }
                     }
+                    Binary::Equality => todo!(),
+                    Binary::Inequality => todo!(),
+                    Binary::GreaterThan => todo!(),
+                    Binary::GreaterOrEqual => todo!(),
+                    Binary::LessThan => todo!(),
+                    Binary::LessOrEqual => todo!(),
                 }
             }
-            Expr::Variable { name } => self.mem.get(name)?,
+            Expr::Binding { name } => self.mem.get(name)?,
             Expr::Assign { target, expr } => {
-                let Expr::Variable { name } = *target else {
+                let Expr::Binding { name } = *target else {
                     panic!("Invalid Assignment Target");
                 };
 
@@ -120,6 +131,7 @@ impl Interpreter {
                 self.mem.assign(name, value)?;
                 Value::Empty
             }
+            Expr::Grouping { expr } => self.eval(*expr)?,
         };
 
         Ok(result)

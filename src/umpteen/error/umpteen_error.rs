@@ -7,7 +7,6 @@ use rustyline::error::ReadlineError;
 
 #[derive(Debug)]
 pub enum UmpteenError {
-    SyntaxError(SyntaxError),
     ParseError(ParseError),
     CompilerError(CompilerError),
     RuntimeError(RuntimeError),
@@ -18,7 +17,6 @@ pub enum UmpteenError {
 impl Display for UmpteenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UmpteenError::SyntaxError(e) => write!(f, "{}", e),
             UmpteenError::ParseError(e) => write!(f, "{}", e),
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
             UmpteenError::RuntimeError(e) => write!(f, "{}", e),
@@ -28,7 +26,7 @@ impl Display for UmpteenError {
     }
 }
 
-use super::{CompilerError, MemoryError, ParseError, RuntimeError, SyntaxError};
+use super::{CompilerError, MemoryError, ParseError, RuntimeError};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);
@@ -38,12 +36,15 @@ impl Line {
         Self(ln, 0)
     }
 
-    pub fn advance(&mut self) {
-        self.1 += 1;
+    pub fn column(&mut self, col: usize) -> Self {
+        self.1 = col;
+        *self
     }
 
-    pub fn newline(&mut self) {
+    pub fn newline(&mut self) -> Self {
         self.0 += 1;
+        self.1 = 1;
+        *self
     }
 }
 
@@ -54,12 +55,6 @@ impl Display for Line {
         } else {
             write!(f, "{}:{}", self.0, self.1)
         }
-    }
-}
-
-impl From<SyntaxError> for UmpteenError {
-    fn from(value: SyntaxError) -> Self {
-        UmpteenError::SyntaxError(value)
     }
 }
 

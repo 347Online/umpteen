@@ -1,11 +1,9 @@
-use std::{
-    iter::{Enumerate, Peekable},
-    str::Chars,
-};
+use std::{iter::Peekable, str::Chars};
 
 use crate::{
     error::Line,
     repr::token::{Token, TokenType},
+    util::report_line,
 };
 
 pub struct Lexer<'s> {
@@ -36,6 +34,8 @@ impl<'s> Lexer<'s> {
                 tokens.push(token);
             }
         }
+        self.line.newline();
+        tokens.push(Token::new(TokenType::Eof, "<EOF>", self.line));
 
         #[cfg(debug_assertions)]
         dbg!(&tokens);
@@ -65,8 +65,8 @@ impl<'s> Lexer<'s> {
         }
 
         let start = self.offset;
+        self.line.column(start + 1);
 
-        self.line.advance();
         let c = self.advance().unwrap();
 
         fn is_identic(c: char) -> bool {
@@ -102,6 +102,8 @@ impl<'s> Lexer<'s> {
             c if c.is_whitespace() => return None,
 
             ';' => token!(Semicolon),
+            '(' => token!(LeftParen),
+            ')' => token!(RightParen),
             '+' => token!(Plus),
             '-' => token!(Minus),
             '*' => token!(Asterisk),
@@ -144,7 +146,7 @@ impl<'s> Lexer<'s> {
                 }
 
                 let lx = lexeme!(end);
-                token!(Number, dbg!(lx))
+                token!(Number, lx)
             }
 
             c if is_identic(c) => {
@@ -168,7 +170,10 @@ impl<'s> Lexer<'s> {
                 }
             }
 
-            _ => todo!(),
+            c => {
+                report_line(format!("Unexpected Symbol `{}`", c), self.line);
+                None?
+            }
         };
 
         Some(tk)

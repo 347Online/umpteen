@@ -12,9 +12,9 @@ pub enum ParseError {
     ExpectedStatement,
     ExpectedExpression,
     UnexpectedEof,
-    UnexpectedToken(TokenType),
     IllegalBinaryOperation(Value, Value, Binary),
     IllegalUnaryOperation(Value, Unary),
+    UnexpectedToken(TokenType),
     ExpectedToken(TokenType),
 }
 
