@@ -4,15 +4,24 @@ use crate::error::Line;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
+    LeftParen,
+    RightParen,
     Semicolon,
 
     Equal,
+    EqualEqual,
+    Bang,
+    BangEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+
     Plus,
     Minus,
     Asterisk,
     Slash,
     Percent,
-    Bang,
 
     Let,
     Print,
@@ -24,7 +33,7 @@ pub enum TokenType {
     String,
     Identifier,
 
-    Error,
+    Eof
 }
 
 impl Display for TokenType {
