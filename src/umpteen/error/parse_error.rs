@@ -14,7 +14,6 @@ pub enum ParseError {
     UnexpectedEof,
     IllegalBinaryOperation(Value, Value, Binary),
     IllegalUnaryOperation(Value, Unary),
-    UnexpectedSymbol(String),
     UnexpectedToken(TokenType),
     ExpectedToken(TokenType),
 }
@@ -41,7 +40,6 @@ impl Display for ParseError {
                 format!("unexpected token {}", kind)
             }
             ParseError::InvalidNumericLiteral(e) => e.to_string(),
-            ParseError::UnexpectedSymbol(symbol) => format!("unexpected symbol `{}`", symbol),
         };
         write!(f, "{}", desc)
     }
