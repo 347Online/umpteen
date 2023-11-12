@@ -8,7 +8,8 @@ use crate::{
         },
         token::{Token, TokenType},
         value::Value,
-    }, util::report_at,
+    },
+    util::report_at,
 };
 
 pub enum AstNode<'a> {
@@ -231,10 +232,5 @@ impl<'p> Parser<'p> {
 
     fn peek(&self) -> Token {
         self.tokens[self.index]
-        // self.tokens.get(self.index).copied().unwrap_or(Token {
-        //     kind: TokenType::Eof,
-        //     lexeme: "<EOF>",
-        //     line: self.line,
-        // })
     }
 }
