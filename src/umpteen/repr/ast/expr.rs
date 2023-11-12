@@ -24,8 +24,8 @@ pub enum Expr<'t> {
         expr: SubExpr<'t>,
     },
     Grouping {
-        expr: SubExpr<'t>
-    }
+        expr: SubExpr<'t>,
+    },
 }
 
 impl<'t> Expr<'t> {

@@ -11,7 +11,11 @@ use crate::{
     },
 };
 
-use super::{env::Memory, lexer::Lexer, parse::{Parser, Ast}};
+use super::{
+    env::Memory,
+    lexer::Lexer,
+    parse::{Ast, Parser},
+};
 
 pub enum Eval {
     Value(Value),

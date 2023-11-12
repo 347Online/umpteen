@@ -2,7 +2,8 @@ use std::{iter::Peekable, str::Chars};
 
 use crate::{
     error::Line,
-    repr::token::{Token, TokenType}, util::report_line,
+    repr::token::{Token, TokenType},
+    util::report_line,
 };
 
 pub struct Lexer<'s> {
@@ -172,7 +173,7 @@ impl<'s> Lexer<'s> {
             c => {
                 report_line(format!("Unexpected Symbol `{}`", c), self.line);
                 None?
-            },
+            }
         };
 
         Some(tk)

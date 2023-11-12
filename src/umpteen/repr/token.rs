@@ -33,7 +33,7 @@ pub enum TokenType {
     String,
     Identifier,
 
-    Eof
+    Eof,
 }
 
 impl Display for TokenType {
