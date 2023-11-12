@@ -92,7 +92,8 @@ impl<'p> Parser<'p> {
                 }
             };
             ast.push(stmt);
-            if self.index == self.tokens.len() {
+            if self.at_end() {
+                ast.push(Stmt::Exit);
                 break;
             }
         }
@@ -106,10 +107,6 @@ impl<'p> Parser<'p> {
     fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
         if catch!(self, Print) {
             return self.print();
-        }
-
-        if catch!(self, Eof) {
-            return Ok(Stmt::Exit);
         }
 
         let expr = self.expression()?;
@@ -195,7 +192,7 @@ impl<'p> Parser<'p> {
             self.consume(TokenType::RightParen)?;
             Ok(Expr::Grouping { expr })
         } else {
-            Err(ParseError::ExpectedExpression)
+            unreachable!()
         }
     }
 
