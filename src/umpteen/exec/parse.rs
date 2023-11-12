@@ -1,5 +1,5 @@
 use crate::{
-    error::ParseError,
+    error::{Line, ParseError},
     repr::{
         ast::{
             expr::Expr,
@@ -8,7 +8,7 @@ use crate::{
         },
         token::{Token, TokenType},
         value::Value,
-    },
+    }, util::report_at,
 };
 
 pub enum AstNode<'a> {
@@ -17,6 +17,57 @@ pub enum AstNode<'a> {
 }
 
 pub type Ast<'a> = Vec<Stmt<'a>>;
+
+macro_rules! catch {
+    ($self:ident, $first:tt $(,$rest:tt)*) => {
+        if $self.check(TokenType::$first)$( || $self.check(TokenType::$rest))* {
+            $self.advance();
+            true
+        } else {
+            false
+        }
+    };
+}
+
+macro_rules! op {
+    ($self:ident, $kind:ident $(,$tk:tt => $op:tt)+) => {{
+        match $self.previous().kind {
+            $(
+                TokenType::$tk => $kind::$op,
+            )+
+
+            _ => unreachable!(),
+        }
+    }};
+}
+
+macro_rules! binop {
+    ($self:ident, $next:ident $(,$tk:tt => $op:tt)+) => {{
+        let mut expr = $self.$next()?;
+        while catch!($self$(,$tk)+) {
+            let op = op!($self, Binary$(,$tk => $op)+);
+            let right = Box::new($self.$next()?);
+            expr = Expr::BinOp {
+                left: Box::new(expr),
+                right,
+                op
+            }
+        }
+        Ok(expr)
+    }};
+}
+
+macro_rules! literal {
+    ($self:ident $(,$tk:tt => $val:tt$(($x:expr))?)+) => {
+        match $self.previous().kind {
+            $(
+                TokenType::$tk => Expr::Literal(Value::$val$(($x))?),
+            )+
+
+            _ => unreachable!(),
+        }
+    };
+}
 
 pub struct Parser<'p> {
     tokens: Vec<Token<'p>>,
@@ -28,138 +79,162 @@ impl<'p> Parser<'p> {
         Parser { tokens, index: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Ast<'p>, ParseError> {
+    pub fn parse(&mut self) -> Ast<'p> {
         let mut ast = vec![];
+
         loop {
-            let stmt = self.parse_stmt()?;
+            let stmt = match self.statement() {
+                Ok(stmt) => stmt,
+                Err(e) => {
+                    report_at(e, self.peek());
+                    break;
+                }
+            };
             ast.push(stmt);
             if self.index == self.tokens.len() {
                 break;
             }
         }
 
-        ast.push(Stmt::Exit);
-
         #[cfg(debug_assertions)]
         dbg!(&ast);
 
-        Ok(ast)
+        ast
     }
 
-    fn consume(&mut self) -> Result<Token<'p>, ParseError> {
-        if let Some(tk) = self.tokens.get(self.index) {
-            self.index += 1;
-            Ok(*tk)
+    fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, Print) {
+            return self.print();
+        }
+
+        if catch!(self, Eof) {
+            return Ok(Stmt::Exit);
+        }
+
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon)?;
+        Ok(Stmt::Expr(expr))
+    }
+
+    fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon)?;
+        Ok(Stmt::Print(value))
+    }
+
+    fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
+        self.equality()
+    }
+
+    fn equality(&mut self) -> Result<Expr<'p>, ParseError> {
+        binop!(self, comparison,
+            BangEqual => Inequality,
+            EqualEqual => Equality
+        )
+    }
+
+    fn comparison(&mut self) -> Result<Expr<'p>, ParseError> {
+        binop!(self, term,
+            Greater => GreaterThan,
+            GreaterEqual => GreaterOrEqual,
+            Less => LessThan,
+            LessEqual => LessOrEqual
+        )
+    }
+
+    fn term(&mut self) -> Result<Expr<'p>, ParseError> {
+        binop!(self, factor,
+            Plus => Add,
+            Minus => Subtract
+        )
+    }
+
+    fn factor(&mut self) -> Result<Expr<'p>, ParseError> {
+        binop!(self, unary,
+            Slash => Divide,
+            Asterisk => Multiply,
+            Percent => Modulo
+        )
+    }
+
+    fn unary(&mut self) -> Result<Expr<'p>, ParseError> {
+        if catch!(self, Bang, Minus) {
+            let op = op!(self, Unary,
+                Bang => Not,
+                Minus => Negate
+            );
+            Ok(Expr::UnOp {
+                expr: Box::new(self.unary()?),
+                op,
+            })
         } else {
-            Err(ParseError::UnexpectedEof)
+            self.primary()
         }
     }
 
-    fn consume_or(&mut self, err: ParseError) -> Result<Token<'p>, ParseError> {
-        self.consume().map_err(|_| err)
+    fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
+        if catch!(self, Identifier) {
+            todo!()
+        }
+        if catch!(self, Empty, True, False, Number, String) {
+            let tk = self.previous();
+            let expr = literal!(self,
+                True => Boolean(true),
+                False => Boolean(false),
+                Empty => Empty,
+                Number => Number(tk.lexeme.parse()?),
+                String => String(Box::new(tk.lexeme.to_owned()))
+            );
+
+            return Ok(expr);
+        }
+
+        if catch!(self, LeftParen) {
+            let expr = Box::new(self.expression()?);
+            self.consume(TokenType::RightParen)?;
+            Ok(Expr::Grouping { expr })
+        } else {
+            Err(ParseError::ExpectedExpression)
+        }
     }
 
-    fn consume_if(&mut self, kind: TokenType) -> Result<Token<'p>, ParseError> {
-        if self.peek().is_ok_and(|x| x == kind) {
-            self.consume()
+    fn advance(&mut self) -> Token<'p> {
+        if !self.at_end() {
+            self.index += 1;
+        }
+        self.previous()
+    }
+
+    fn consume(&mut self, kind: TokenType) -> Result<Token<'p>, ParseError> {
+        if self.check(kind) {
+            Ok(self.advance())
         } else {
             Err(ParseError::ExpectedToken(kind))
         }
     }
 
-    fn peek(&self) -> Result<TokenType, ParseError> {
-        let index = self.index;
-        self.tokens
-            .get(index)
-            .copied()
-            .map(|tk| tk.kind)
-            .ok_or(ParseError::UnexpectedEof)
+    fn previous(&self) -> Token<'p> {
+        self.tokens[self.index - 1]
     }
 
     fn check(&self, kind: TokenType) -> bool {
-        self.peek().is_ok_and(|x| x == kind)
+        if self.at_end() {
+            false
+        } else {
+            self.peek().kind == kind
+        }
     }
 
-    fn parse_stmt(&mut self) -> Result<Stmt<'p>, ParseError> {
-        let token = self.consume_or(ParseError::ExpectedStatement)?;
-
-        let stmt = match token.kind {
-            TokenType::Print => {
-                let expr = self.parse_expr()?;
-                Stmt::Print(expr)
-            }
-
-            TokenType::Let => {
-                let name = self.consume_if(TokenType::Identifier)?.lexeme;
-
-                if self.consume_if(TokenType::Equal).is_ok() {
-                    let expr = Box::new(self.parse_expr()?);
-                    Stmt::Declare(name, Some(*expr))
-                } else {
-                    Stmt::Declare(name, None)
-                }
-            }
-
-            TokenType::Error => todo!(),
-
-            kind => Err(ParseError::UnexpectedToken(kind))?,
-        };
-        self.consume_if(TokenType::Semicolon)?;
-        Ok(stmt)
+    fn at_end(&self) -> bool {
+        self.peek().kind == TokenType::Eof
     }
 
-    fn parse_expr(&mut self) -> Result<Expr<'p>, ParseError> {
-        let Token { lexeme, kind, line } = self.consume_or(ParseError::ExpectedExpression)?;
-
-        let expr = match kind {
-            TokenType::Empty => Expr::Value(Value::Empty),
-            TokenType::True => Expr::Value(Value::Boolean(true)),
-            TokenType::False => Expr::Value(Value::Boolean(false)),
-            TokenType::Number => {
-                let num: f64 = lexeme.parse()?;
-                Expr::Value(Value::Number(num))
-            }
-            TokenType::String => Expr::Value(Value::from(lexeme)),
-
-            TokenType::Bang => Expr::UnOp {
-                expr: Box::new(self.parse_expr()?),
-                op: Unary::Not,
-            },
-            TokenType::Plus => Expr::BinOp {
-                left: Box::new(self.parse_expr()?),
-                right: Box::new(self.parse_expr()?),
-                op: Binary::Add,
-            },
-            TokenType::Minus => Expr::BinOp {
-                left: Box::new(self.parse_expr()?),
-                right: Box::new(self.parse_expr()?),
-                op: Binary::Subtract,
-            },
-            TokenType::Asterisk => Expr::BinOp {
-                right: Box::new(self.parse_expr()?),
-                left: Box::new(self.parse_expr()?),
-                op: Binary::Multiply,
-            },
-            TokenType::Slash => Expr::BinOp {
-                right: Box::new(self.parse_expr()?),
-                left: Box::new(self.parse_expr()?),
-                op: Binary::Divide,
-            },
-            TokenType::Percent => Expr::BinOp {
-                right: Box::new(self.parse_expr()?),
-                left: Box::new(self.parse_expr()?),
-                op: Binary::Modulo,
-            },
-
-            TokenType::Identifier => Expr::Variable { name: lexeme },
-
-            TokenType::Equal => todo!(),
-
-            TokenType::Error => todo!(),
-
-            kind => Err(ParseError::UnexpectedToken(kind))?,
-        };
-
-        Ok(expr)
+    fn peek(&self) -> Token {
+        self.tokens[self.index]
+        // self.tokens.get(self.index).copied().unwrap_or(Token {
+        //     kind: TokenType::Eof,
+        //     lexeme: "<EOF>",
+        //     line: self.line,
+        // })
     }
 }
