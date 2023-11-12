@@ -36,12 +36,15 @@ impl Line {
         Self(ln, 0)
     }
 
-    pub fn advance(&mut self) {
-        self.1 += 1;
+    pub fn column(&mut self, col: usize) -> Self {
+        self.1 = col;
+        *self
     }
 
-    pub fn newline(&mut self) {
+    pub fn newline(&mut self) -> Self {
         self.0 += 1;
+        self.1 = 1;
+        *self
     }
 }
 
