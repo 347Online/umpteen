@@ -171,8 +171,6 @@ impl<'p> Parser<'p> {
     }
 
     fn block(&mut self) -> Result<Stmt<'p>, ParseError> {
-        self.consume(TokenType::LeftBrace)?;
-
         let mut statements = vec![];
 
         while !self.check(TokenType::RightBrace) && !self.at_end() {
