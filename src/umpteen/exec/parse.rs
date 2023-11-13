@@ -121,8 +121,22 @@ impl<'p> Parser<'p> {
             return self.print();
         }
 
+        if catch!(self, Loop) {
+            return self.repetition();
+        }
+
+        if catch!(self, Break) {
+            self.consume(TokenType::Semicolon)?;
+            return Ok(Stmt::Break);
+        }
+
+        if catch!(self, Continue) {
+            self.consume(TokenType::Semicolon)?;
+            return Ok(Stmt::Continue);
+        }
+
         if catch!(self, LeftBrace) {
-            return Ok(self.block()?);
+            return self.block();
         }
 
         let expr = self.expression()?;
@@ -130,16 +144,19 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Expr(expr))
     }
 
+    fn repetition(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let block = Box::new(self.block()?);
+        Ok(Stmt::Loop(block))
+    }
+
     fn conditional(&mut self) -> Result<Stmt<'p>, ParseError> {
         let expr = self.expression()?;
 
-        self.consume(TokenType::LeftBrace)?;
         let then_branch = Box::new(self.block()?);
         let else_branch = if catch!(self, Else) {
             if catch!(self, If) {
                 Some(Box::new(self.conditional()?))
             } else {
-                self.consume(TokenType::LeftBrace)?;
                 Some(Box::new(self.block()?))
             }
         } else {
@@ -154,6 +171,8 @@ impl<'p> Parser<'p> {
     }
 
     fn block(&mut self) -> Result<Stmt<'p>, ParseError> {
+        self.consume(TokenType::LeftBrace)?;
+
         let mut statements = vec![];
 
         while !self.check(TokenType::RightBrace) && !self.at_end() {

@@ -112,8 +112,38 @@ impl<'s> Lexer<'s> {
             '/' => token!(Slash),
             '%' => token!(Percent),
 
-            '!' => token!(Bang),
-            '=' => token!(Equal),
+            '>' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(GreaterEqual)
+                } else {
+                    token!(Greater)
+                }
+            },
+            '<' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(LessEqual)
+                } else {
+                    token!(Less)
+                }
+            },
+            '=' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(EqualEqual)
+                } else {
+                    token!(Equal)
+                }
+            },
+            '!' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(BangEqual)
+                } else {
+                    token!(Bang)
+                }
+            },
             '&' if self.peek() == Some('&') => {
                 self.advance();
                 token!(And)
@@ -175,9 +205,12 @@ impl<'s> Lexer<'s> {
 
                     "var" => token!(Var, lx),
                     "let" => token!(Let, lx),
-                    "print" => token!(Print, lx), // TODO: Re-implement as a function
                     "if" => token!(If, lx),
                     "else" => token!(Else, lx),
+                    "loop" => token!(Loop, lx),
+                    "break" => token!(Break, lx),
+                    "continue" => token!(Continue, lx),
+                    "print" => token!(Print, lx), // TODO: Re-implement as a function
 
                     _ => token!(Identifier, lx),
                 }

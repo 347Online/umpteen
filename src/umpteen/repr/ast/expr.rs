@@ -4,7 +4,7 @@ use super::ops::{Binary, Unary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr<'t> {
     Literal(Value),
     Binding {

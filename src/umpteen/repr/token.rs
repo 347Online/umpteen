@@ -33,6 +33,9 @@ pub enum TokenType {
     Print,
     If,
     Else,
+    Loop,
+    Break,
+    Continue,
 
     True,
     False,

@@ -8,6 +8,8 @@ pub enum RuntimeError {
     MemoryError(MemoryError),
     InvalidInstruction(u8),
     ChunkReadError,
+    Break,
+    Continue,
 }
 
 impl Display for RuntimeError {
@@ -20,6 +22,8 @@ impl Display for RuntimeError {
             RuntimeError::InvalidInstruction(byte) => {
                 format!("invalid Instruction `{:#04x}`", byte)
             }
+            RuntimeError::Break => "break not allowed outside loop".to_string(),
+            RuntimeError::Continue => "continue not allowed outside loop".to_string(),
         };
 
         write!(f, "{}", desc)

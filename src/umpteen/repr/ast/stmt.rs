@@ -2,7 +2,7 @@ use super::expr::Expr;
 
 pub type SubStmt<'t> = Box<Stmt<'t>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt<'t> {
     Expr(Expr<'t>),
     Print(Expr<'t>),
@@ -17,6 +17,9 @@ pub enum Stmt<'t> {
         then_branch: SubStmt<'t>,
         else_branch: Option<SubStmt<'t>>,
     },
+    Loop(SubStmt<'t>),
+    Break,
+    Continue,
     Empty,
     Exit,
 }

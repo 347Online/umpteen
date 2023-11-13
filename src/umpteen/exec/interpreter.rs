@@ -1,5 +1,5 @@
 use crate::{
-    error::UmpteenError,
+    error::{RuntimeError, UmpteenError, ParseError},
     repr::{
         ast::{
             expr::Expr,
@@ -88,7 +88,7 @@ impl Interpreter {
             Stmt::Exit => return Ok(None),
             Stmt::Block(statements) => {
                 for stmt in statements {
-                    self.exec(stmt);
+                    self.exec(stmt)?;
                 }
             }
             Stmt::Condition {
@@ -102,21 +102,19 @@ impl Interpreter {
                     self.exec(*else_branch)?;
                 }
             }
+            Stmt::Break => Err(RuntimeError::Break)?,
+            Stmt::Continue => Err(RuntimeError::Continue)?,
+            Stmt::Loop(block) => loop {
+                match self.exec(*block.clone()) {
+                    Err(UmpteenError::RuntimeError(RuntimeError::Break)) => break,
+                    Err(UmpteenError::RuntimeError(RuntimeError::Continue)) => continue,
+                    x => x,
+                }?;
+            },
         }
 
         Ok(Some(Value::Empty))
     }
-
-    // fn exec_block(&mut self, block: Stmt) -> Result<Option<Value>, UmpteenError> {
-    //     let Stmt::Block(statements) = block else {
-    //         panic!();
-    //     };
-    //     for stmt in statements {
-    //         self.exec(stmt)?;
-    //     }
-
-    //     Ok(Some(Value::Empty))
-    // }
 
     fn eval(&mut self, expr: Expr) -> Result<Value, UmpteenError> {
         let result = match expr {
@@ -151,12 +149,48 @@ impl Interpreter {
                             self.eval(*right)?
                         }
                     }
-                    Binary::Equality => todo!(),
-                    Binary::Inequality => todo!(),
-                    Binary::GreaterThan => todo!(),
-                    Binary::GreaterOrEqual => todo!(),
-                    Binary::LessThan => todo!(),
-                    Binary::LessOrEqual => todo!(),
+                    Binary::Equality => Value::Boolean(lhs == self.eval(*right)?),
+                    Binary::Inequality => Value::Boolean(lhs != self.eval(*right)?),
+                    Binary::GreaterThan => {
+                        let rhs = self.eval(*right)?;
+                        match (&lhs, &rhs) {
+                            (Value::Number(a), Value::Number(b)) => {
+                                Value::Boolean(a > b)
+                            }
+
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                        }
+                    },
+                    Binary::GreaterOrEqual => {
+                        let rhs = self.eval(*right)?;
+                        match (&lhs, &rhs) {
+                            (Value::Number(a), Value::Number(b)) => {
+                                Value::Boolean(a >= b)
+                            }
+
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                        }
+                    },
+                    Binary::LessThan => {
+                        let rhs = self.eval(*right)?;
+                        match (&lhs, &rhs) {
+                            (Value::Number(a), Value::Number(b)) => {
+                                Value::Boolean(a < b)
+                            }
+
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                        }
+                    },
+                    Binary::LessOrEqual => {
+                        let rhs = self.eval(*right)?;
+                        match (&lhs, &rhs) {
+                            (Value::Number(a), Value::Number(b)) => {
+                                Value::Boolean(a <= b)
+                            }
+
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                        }
+                    },
                 }
             }
             Expr::Binding { name } => self.mem.get(name)?,
