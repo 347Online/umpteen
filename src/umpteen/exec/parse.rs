@@ -103,10 +103,13 @@ impl<'p> Parser<'p> {
 
     fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
         if catch!(self, Var) {
-            self.var()
-        } else {
-            self.statement()
+            return self.variable(true);
         }
+        if catch!(self, Let) {
+            return self.variable(false);
+        }
+
+        self.statement()
     }
 
     fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
@@ -119,7 +122,7 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Expr(expr))
     }
 
-    fn var(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
         let name = self.consume(TokenType::Identifier)?.lexeme;
 
         let init = if catch!(self, Equal) {
@@ -231,7 +234,7 @@ impl<'p> Parser<'p> {
             return Ok(Expr::Grouping { expr });
         }
 
-        panic!("{:?}", self.previous())
+        Err(ParseError::UnexpectedToken(self.previous().kind))
     }
 
     fn advance(&mut self) -> Token<'p> {
@@ -250,7 +253,7 @@ impl<'p> Parser<'p> {
     }
 
     fn previous(&self) -> Token<'p> {
-        self.tokens[self.index - 1]
+        self.tokens[self.index.saturating_sub(1)]
     }
 
     fn check(&self, kind: TokenType) -> bool {

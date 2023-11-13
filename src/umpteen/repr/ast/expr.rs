@@ -7,6 +7,12 @@ pub type SubExpr<'t> = Box<Expr<'t>>;
 #[derive(Debug)]
 pub enum Expr<'t> {
     Literal(Value),
+    Binding {
+        name: &'t str,
+    },
+    Grouping {
+        expr: SubExpr<'t>,
+    },
     UnOp {
         expr: SubExpr<'t>,
         op: Unary,
@@ -16,14 +22,8 @@ pub enum Expr<'t> {
         right: SubExpr<'t>,
         op: Binary,
     },
-    Binding {
-        name: &'t str,
-    },
     Assign {
         name: &'t str,
-        expr: SubExpr<'t>,
-    },
-    Grouping {
         expr: SubExpr<'t>,
     },
 }

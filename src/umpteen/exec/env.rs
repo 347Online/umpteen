@@ -71,9 +71,11 @@ impl Memory {
     }
 
     pub fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
-        let addr = *self.names.get(name).unwrap();
-
-        Ok(addr)
+        if let Some(addr) = self.names.get(name) {
+            Ok(*addr)
+        } else {
+            Err(MemoryError::NoSuchVariable(name.to_owned()))
+        }
     }
 
     fn offset(&self) -> usize {
