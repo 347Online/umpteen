@@ -10,6 +10,7 @@ pub enum Expr<'t> {
     List(Vec<Expr<'t>>),
     Binding {
         name: &'t str,
+        index: Option<SubExpr<'t>>,
     },
     Grouping {
         expr: SubExpr<'t>,
@@ -25,6 +26,7 @@ pub enum Expr<'t> {
     },
     Assign {
         name: &'t str,
+        index: Option<SubExpr<'t>>,
         expr: SubExpr<'t>,
     },
 }

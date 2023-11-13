@@ -14,10 +14,10 @@ pub enum Stmt<'t> {
     Block(Vec<Stmt<'t>>),
     Condition {
         test: Expr<'t>,
-        then_branch: SubStmt<'t>,
-        else_branch: Option<SubStmt<'t>>,
+        then_branch: Vec<Stmt<'t>>,
+        else_branch: Option<Vec<Stmt<'t>>>,
     },
-    Loop(SubStmt<'t>),
+    Loop(Vec<Stmt<'t>>),
     Break,
     Continue,
     Empty,

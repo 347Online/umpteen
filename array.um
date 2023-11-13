@@ -1,0 +1,12 @@
+var i = 0;
+
+var x = [];
+
+loop {
+  x[i] = "Something";
+  i = i + 1;
+  print i;
+  if i >= 100 {
+    break;
+  }
+}

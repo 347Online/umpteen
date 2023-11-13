@@ -12,12 +12,14 @@ use super::ast::ops::{Binary, Unary};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     List(Vec<Value>),
+    SomethingElse
 }
 
 impl Object {
     pub fn is_empty(&self) -> bool {
         match self {
             Object::List(values) => values.is_empty(),
+            Object::SomethingElse => todo!(),
         }
     }
 }
@@ -36,6 +38,7 @@ impl Display for Object {
                     write!(f, "{}", value)?;
                 }
             },
+            Object::SomethingElse => todo!(),
         }
         write!(f, "]")
     }

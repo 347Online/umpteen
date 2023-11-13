@@ -1,10 +1,14 @@
 use std::{error::Error, fmt::Display};
 
+use crate::repr::value::Value;
+
 #[derive(Debug)]
 pub enum MemoryError {
     NoSuchVariable(String),
     UninitializedVariableAccess(String),
     OutOfBoundsMemoryAccess,
+    CannotIndex(String),
+    CannotIndexWith(String),
 }
 
 impl Display for MemoryError {
@@ -15,6 +19,8 @@ impl Display for MemoryError {
                 format!("tried to access uninitialized variable `{}`", name),
             
             MemoryError::OutOfBoundsMemoryAccess => "out of bounds memory access".to_string(),
+            MemoryError::CannotIndex(x) => format!("cannot index into {}", x),
+            MemoryError::CannotIndexWith(x) => format!("invalid index type for variable `{}`", x),
         };
         write!(f, "{}", desc)
     }

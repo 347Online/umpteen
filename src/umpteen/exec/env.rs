@@ -2,7 +2,10 @@ use std::{collections::HashMap, fmt::Display};
 
 use uuid::Uuid;
 
-use crate::{error::MemoryError, repr::value::Value};
+use crate::{
+    error::MemoryError,
+    repr::value::{Object, Value},
+};
 
 #[derive(Debug)]
 pub enum StackItem {
@@ -47,9 +50,26 @@ impl Memory {
         Ok(())
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), MemoryError> {
+    pub fn assign(
+        &mut self,
+        name: &str,
+        index: Option<usize>,
+        value: Value,
+    ) -> Result<(), MemoryError> {
         if self.vars.contains_key(name) {
-            self.vars.insert(name.to_string(), Some(value));
+            if let Some(idx) = index {
+                if let Some(Some(Value::Object(obj))) = self.vars.get_mut(name) {
+                    if let Object::List(list) = obj.as_mut() {
+                        if idx >= list.len() {
+                            list.resize(idx + 1, Value::Empty);
+                        }
+                        list[idx] = value;
+                        return Ok(());
+                    }
+                }
+            } else {
+                self.vars.insert(name.to_string(), Some(value));
+            }
         } else {
             Err(MemoryError::NoSuchVariable(name.to_string()))?
         }
@@ -57,12 +77,22 @@ impl Memory {
         Ok(())
     }
 
-    pub fn get(&self, name: &str) -> Result<Value, MemoryError> {
-        self.vars
-            .get(name)
-            .cloned()
-            .flatten()
-            .ok_or(MemoryError::UninitializedVariableAccess(name.to_owned()))
+    pub fn get(&self, name: &str, index: Option<usize>) -> Result<Value, MemoryError> {
+        let Some(Some(var)) = self.vars.get(name) else {
+            return Err(MemoryError::UninitializedVariableAccess(name.to_owned()));
+        };
+
+        if let Some(idx) = index {
+            if let Value::Object(obj) = var {
+                if let Object::List(list) = obj.as_ref() {
+                    return Ok(list[idx].clone());
+                }
+            } else {
+                Err(MemoryError::CannotIndex(name.to_string()))?;
+            }
+        }
+
+        Ok(var.clone())
     }
 
     pub fn parent(&self) -> Option<Uuid> {
@@ -82,17 +112,17 @@ impl Env {
         Self::default()
     }
 
-    pub fn get(&self, name: &str) -> Result<Value, MemoryError> {
+    pub fn get(&self, name: &str, index: Option<usize>) -> Result<Value, MemoryError> {
         let mut maybe_mem = Some(self.mem());
-        
+
         while let Some(mem) = maybe_mem {
-            if let Ok(val) = mem.get(name) {
+            if let Ok(val) = mem.get(name, index) {
                 return Ok(val);
             } else if let Some(id) = mem.parent {
-                maybe_mem = self.scopes.get(&id);
+                maybe_mem = self.retrieve(id);
             } else {
-                let mem = self.scopes.get(&self.glob_key).unwrap();
-                return mem.get(name);
+                let mem = self.retrieve(self.glob_key).unwrap();
+                return mem.get(name, index);
             }
         }
 
@@ -100,11 +130,32 @@ impl Env {
     }
 
     pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
+        // Always uses current scope
         self.mem_mut().declare(name)
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), MemoryError> {
-        self.mem_mut().assign(name, value)
+    pub fn assign(
+        &mut self,
+        name: &str,
+        index: Option<usize>,
+        value: Value,
+    ) -> Result<(), MemoryError> {
+        let mut maybe_mem = Some(self.mem_mut());
+        while let Some(mem) = maybe_mem.as_deref_mut() {
+            if mem.vars.contains_key(name) {
+                return mem.assign(name, index, value);
+            } else if let Some(id) = mem.parent {
+                maybe_mem = self.retrieve_mut(id);
+            } else {
+                let mem = self.retrieve_mut(self.glob_key).unwrap();
+                return mem.assign(name, index, value);
+            }
+        }
+
+
+        Err(MemoryError::NoSuchVariable(name.to_owned()))
+        // todo!()
+        // // self.mem_mut().assign(name, index, value)
     }
 
     pub fn set_current(&mut self, id: Option<Uuid>) -> Option<Uuid> {
@@ -123,6 +174,10 @@ impl Env {
 
     fn retrieve(&self, id: Uuid) -> Option<&Memory> {
         self.scopes.get(&id)
+    }
+
+    fn retrieve_mut(&mut self, id: Uuid) -> Option<&mut Memory> {
+        self.scopes.get_mut(&id)
     }
 
     fn mem(&self) -> &Memory {

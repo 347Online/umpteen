@@ -136,7 +136,7 @@ impl<'p> Parser<'p> {
         }
 
         if catch!(self, LeftBrace) {
-            return self.block();
+            return Ok(Stmt::Block(self.block()?));
         }
 
         let expr = self.expression()?;
@@ -145,20 +145,22 @@ impl<'p> Parser<'p> {
     }
 
     fn repetition(&mut self) -> Result<Stmt<'p>, ParseError> {
-        let block = Box::new(self.block()?);
+        self.consume(TokenType::LeftBrace)?;
+        let block = self.block()?;
         Ok(Stmt::Loop(block))
     }
 
     fn conditional(&mut self) -> Result<Stmt<'p>, ParseError> {
         let expr = self.expression()?;
 
-        let then_branch = Box::new(self.block()?);
+        self.consume(TokenType::LeftBrace)?;
+        let then_branch = self.block()?;
         let else_branch = if catch!(self, Else) {
-            if catch!(self, If) {
-                Some(Box::new(self.conditional()?))
-            } else {
-                Some(Box::new(self.block()?))
-            }
+            // if catch!(self, If) {
+                // Some(Box::new(Stmt::Block(vec![self.conditional()?])))
+            // } else {
+                Some(self.block()?)
+            // }
         } else {
             None
         };
@@ -170,16 +172,14 @@ impl<'p> Parser<'p> {
         })
     }
 
-    fn block(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn block(&mut self) -> Result<Ast<'p>, ParseError> {
         let mut statements = vec![];
 
-        while !self.check(TokenType::RightBrace) && !self.at_end() {
+        while !self.at_end() && !catch!(self, RightBrace) {
             statements.push(self.declaration()?);
         }
 
-        self.consume(TokenType::RightBrace)?;
-
-        Ok(Stmt::Block(statements))
+        Ok(statements)
     }
 
     fn declare_variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
@@ -214,9 +214,9 @@ impl<'p> Parser<'p> {
             let equals = self.previous();
             let value = self.assignment()?;
 
-            if let Expr::Binding { name } = expr {
+            if let Expr::Binding { name, index } = expr {
                 let expr = Box::new(value);
-                return Ok(Expr::Assign { name, expr });
+                return Ok(Expr::Assign { name, index, expr });
             }
 
             report_at("Invalid Assignment Target", equals);
@@ -274,7 +274,12 @@ impl<'p> Parser<'p> {
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
         if catch!(self, Identifier) {
             let name = self.previous().lexeme;
-            return Ok(Expr::Binding { name });
+            if catch!(self, LeftBracket) {
+                let index = Some(Box::new(self.expression()?));
+                self.consume(TokenType::RightBracket)?;
+                return Ok(Expr::Binding { name, index });
+            }
+            return Ok(Expr::Binding { name, index: None });
         }
 
         if catch!(self, Empty, True, False, Number, String) {
