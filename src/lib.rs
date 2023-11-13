@@ -6,7 +6,7 @@ pub mod umpteen {
 }
 pub use umpteen::*;
 
-use rustyline::{config::Configurer, error::ReadlineError};
+use rustyline::error::ReadlineError;
 use umpteen::{error::UmpteenError, exec::interpreter::Interpreter, repr::value::Value};
 
 pub fn repl() {

@@ -1,5 +1,5 @@
 use crate::{
-    error::{Line, ParseError},
+    error::ParseError,
     repr::{
         ast::{
             expr::Expr,
