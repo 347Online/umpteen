@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rustyline = { version = "12.0.0", features = ["with-file-history"] }
+uuid = { version = "1.5.0", features = ["v4"] }

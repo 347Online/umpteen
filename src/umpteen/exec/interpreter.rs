@@ -1,5 +1,7 @@
+use uuid::Uuid;
+
 use crate::{
-    error::{RuntimeError, UmpteenError, ParseError},
+    error::{ParseError, RuntimeError, UmpteenError},
     repr::{
         ast::{
             expr::Expr,
@@ -12,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    env::Memory,
+    env::Env,
     lexer::Lexer,
     parse::{Ast, Parser},
 };
@@ -24,7 +26,7 @@ pub enum Eval {
 
 #[derive(Debug, Default)]
 pub struct Interpreter {
-    mem: Memory,
+    env: Env,
 }
 
 impl Interpreter {
@@ -67,11 +69,11 @@ impl Interpreter {
     fn exec(&mut self, stmt: Stmt) -> Result<Option<Value>, UmpteenError> {
         match stmt {
             Stmt::Declare { name, init } => {
-                self.mem.declare(name)?;
+                self.env.declare(name)?;
 
                 if let Some(expr) = init {
                     let value = self.eval(expr)?;
-                    self.mem.assign(name, value)?;
+                    self.env.assign(name, value)?;
                 }
             }
             Stmt::Expr(expr) => {
@@ -87,9 +89,8 @@ impl Interpreter {
             Stmt::Empty => (),
             Stmt::Exit => return Ok(None),
             Stmt::Block(statements) => {
-                for stmt in statements {
-                    self.exec(stmt)?;
-                }
+                let mem_key = Some(self.env.new_enclosed());
+                self.exec_block(statements, mem_key)?;
             }
             Stmt::Condition {
                 test,
@@ -114,6 +115,24 @@ impl Interpreter {
         }
 
         Ok(Some(Value::Empty))
+    }
+
+    fn exec_block(&mut self, statements: Ast, env_id: Option<Uuid>) -> Result<(), UmpteenError> {
+        let mut res = Ok(());
+        let previous = self.env.set_current(env_id);
+
+        for stmt in statements {
+            match self.exec(stmt) {
+                Ok(_) => (),
+                Err(err) => {
+                    res = Err(dbg!(err));
+                    break;
+                }
+            }
+        }
+
+        self.env.set_current(previous);
+        res
     }
 
     fn eval(&mut self, expr: Expr) -> Result<Value, UmpteenError> {
@@ -154,49 +173,41 @@ impl Interpreter {
                     Binary::GreaterThan => {
                         let rhs = self.eval(*right)?;
                         match (&lhs, &rhs) {
-                            (Value::Number(a), Value::Number(b)) => {
-                                Value::Boolean(a > b)
-                            }
+                            (Value::Number(a), Value::Number(b)) => Value::Boolean(a > b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?,
                         }
-                    },
+                    }
                     Binary::GreaterOrEqual => {
                         let rhs = self.eval(*right)?;
                         match (&lhs, &rhs) {
-                            (Value::Number(a), Value::Number(b)) => {
-                                Value::Boolean(a >= b)
-                            }
+                            (Value::Number(a), Value::Number(b)) => Value::Boolean(a >= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?,
                         }
-                    },
+                    }
                     Binary::LessThan => {
                         let rhs = self.eval(*right)?;
                         match (&lhs, &rhs) {
-                            (Value::Number(a), Value::Number(b)) => {
-                                Value::Boolean(a < b)
-                            }
+                            (Value::Number(a), Value::Number(b)) => Value::Boolean(a < b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?,
                         }
-                    },
+                    }
                     Binary::LessOrEqual => {
                         let rhs = self.eval(*right)?;
                         match (&lhs, &rhs) {
-                            (Value::Number(a), Value::Number(b)) => {
-                                Value::Boolean(a <= b)
-                            }
+                            (Value::Number(a), Value::Number(b)) => Value::Boolean(a <= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?
+                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, op))?,
                         }
-                    },
+                    }
                 }
             }
-            Expr::Binding { name } => self.mem.get(name)?,
+            Expr::Binding { name } => self.env.get(name)?,
             Expr::Assign { name, expr } => {
                 let value = self.eval(*expr)?;
-                self.mem.assign(name, value)?;
+                self.env.assign(name, value)?;
                 Value::Empty
             }
             Expr::Grouping { expr } => self.eval(*expr)?,
