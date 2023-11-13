@@ -11,6 +11,12 @@ pub enum Stmt<'t> {
         name: &'t str,
         init: Option<Expr<'t>>,
     },
+    Block(Vec<Stmt<'t>>),
+    Condition {
+        test: Expr<'t>,
+        then_branch: SubStmt<'t>,
+        else_branch: Option<SubStmt<'t>>,
+    },
     Empty,
     Exit,
 }

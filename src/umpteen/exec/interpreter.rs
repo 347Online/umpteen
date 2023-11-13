@@ -53,33 +53,70 @@ impl Interpreter {
         let mut return_value = Value::Empty;
 
         for stmt in ast {
-            match stmt {
-                Stmt::Declare { name, init } => {
-                    self.mem.declare(name)?;
-
-                    if let Some(expr) = init {
-                        let value = self.eval(expr)?;
-                        self.mem.assign(name, value)?;
-                    }
+            match self.exec(stmt)? {
+                Some(val) => {
+                    return_value = val;
                 }
-                Stmt::Expr(expr) => {
-                    self.eval(expr)?;
-                }
-                Stmt::Print(expr) => {
-                    let value = self.eval(expr)?;
-                    println!("{}", value);
-                }
-                Stmt::Return(expr) => {
-                    return_value = self.eval(expr)?;
-                    break;
-                }
-                Stmt::Empty => (),
-                Stmt::Exit => break,
+                None => break,
             }
         }
 
         Ok(return_value)
     }
+
+    fn exec(&mut self, stmt: Stmt) -> Result<Option<Value>, UmpteenError> {
+        match stmt {
+            Stmt::Declare { name, init } => {
+                self.mem.declare(name)?;
+
+                if let Some(expr) = init {
+                    let value = self.eval(expr)?;
+                    self.mem.assign(name, value)?;
+                }
+            }
+            Stmt::Expr(expr) => {
+                self.eval(expr)?;
+            }
+            Stmt::Print(expr) => {
+                let value = self.eval(expr)?;
+                println!("{}", value);
+            }
+            Stmt::Return(expr) => {
+                return Ok(Some(self.eval(expr)?));
+            }
+            Stmt::Empty => (),
+            Stmt::Exit => return Ok(None),
+            Stmt::Block(statements) => {
+                for stmt in statements {
+                    self.exec(stmt);
+                }
+            }
+            Stmt::Condition {
+                test,
+                then_branch,
+                else_branch,
+            } => {
+                if self.eval(test)?.truthy() {
+                    self.exec(*then_branch)?;
+                } else if let Some(else_branch) = else_branch {
+                    self.exec(*else_branch)?;
+                }
+            }
+        }
+
+        Ok(Some(Value::Empty))
+    }
+
+    // fn exec_block(&mut self, block: Stmt) -> Result<Option<Value>, UmpteenError> {
+    //     let Stmt::Block(statements) = block else {
+    //         panic!();
+    //     };
+    //     for stmt in statements {
+    //         self.exec(stmt)?;
+    //     }
+
+    //     Ok(Some(Value::Empty))
+    // }
 
     fn eval(&mut self, expr: Expr) -> Result<Value, UmpteenError> {
         let result = match expr {

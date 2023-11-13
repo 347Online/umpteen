@@ -36,8 +36,8 @@ impl Line {
         Self(ln, 0)
     }
 
-    pub fn column(&mut self, col: usize) -> Self {
-        self.1 = col;
+    pub fn advance(&mut self) -> Self {
+        self.1 += 1;
         *self
     }
 

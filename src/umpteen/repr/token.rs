@@ -6,6 +6,8 @@ use crate::error::Line;
 pub enum TokenType {
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
     Semicolon,
 
     Equal,
@@ -23,9 +25,14 @@ pub enum TokenType {
     Slash,
     Percent,
 
+    And,
+    Or,
+
     Var,
     Let,
     Print,
+    If,
+    Else,
 
     True,
     False,

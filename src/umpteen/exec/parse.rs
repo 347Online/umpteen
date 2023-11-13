@@ -113,13 +113,56 @@ impl<'p> Parser<'p> {
     }
 
     fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, If) {
+            return self.conditional();
+        }
+
         if catch!(self, Print) {
             return self.print();
+        }
+
+        if catch!(self, LeftBrace) {
+            return Ok(self.block()?);
         }
 
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon)?;
         Ok(Stmt::Expr(expr))
+    }
+
+    fn conditional(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let expr = self.expression()?;
+
+        self.consume(TokenType::LeftBrace)?;
+        let then_branch = Box::new(self.block()?);
+        let else_branch = if catch!(self, Else) {
+            if catch!(self, If) {
+                Some(Box::new(self.conditional()?))
+            } else {
+                self.consume(TokenType::LeftBrace)?;
+                Some(Box::new(self.block()?))
+            }
+        } else {
+            None
+        };
+
+        Ok(Stmt::Condition {
+            test: expr,
+            then_branch,
+            else_branch,
+        })
+    }
+
+    fn block(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let mut statements = vec![];
+
+        while !self.check(TokenType::RightBrace) && !self.at_end() {
+            statements.push(self.declaration()?);
+        }
+
+        self.consume(TokenType::RightBrace)?;
+
+        Ok(Stmt::Block(statements))
     }
 
     fn declare_variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
