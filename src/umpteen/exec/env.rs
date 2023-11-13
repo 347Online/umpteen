@@ -1,15 +1,10 @@
-use std::{
-    collections::HashMap,
-    fmt::Display,
-    ops::{Deref, DerefMut},
-};
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{error::MemoryError, repr::value::Value};
 
 #[derive(Debug, Default)]
 pub struct Memory {
-    values: Vec<Option<Value>>,
-    names: HashMap<String, usize>,
+    vars: HashMap<String, Option<Value>>,
 }
 
 #[derive(Debug)]
@@ -30,63 +25,31 @@ impl Display for StackItem {
 pub type Stack = Vec<StackItem>;
 
 impl Memory {
-    pub fn declare(&mut self, name: &str) -> Result<usize, MemoryError> {
-        if self.names.contains_key(name) {
-            panic!("variable already declared") // TODO: Create an error variant instead of panic
+    pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
+        if self.vars.contains_key(name) {
+            panic!("variable already declared")
         } else {
-            let addr = self.offset();
-            self.values.push(None);
-            self.names.insert(name.to_string(), addr);
-            Ok(addr)
+            self.vars.insert(name.to_string(), None);
         }
-    }
-
-    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), MemoryError> {
-        let addr = self.retrieve(name)?;
-        self.values[addr] = Some(value);
 
         Ok(())
     }
 
-    pub fn get(&self, name: &str) -> Result<Value, MemoryError> {
-        let addr = self.retrieve(name)?;
-        self.get_addr(addr)
+    pub fn assign(&mut self, name: &str, value: Value) -> Result<(), MemoryError> {
+        if self.vars.contains_key(name) {
+            self.vars.insert(name.to_string(), Some(value));
+        } else {
+            Err(MemoryError::NoSuchVariable(name.to_string()))?
+        }
+
+        Ok(())
     }
 
-    pub fn get_addr(&self, addr: usize) -> Result<Value, MemoryError> {
-        let value = self
-            .values
-            .get(addr)
+    pub fn get(&mut self, name: &str) -> Result<Value, MemoryError> {
+        self.vars
+            .get(name)
             .cloned()
             .flatten()
-            .ok_or(MemoryError::InvalidReference(addr))?;
-
-        Ok(value)
-    }
-
-    pub fn retrieve(&self, name: &str) -> Result<usize, MemoryError> {
-        if let Some(addr) = self.names.get(name) {
-            Ok(*addr)
-        } else {
-            Err(MemoryError::NoSuchVariable(name.to_owned()))
-        }
-    }
-
-    fn offset(&self) -> usize {
-        self.values.len()
-    }
-}
-
-impl Deref for Memory {
-    type Target = Vec<Option<Value>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.values
-    }
-}
-
-impl DerefMut for Memory {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.values
+            .ok_or(MemoryError::UninitializedVariableAccess(name.to_owned()))
     }
 }

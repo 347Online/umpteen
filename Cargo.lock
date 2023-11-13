@@ -187,7 +187,7 @@ checksum = "9e08d8363704e6c71fc928674353e6b7c23dcea9d82d7012c8faf2a3a025f8d0"
 
 [[package]]
 name = "umpteen"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "rustyline",
 ]
