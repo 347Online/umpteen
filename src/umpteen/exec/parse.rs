@@ -103,10 +103,10 @@ impl<'p> Parser<'p> {
 
     fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
         if catch!(self, Var) {
-            return self.variable(true);
+            return self.declare_variable(true);
         }
         if catch!(self, Let) {
-            return self.variable(false);
+            return self.declare_variable(false);
         }
 
         self.statement()
@@ -122,7 +122,7 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Expr(expr))
     }
 
-    fn variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
+    fn declare_variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
         let name = self.consume(TokenType::Identifier)?.lexeme;
 
         let init = if catch!(self, Equal) {
@@ -130,9 +130,11 @@ impl<'p> Parser<'p> {
         } else {
             None
         };
-
         self.consume(TokenType::Semicolon)?;
-        Ok(Stmt::Declare(name, init))
+
+        // TODO: Do something different for an immutable binding.
+        // For now, all bindings are mutable
+        Ok(Stmt::Declare { name, init })
     }
 
     fn print(&mut self) -> Result<Stmt<'p>, ParseError> {

@@ -54,10 +54,10 @@ impl Interpreter {
 
         for stmt in ast {
             match stmt {
-                Stmt::Declare(name, maybe_expr) => {
+                Stmt::Declare { name, init } => {
                     self.mem.declare(name)?;
 
-                    if let Some(expr) = maybe_expr {
+                    if let Some(expr) = init {
                         let value = self.eval(expr)?;
                         self.mem.assign(name, value)?;
                     }
@@ -73,6 +73,7 @@ impl Interpreter {
                     return_value = self.eval(expr)?;
                     break;
                 }
+                Stmt::Empty => (),
                 Stmt::Exit => break,
             }
         }

@@ -30,12 +30,6 @@ impl Display for StackItem {
 pub type Stack = Vec<StackItem>;
 
 impl Memory {
-    pub fn declare_constant(&mut self, value: Value) -> usize {
-        let addr = self.offset();
-        self.values.push(Some(value));
-        addr
-    }
-
     pub fn declare(&mut self, name: &str) -> Result<usize, MemoryError> {
         if self.names.contains_key(name) {
             panic!("variable already declared") // TODO: Create an error variant instead of panic
