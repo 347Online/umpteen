@@ -20,14 +20,14 @@ pub enum AstNode<'a> {
 pub type Ast<'a> = Vec<Stmt<'a>>;
 
 macro_rules! catch {
-    ($self:ident, $first:tt $(,$rest:tt)*) => {
+    ($self:ident, $first:tt $(,$rest:tt)*) => {{
         if $self.check(TokenType::$first)$( || $self.check(TokenType::$rest))* {
             $self.advance();
             true
         } else {
             false
         }
-    };
+    }};
 }
 
 macro_rules! op {
@@ -83,25 +83,30 @@ impl<'p> Parser<'p> {
     pub fn parse(&mut self) -> Ast<'p> {
         let mut ast = vec![];
 
-        loop {
-            let stmt = match self.statement() {
-                Ok(stmt) => stmt,
+        while !self.at_end() {
+            match self.declaration() {
+                Ok(stmt) => ast.push(stmt),
                 Err(e) => {
                     report_at(e, self.peek());
                     break;
                 }
-            };
-            ast.push(stmt);
-            if self.at_end() {
-                ast.push(Stmt::Exit);
-                break;
             }
         }
+
+        ast.push(Stmt::Exit);
 
         #[cfg(debug_assertions)]
         dbg!(&ast);
 
         ast
+    }
+
+    fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, Var) {
+            self.var()
+        } else {
+            self.statement()
+        }
     }
 
     fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
@@ -114,6 +119,19 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Expr(expr))
     }
 
+    fn var(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme;
+
+        let init = if catch!(self, Equal) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        self.consume(TokenType::Semicolon)?;
+        Ok(Stmt::Declare(name, init))
+    }
+
     fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon)?;
@@ -121,7 +139,25 @@ impl<'p> Parser<'p> {
     }
 
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
+        let expr = self.equality()?;
+
+        if catch!(self, Equal) {
+            let equals = self.previous();
+            let value = self.assignment()?;
+
+            if let Expr::Binding { name } = expr {
+                let expr = Box::new(value);
+                return Ok(Expr::Assign { name, expr });
+            }
+
+            report_at("Invalid Assignment Target", equals);
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr<'p>, ParseError> {
@@ -172,8 +208,10 @@ impl<'p> Parser<'p> {
 
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
         if catch!(self, Identifier) {
-            todo!()
+            let name = self.previous().lexeme;
+            return Ok(Expr::Binding { name });
         }
+
         if catch!(self, Empty, True, False, Number, String) {
             let tk = self.previous();
             let expr = literal!(self,
@@ -190,10 +228,10 @@ impl<'p> Parser<'p> {
         if catch!(self, LeftParen) {
             let expr = Box::new(self.expression()?);
             self.consume(TokenType::RightParen)?;
-            Ok(Expr::Grouping { expr })
-        } else {
-            unreachable!()
+            return Ok(Expr::Grouping { expr });
         }
+
+        panic!("{:?}", self.previous())
     }
 
     fn advance(&mut self) -> Token<'p> {

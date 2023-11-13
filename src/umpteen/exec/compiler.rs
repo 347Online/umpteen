@@ -36,10 +36,6 @@ impl Compiler<'_> {
             self.statement(stmt)?;
         }
 
-        
-
-        dbg!(&self);
-
         Ok(self.program)
     }
 

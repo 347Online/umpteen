@@ -20,7 +20,7 @@ pub enum Expr<'t> {
         name: &'t str,
     },
     Assign {
-        target: SubExpr<'t>,
+        name: &'t str,
         expr: SubExpr<'t>,
     },
     Grouping {

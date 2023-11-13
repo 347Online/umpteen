@@ -163,6 +163,7 @@ impl<'s> Lexer<'s> {
                     "true" => token!(True, lx),
                     "false" => token!(False, lx),
 
+                    "var" => token!(Var, lx),
                     "let" => token!(Let, lx),
                     "print" => token!(Print, lx), // TODO: Re-implement as a function
 

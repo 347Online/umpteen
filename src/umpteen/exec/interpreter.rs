@@ -122,11 +122,7 @@ impl Interpreter {
                 }
             }
             Expr::Binding { name } => self.mem.get(name)?,
-            Expr::Assign { target, expr } => {
-                let Expr::Binding { name } = *target else {
-                    panic!("Invalid Assignment Target");
-                };
-
+            Expr::Assign { name, expr } => {
                 let value = self.eval(*expr)?;
                 self.mem.assign(name, value)?;
                 Value::Empty

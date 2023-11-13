@@ -23,6 +23,7 @@ pub enum TokenType {
     Slash,
     Percent,
 
+    Var,
     Let,
     Print,
 
