@@ -9,7 +9,7 @@ use crate::{
             stmt::Stmt,
         },
         token::Token,
-        value::Value,
+        value::{Value, Object},
     },
 };
 
@@ -134,10 +134,17 @@ impl Interpreter {
         self.env.set_current(previous);
         res
     }
-
+    
     fn eval(&mut self, expr: Expr) -> Result<Value, UmpteenError> {
         let result = match expr {
             Expr::Literal(value) => value,
+            Expr::List(expressions) => {
+                let mut values = vec![];
+                for expr in expressions {
+                    values.push(self.eval(expr)?);
+                }
+                Value::Object(Box::new(Object::List(values)))
+            },
             Expr::UnOp { expr, op } => {
                 let value = self.eval(*expr)?;
                 match op {
@@ -147,7 +154,7 @@ impl Interpreter {
             }
             Expr::BinOp { left, right, op } => {
                 let lhs = self.eval(*left)?;
-
+                
                 match op {
                     Binary::Add => (lhs + self.eval(*right)?)?,
                     Binary::Subtract => (lhs - self.eval(*right)?)?,

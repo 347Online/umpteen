@@ -7,6 +7,7 @@ pub type SubExpr<'t> = Box<Expr<'t>>;
 #[derive(Debug, Clone)]
 pub enum Expr<'t> {
     Literal(Value),
+    List(Vec<Expr<'t>>),
     Binding {
         name: &'t str,
     },

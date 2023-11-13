@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     process::{ExitCode, Termination},
@@ -9,27 +10,34 @@ use crate::error::ParseError;
 use super::ast::ops::{Binary, Unary};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ObjectData {
-    SomethingElse,
+pub enum Object {
+    List(Vec<Value>),
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Object(pub Box<ObjectData>);
 
 impl Object {
     pub fn is_empty(&self) -> bool {
-        match self.0.as_ref() {
-            ObjectData::SomethingElse => todo!(),
+        match self {
+            Object::List(values) => values.is_empty(),
         }
     }
 }
 
 impl Display for Object {
-    #[allow(unused)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0.as_ref() {
-            ObjectData::SomethingElse => todo!(),
+        write!(f,"[")?;
+        match self {
+            Object::List(values) => {
+                let mut first = true;
+
+                for value in values {
+                    if first {first = false;} else {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", value)?;
+                }
+            },
         }
+        write!(f, "]")
     }
 }
 
@@ -40,7 +48,7 @@ pub enum Value {
     Boolean(bool),       // 001
     Number(f64),         // 002
     String(Box<String>), // 020
-    Object(Object),      // 030
+    Object(Box<Object>), // 030
 }
 
 impl Value {
@@ -63,7 +71,7 @@ impl Value {
             Value::Number(x) => *x > 0.0,
             Value::String(string) => !string.is_empty(),
 
-            Value::Object(_) => true,
+            Value::Object(x) => !x.is_empty(),
         }
     }
 }

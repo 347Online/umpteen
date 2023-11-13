@@ -105,7 +105,11 @@ impl<'s> Lexer<'s> {
             ')' => token!(RightParen),
             '{' => token!(LeftBrace),
             '}' => token!(RightBrace),
+            '[' => token!(LeftBracket),
+            ']' => token!(RightBracket),
             ';' => token!(Semicolon),
+            ',' => token!(Comma),
+
             '+' => token!(Plus),
             '-' => token!(Minus),
             '*' => token!(Asterisk),
@@ -119,7 +123,7 @@ impl<'s> Lexer<'s> {
                 } else {
                     token!(Greater)
                 }
-            },
+            }
             '<' => {
                 if self.peek() == Some('=') {
                     self.advance();
@@ -127,7 +131,7 @@ impl<'s> Lexer<'s> {
                 } else {
                     token!(Less)
                 }
-            },
+            }
             '=' => {
                 if self.peek() == Some('=') {
                     self.advance();
@@ -135,7 +139,7 @@ impl<'s> Lexer<'s> {
                 } else {
                     token!(Equal)
                 }
-            },
+            }
             '!' => {
                 if self.peek() == Some('=') {
                     self.advance();
@@ -143,15 +147,15 @@ impl<'s> Lexer<'s> {
                 } else {
                     token!(Bang)
                 }
-            },
+            }
             '&' if self.peek() == Some('&') => {
                 self.advance();
                 token!(And)
-            },
+            }
             '|' if self.peek() == Some('|') => {
                 self.advance();
                 token!(Or)
-            },
+            }
 
             '"' => {
                 let mut end: usize = self.offset;

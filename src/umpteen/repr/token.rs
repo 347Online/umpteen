@@ -8,7 +8,10 @@ pub enum TokenType {
     RightParen,
     LeftBrace,
     RightBrace,
+    LeftBracket,
+    RightBracket,
     Semicolon,
+    Comma,
 
     Equal,
     EqualEqual,

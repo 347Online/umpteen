@@ -296,6 +296,20 @@ impl<'p> Parser<'p> {
             return Ok(Expr::Grouping { expr });
         }
 
+        if catch!(self, LeftBracket) {
+            let mut list = vec![];
+
+            while !self.check(TokenType::RightBracket) {
+                let expr = self.expression()?;
+                list.push(expr);
+                if !catch!(self, Comma) {
+                    break;
+                }
+            }
+            self.consume(TokenType::RightBracket)?;
+            return Ok(Expr::List(list));
+        }
+
         Err(ParseError::UnexpectedToken(self.previous().kind))
     }
 
