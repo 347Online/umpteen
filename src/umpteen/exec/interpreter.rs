@@ -275,8 +275,6 @@ impl Interpreter {
             } => {
                 let callee = self.eval(callee)?;
 
-                dbg!(&callee);
-
                 let mut args = vec![];
                 for arg in call_args {
                     args.push(self.eval(arg)?);
