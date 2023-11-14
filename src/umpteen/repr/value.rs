@@ -9,28 +9,31 @@ use std::{
 
 use crate::error::ParseError;
 
-use super::ast::ops::{Binary, Unary};
+use super::ast::{
+    ops::{Binary, Unary},
+    stmt::Stmt,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     List(Vec<Value>),
-    SomethingElse,
+    // Fnc(Fnc),
 }
 
 impl Object {
     pub fn is_empty(&self) -> bool {
         match self {
             Object::List(values) => values.is_empty(),
-            Object::SomethingElse => todo!(),
+            Object::Fnc(_) => false,
         }
     }
 }
 
 impl Display for Object {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut buffer = String::from('[');
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Object::List(values) => {
+                let mut buffer = String::from('[');
                 let mut first = true;
 
                 for value in values {
@@ -41,12 +44,11 @@ impl Display for Object {
                     }
                     buffer.push_str(&format!("{}", value));
                 }
+                buffer.push(']');
+                write!(f, "{}", buffer)
             }
-            Object::SomethingElse => todo!(),
+            Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
         }
-        buffer.push(']');
-
-        write!(f, "{}", buffer)
     }
 }
 
@@ -70,9 +72,7 @@ impl Value {
             Value::Object(_) => 30,
         }
     }
-}
 
-impl Value {
     pub fn truthy(&self) -> bool {
         match self {
             Value::Empty => false,
@@ -86,7 +86,7 @@ impl Value {
 }
 
 impl Display for Value {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         macro_rules! write_val {
             ($x: expr) => {
                 write!(f, "{}", $x)
@@ -129,7 +129,7 @@ impl From<f64> for Value {
 }
 
 impl Not for Value {
-    type Output = Value;
+    type Output = Self;
 
     fn not(self) -> Self::Output {
         Value::Boolean(!self.truthy())
@@ -137,18 +137,21 @@ impl Not for Value {
 }
 
 impl Neg for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn neg(self) -> Self::Output {
         match self {
             Value::Number(x) => Ok(Value::Number(-x)),
-            _ => Err(ParseError::IllegalUnaryOperation(self, Unary::Negate))?,
+            _ => Err(ParseError::IllegalUnaryOperation(
+                self.to_string(),
+                Unary::Negate,
+            ))?,
         }
     }
 }
 
 impl Add for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn add(self, rhs: Self) -> Self::Output {
         let lhs = self;
@@ -156,21 +159,25 @@ impl Add for Value {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
             (Value::String(a), Value::String(b)) => Value::String(Box::new(*a + &b)),
 
-            (a, b) => Err(ParseError::IllegalBinaryOperation(a, b, Binary::Add))?,
+            (a, b) => Err(ParseError::IllegalBinaryOperation(
+                a.to_string(),
+                b.to_string(),
+                Binary::Add,
+            ))?,
         };
         Ok(val)
     }
 }
 
 impl Sub for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a - b),
             _ => Err(ParseError::IllegalBinaryOperation(
-                self,
-                rhs,
+                self.to_string(),
+                rhs.to_string(),
                 Binary::Subtract,
             ))?,
         };
@@ -179,14 +186,14 @@ impl Sub for Value {
 }
 
 impl Mul for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn mul(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a * b),
             _ => Err(ParseError::IllegalBinaryOperation(
-                self,
-                rhs,
+                self.to_string(),
+                rhs.to_string(),
                 Binary::Multiply,
             ))?,
         };
@@ -195,14 +202,14 @@ impl Mul for Value {
 }
 
 impl Div for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn div(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a / b),
             _ => Err(ParseError::IllegalBinaryOperation(
-                self,
-                rhs,
+                self.to_string(),
+                rhs.to_string(),
                 Binary::Divide,
             ))?,
         };
@@ -211,14 +218,14 @@ impl Div for Value {
 }
 
 impl Rem for Value {
-    type Output = Result<Value, ParseError>;
+    type Output = Result<Self, ParseError>;
 
     fn rem(self, rhs: Self) -> Self::Output {
         let val = match (&self, &rhs) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a % b),
             _ => Err(ParseError::IllegalBinaryOperation(
-                self,
-                rhs,
+                self.to_string(),
+                rhs.to_string(),
                 Binary::Modulo,
             ))?,
         };
