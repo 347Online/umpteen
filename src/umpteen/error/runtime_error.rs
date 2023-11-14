@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{exec::interpreter::Divergence, repr::value::Value};
+use crate::exec::interpreter::Divergence;
 
 use super::MemoryError;
 

@@ -1,7 +1,5 @@
 use std::{error::Error, fmt::Display};
 
-use crate::repr::value::Value;
-
 #[derive(Debug)]
 pub enum MemoryError {
     NoSuchVariable(String),
