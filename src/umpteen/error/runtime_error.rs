@@ -36,7 +36,7 @@ impl From<MemoryError> for RuntimeError {
     }
 }
 
-impl From<Divergence<'_>> for RuntimeError {
+impl From<Divergence> for RuntimeError {
     fn from(value: Divergence) -> Self {
         RuntimeError::IllegalDivergence(value.to_string())
     }

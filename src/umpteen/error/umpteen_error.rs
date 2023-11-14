@@ -6,17 +6,17 @@ use std::{
 use rustyline::error::ReadlineError;
 
 #[derive(Debug)]
-pub enum UmpteenError<'u> {
+pub enum UmpteenError {
     ParseError(ParseError),
     CompilerError(CompilerError),
     RuntimeError(RuntimeError),
     MemoryError(MemoryError),
     ReplError(ReadlineError),
-    Divergence(Divergence<'u>),
+    Divergence(Divergence),
 }
 
-impl Display for UmpteenError<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for UmpteenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             UmpteenError::ParseError(e) => write!(f, "{}", e),
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
@@ -53,7 +53,7 @@ impl Line {
 }
 
 impl Display for Line {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.1 == 0 {
             write!(f, "{}", self.0)
         } else {
@@ -62,40 +62,40 @@ impl Display for Line {
     }
 }
 
-impl From<ParseError> for UmpteenError<'_> {
+impl From<ParseError> for UmpteenError {
     fn from(value: ParseError) -> Self {
         UmpteenError::ParseError(value)
     }
 }
 
-impl From<CompilerError> for UmpteenError<'_> {
+impl From<CompilerError> for UmpteenError {
     fn from(value: CompilerError) -> Self {
         UmpteenError::CompilerError(value)
     }
 }
 
-impl From<RuntimeError> for UmpteenError<'_> {
+impl From<RuntimeError> for UmpteenError {
     fn from(value: RuntimeError) -> Self {
         UmpteenError::RuntimeError(value)
     }
 }
 
-impl From<MemoryError> for UmpteenError<'_> {
+impl From<MemoryError> for UmpteenError {
     fn from(value: MemoryError) -> Self {
         UmpteenError::MemoryError(value)
     }
 }
 
-impl From<ReadlineError> for UmpteenError<'_> {
+impl From<ReadlineError> for UmpteenError {
     fn from(value: ReadlineError) -> Self {
         UmpteenError::ReplError(value)
     }
 }
 
-impl From<Divergence<'_>> for UmpteenError<'_> {
+impl From<Divergence> for UmpteenError {
     fn from(value: Divergence) -> Self {
         UmpteenError::Divergence(value)
     }
 }
 
-impl Error for UmpteenError<'_> {}
+impl Error for UmpteenError {}

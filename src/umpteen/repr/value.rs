@@ -24,7 +24,7 @@ impl Object {
     pub fn is_empty(&self) -> bool {
         match self {
             Object::List(values) => values.is_empty(),
-            Object::Fnc(_) => false,
+            // Object::Fnc(_) => false,
         }
     }
 }
@@ -47,7 +47,7 @@ impl Display for Object {
                 buffer.push(']');
                 write!(f, "{}", buffer)
             }
-            Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
+            // Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
         }
     }
 }
