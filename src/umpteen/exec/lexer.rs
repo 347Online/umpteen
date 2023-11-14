@@ -109,6 +109,36 @@ impl<'s> Lexer<'s> {
             ']' => token!(RightBracket),
             ';' => token!(Semicolon),
             ',' => token!(Comma),
+            '#' => {
+                if matches!((self.peek(), self.peek_ahead(1)), (Some('#'), Some('#'))) {
+                    self.advance();
+                    self.advance();
+                    while let Some(c) = self.peek() {
+                        if c == '\n' {
+                            self.line.newline();
+                        }
+                        if c == '#' {
+                            self.advance();
+                            if matches!((self.peek(), self.peek_ahead(1)), (Some('#'), Some('#'))) {
+                                self.advance();
+                                self.advance();
+                                break;
+                            }
+                        } else {
+                            self.advance();
+                        }
+                    }
+                    return None;
+                } else {
+                    while let Some(c) = self.peek() {
+                        if c == '\n' {
+                            break;
+                        }
+                        self.advance();
+                    }
+                    return None;
+                }
+            }
 
             '+' => token!(Plus),
             '-' => token!(Minus),
@@ -148,6 +178,7 @@ impl<'s> Lexer<'s> {
                     token!(Bang)
                 }
             }
+
             '&' if self.peek() == Some('&') => {
                 self.advance();
                 token!(And)
