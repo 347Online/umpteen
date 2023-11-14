@@ -6,9 +6,12 @@ use std::{
     rc::Rc,
 };
 
-use crate::error::ParseError;
+use crate::{boxed, error::ParseError};
 
-use super::{ast::ops::{Binary, Unary}, object::Object};
+use super::{
+    ast::ops::{Binary, Unary},
+    object::Object,
+};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
@@ -70,13 +73,13 @@ impl From<bool> for Value {
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::String(Box::new(value.to_string()))
+        Value::String(boxed!(value.to_string()))
     }
 }
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::String(Box::new(value))
+        Value::String(boxed!(value))
     }
 }
 
@@ -115,7 +118,7 @@ impl Add for Value {
         let lhs = self;
         let val = match (lhs.clone(), rhs.clone()) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
-            (Value::String(a), Value::String(b)) => Value::String(Box::new(*a + &b)),
+            (Value::String(a), Value::String(b)) => Value::String(boxed!(*a + &b)),
 
             (a, b) => Err(ParseError::IllegalBinaryOperation(
                 a.to_string(),

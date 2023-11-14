@@ -19,6 +19,5 @@ pub enum Stmt<'t> {
     Break,
     Continue,
     Return(Expr<'t>),
-    // Print(Expr<'t>),
     Exit,
 }

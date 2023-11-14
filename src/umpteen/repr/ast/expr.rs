@@ -1,4 +1,4 @@
-use crate::repr::value::Value;
+use crate::{repr::value::Value, boxed};
 
 use super::ops::{Binary, Unary};
 
@@ -31,17 +31,17 @@ pub enum Expr<'t> {
     },
     Call {
         callee: SubExpr<'t>,
-        args: Vec<Expr<'t>>
-    }
+        args: Vec<Expr<'t>>,
+    },
 }
 
 impl<'t> Expr<'t> {
     pub fn unary(expr: Expr<'t>, op: Unary) -> Expr<'t> {
-        let expr = Box::new(expr);
+        let expr = boxed!(expr);
         Expr::UnOp { expr, op }
     }
     pub fn binary(left: Expr<'t>, right: Expr<'t>, op: Binary) -> Expr<'t> {
-        let (left, right) = (Box::new(left), Box::new(right));
+        let (left, right) = (boxed!(left), boxed!(right));
         Expr::BinOp { left, right, op }
     }
 }

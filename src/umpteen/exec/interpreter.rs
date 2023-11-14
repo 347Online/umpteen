@@ -94,10 +94,6 @@ impl Interpreter {
             Stmt::Expr(expr) => {
                 self.eval(expr)?;
             }
-            // Stmt::Print(expr) => {
-            //     let value = self.eval(expr)?;
-            //     println!("{}", value);
-            // }
             Stmt::Block(statements) => {
                 let mem_key = Some(self.env.new_enclosed());
                 self.exec_block(statements, mem_key)?;
@@ -278,6 +274,8 @@ impl Interpreter {
                 args: call_args,
             } => {
                 let callee = self.eval(callee)?;
+
+                dbg!(&callee);
 
                 let mut args = vec![];
                 for arg in call_args {

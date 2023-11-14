@@ -49,7 +49,6 @@ pub enum TokenType {
     Continue,
     Fnc,
     Return,
-    // Print,
 
     True,
     False,

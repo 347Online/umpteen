@@ -1,4 +1,5 @@
 use crate::{
+    boxed,
     error::ParseError,
     repr::{
         ast::{
@@ -47,9 +48,9 @@ macro_rules! binop {
         let mut expr = $self.$next()?;
         while catch!($self$(,$tk)+) {
             let op = op!($self, Binary$(,$tk => $op)+);
-            let right = Box::new($self.$next()?);
+            let right = boxed!($self.$next()?);
             expr = Expr::BinOp {
-                left: Box::new(expr),
+                left: boxed!(expr),
                 right,
                 op
             }
@@ -119,10 +120,6 @@ impl<'p> Parser<'p> {
         if catch!(self, If) {
             return self.conditional();
         }
-
-        // if catch!(self, Print) {
-        //     return self.print();
-        // }
 
         if catch!(self, Loop) {
             return self.repetition();
@@ -244,12 +241,6 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Exit)
     }
 
-    // fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
-    //     let value = self.expression()?;
-    //     self.consume(TokenType::Semicolon)?;
-    //     Ok(Stmt::Print(value))
-    // }
-
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
         self.assignment()
     }
@@ -277,8 +268,8 @@ impl<'p> Parser<'p> {
                 value
             } else {
                 Expr::BinOp {
-                    left: Box::new(target),
-                    right: Box::new(value),
+                    left: boxed!(target),
+                    right: boxed!(value),
                     op: op.kind.try_into().unwrap(),
                 }
             };
@@ -286,7 +277,7 @@ impl<'p> Parser<'p> {
             Ok(Expr::Assign {
                 name,
                 index,
-                expr: Box::new(value),
+                expr: boxed!(value),
             })
         } else {
             Err(ParseError::InvalidAssignmentTarget(op.lexeme.to_owned()))
@@ -331,33 +322,12 @@ impl<'p> Parser<'p> {
                 Minus => Negate
             );
             Ok(Expr::UnOp {
-                expr: Box::new(self.unary()?),
+                expr: boxed!(self.unary()?),
                 op,
             })
         } else {
             self.call()
         }
-    }
-
-    fn finish_call(&mut self, callee: Expr<'p>) -> Result<Expr<'p>, ParseError> {
-        let mut args = vec![];
-
-        if !self.check(TokenType::RightParen) {
-            loop {
-                if args.len() >= 255 { // TODO: Constant instead of magic number
-                    eprintln!("Too many arguments, limit is 255");
-                }
-                args.push(self.expression()?);
-                if !catch!(self, Comma) {
-                    args.push(self.expression()?);
-                }
-            }
-        }
-
-        self.consume(TokenType::RightParen)?;
-
-        let callee = Box::new(callee);
-        Ok(Expr::Call { callee, args })
     }
 
     fn call(&mut self) -> Result<Expr<'p>, ParseError> {
@@ -366,6 +336,7 @@ impl<'p> Parser<'p> {
         loop {
             if catch!(self, LeftParen) {
                 expr = self.finish_call(expr)?;
+                dbg!(&expr);
             } else {
                 break;
             }
@@ -374,11 +345,32 @@ impl<'p> Parser<'p> {
         Ok(expr)
     }
 
+    fn finish_call(&mut self, callee: Expr<'p>) -> Result<Expr<'p>, ParseError> {
+        let mut args = vec![];
+
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if args.len() > 255 {
+                    // TODO: Constant instead of magic number
+                    eprintln!("Too many arguments, limit is 255");
+                }
+                args.push(self.expression()?);
+                if !catch!(self, Comma) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen)?;
+
+        let callee = boxed!(callee);
+        Ok(Expr::Call { callee, args })
+    }
+
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
         if catch!(self, Identifier) {
             let name = self.previous().lexeme;
             if catch!(self, LeftBracket) {
-                let index = Some(Box::new(self.expression()?));
+                let index = Some(boxed!(self.expression()?));
                 self.consume(TokenType::RightBracket)?;
                 return Ok(Expr::Binding { name, index });
             }
@@ -392,14 +384,14 @@ impl<'p> Parser<'p> {
                 False => Boolean(false),
                 Empty => Empty,
                 Number => Number(tk.lexeme.parse()?),
-                String => String(Box::new(tk.lexeme.to_owned()))
+                String => String(boxed!(tk.lexeme.to_owned()))
             );
 
             return Ok(expr);
         }
 
         if catch!(self, LeftParen) {
-            let expr = Box::new(self.expression()?);
+            let expr = boxed!(self.expression()?);
             self.consume(TokenType::RightParen)?;
             return Ok(Expr::Grouping { expr });
         }
@@ -418,7 +410,7 @@ impl<'p> Parser<'p> {
             return Ok(Expr::List(list));
         }
 
-        Err(ParseError::UnexpectedToken(self.previous().kind))
+        Err(ParseError::UnexpectedToken(self.peek().kind))
     }
 
     fn advance(&mut self) -> Token<'p> {
@@ -430,7 +422,7 @@ impl<'p> Parser<'p> {
 
     fn consume(&mut self, kind: TokenType) -> Result<Token<'p>, ParseError> {
         if self.check(kind) {
-            Ok(self.advance())
+            Ok(dbg!(self.advance()))
         } else {
             Err(ParseError::ExpectedToken(kind))
         }
