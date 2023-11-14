@@ -1,8 +1,10 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
-    process::{ExitCode, Termination}, cell::RefCell, rc::Rc,
+    process::{ExitCode, Termination},
+    rc::Rc,
 };
 
 use crate::error::ParseError;
@@ -26,7 +28,7 @@ impl Object {
 
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[")?;
+        let mut buffer = String::from('[');
         match self {
             Object::List(values) => {
                 let mut first = true;
@@ -35,14 +37,16 @@ impl Display for Object {
                     if first {
                         first = false;
                     } else {
-                        write!(f, ", ")?;
+                        buffer.push_str(", ");
                     }
-                    write!(f, "{}", value)?;
+                    buffer.push_str(&format!("{}", value));
                 }
             }
             Object::SomethingElse => todo!(),
         }
-        write!(f, "]")
+        buffer.push(']');
+
+        write!(f, "{}", buffer)
     }
 }
 
