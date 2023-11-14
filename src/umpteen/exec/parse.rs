@@ -422,7 +422,7 @@ impl<'p> Parser<'p> {
 
     fn consume(&mut self, kind: TokenType) -> Result<Token<'p>, ParseError> {
         if self.check(kind) {
-            Ok(dbg!(self.advance()))
+            Ok(self.advance())
         } else {
             Err(ParseError::ExpectedToken(kind))
         }
