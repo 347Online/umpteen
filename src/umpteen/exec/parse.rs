@@ -156,11 +156,7 @@ impl<'p> Parser<'p> {
         self.consume(TokenType::LeftBrace)?;
         let then_branch = self.block()?;
         let else_branch = if catch!(self, Else) {
-            // if catch!(self, If) {
-                // Some(Box::new(Stmt::Block(vec![self.conditional()?])))
-            // } else {
-                Some(self.block()?)
-            // }
+            Some(self.block()?)
         } else {
             None
         };

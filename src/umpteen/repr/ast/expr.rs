@@ -33,12 +33,10 @@ pub enum Expr<'t> {
 
 impl<'t> Expr<'t> {
     pub fn unary(expr: Expr<'t>, op: Unary) -> Expr<'t> {
-        // Helper method for initializing unary op expressions
         let expr = Box::new(expr);
         Expr::UnOp { expr, op }
     }
     pub fn binary(left: Expr<'t>, right: Expr<'t>, op: Binary) -> Expr<'t> {
-        // Helper method for initializing binary op expressions
         let (left, right) = (Box::new(left), Box::new(right));
         Expr::BinOp { left, right, op }
     }

@@ -154,8 +154,6 @@ impl Env {
 
 
         Err(MemoryError::NoSuchVariable(name.to_owned()))
-        // todo!()
-        // // self.mem_mut().assign(name, index, value)
     }
 
     pub fn set_current(&mut self, id: Option<Uuid>) -> Option<Uuid> {

@@ -12,7 +12,7 @@ use super::ast::ops::{Binary, Unary};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     List(Vec<Value>),
-    SomethingElse
+    SomethingElse,
 }
 
 impl Object {
@@ -26,18 +26,20 @@ impl Object {
 
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,"[")?;
+        write!(f, "[")?;
         match self {
             Object::List(values) => {
                 let mut first = true;
 
                 for value in values {
-                    if first {first = false;} else {
+                    if first {
+                        first = false;
+                    } else {
                         write!(f, ", ")?;
                     }
                     write!(f, "{}", value)?;
                 }
-            },
+            }
             Object::SomethingElse => todo!(),
         }
         write!(f, "]")
@@ -47,11 +49,11 @@ impl Display for Object {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {
     #[default]
-    Empty, // 000
-    Boolean(bool),       // 001
-    Number(f64),         // 002
-    String(Box<String>), // 020
-    Object(Box<Object>), // 030
+    Empty,
+    Boolean(bool),
+    Number(f64),
+    String(Box<String>),
+    Object(Box<Object>),
 }
 
 impl Value {
