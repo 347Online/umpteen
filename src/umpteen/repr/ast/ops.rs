@@ -54,7 +54,7 @@ impl TryFrom<TokenType> for Binary {
             TokenType::LessEqual => Self::LessOrEqual,
             TokenType::Plus => Self::Add,
             TokenType::Minus => Self::Subtract,
-            TokenType::Asterisk => Self::Multiply,
+            TokenType::Star => Self::Multiply,
             TokenType::Slash => Self::Divide,
             TokenType::Percent => Self::Modulo,
 

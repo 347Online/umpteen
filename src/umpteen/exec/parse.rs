@@ -108,6 +108,9 @@ impl<'p> Parser<'p> {
         if catch!(self, Let) {
             return self.declare_variable(false);
         }
+        if catch!(self, Fnc) {
+            return self.declare_fnc();
+        }
 
         self.statement()
     }
@@ -133,6 +136,17 @@ impl<'p> Parser<'p> {
         if catch!(self, Continue) {
             self.consume(TokenType::Semicolon)?;
             return Ok(Stmt::Continue);
+        }
+        
+        if catch!(self, Return) {
+            if catch!(self, Semicolon) {
+                return Ok(Stmt::Return(Expr::Literal(Value::Empty)));
+            } else {
+                let expr = self.expression()?;
+                self.consume(TokenType::Semicolon)?;
+                dbg!(&expr);
+                return Ok(Stmt::Return(expr));
+            }
         }
 
         if catch!(self, LeftBrace) {
@@ -193,6 +207,44 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Declare { name, init })
     }
 
+    fn declare_fnc(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme;
+        self.consume(TokenType::LeftParen)?;
+
+        let mut first = true;
+
+        let mut params = vec![];
+
+        while !catch!(self, RightParen) {
+            if first {
+                first = false;
+            } else {
+                self.consume(TokenType::Comma)?;
+            }
+
+            let param = self.consume(TokenType::Identifier)?.lexeme;
+            self.consume(TokenType::Colon)?;
+            let param_type = self.consume(TokenType::Identifier)?.lexeme;
+            params.push((param, param_type));
+        }
+
+        println!("Parsed Params: {:?}", params);
+
+        self.consume(TokenType::ThinArrow)?;
+        let return_type = self.consume(TokenType::Identifier)?.lexeme;
+
+        println!("Return type: {}", return_type);
+
+        self.consume(TokenType::LeftBrace)?;
+        let body = self.block()?;
+
+        println!("Fnc body: {:#?}", body);
+
+        // TODO: Instantiate a function with args and body
+
+        Ok(Stmt::Exit)
+    }
+
     fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon)?;
@@ -247,7 +299,7 @@ impl<'p> Parser<'p> {
     fn factor(&mut self) -> Result<Expr<'p>, ParseError> {
         binop!(self, unary,
             Slash => Divide,
-            Asterisk => Multiply,
+            Star => Multiply,
             Percent => Modulo
         )
     }

@@ -47,10 +47,20 @@ impl<'s> Lexer<'s> {
         let c = self.chars.peek()?;
         Some(*c)
     }
+
     fn peek_ahead(&mut self, n: usize) -> Option<char> {
         let x = self.chars.clone().nth(n)?;
 
         Some(x)
+    }
+
+    fn catch(&mut self, c: char) -> bool {
+        if self.peek() == Some(c) {
+            self.advance();
+            true
+        } else {
+            false
+        }
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -108,6 +118,7 @@ impl<'s> Lexer<'s> {
             '[' => token!(LeftBracket),
             ']' => token!(RightBracket),
             ';' => token!(Semicolon),
+            ':' => token!(Colon),
             ',' => token!(Comma),
             '#' => {
                 if matches!((self.peek(), self.peek_ahead(1)), (Some('#'), Some('#'))) {
@@ -141,50 +152,54 @@ impl<'s> Lexer<'s> {
             }
 
             '+' => token!(Plus),
-            '-' => token!(Minus),
-            '*' => token!(Asterisk),
+            '-' => {
+                if self.catch('>') {
+                    token!(ThinArrow)
+                } else if self.catch('=') {
+                    token!(MinusEqual)
+                } else {
+                    token!(Minus)
+                }
+            }
+            '*' => token!(Star),
             '/' => token!(Slash),
             '%' => token!(Percent),
 
             '>' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(GreaterEqual)
                 } else {
                     token!(Greater)
                 }
             }
             '<' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(LessEqual)
                 } else {
                     token!(Less)
                 }
             }
             '=' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(EqualEqual)
+                } else if self.catch('>') {
+                    token!(FatArrow)
                 } else {
                     token!(Equal)
                 }
             }
             '!' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(BangEqual)
                 } else {
                     token!(Bang)
                 }
             }
 
-            '&' if self.peek() == Some('&') => {
-                self.advance();
+            '&' if self.catch('&') => {
                 token!(And)
             }
-            '|' if self.peek() == Some('|') => {
-                self.advance();
+            '|' if self.catch('|') => {
                 token!(Or)
             }
 
@@ -245,6 +260,8 @@ impl<'s> Lexer<'s> {
                     "loop" => token!(Loop, lx),
                     "break" => token!(Break, lx),
                     "continue" => token!(Continue, lx),
+                    "fnc" => token!(Fnc, lx),
+                    "return" => token!(Return, lx),
                     "print" => token!(Print, lx), // TODO: Re-implement as a function
 
                     _ => token!(Identifier, lx),

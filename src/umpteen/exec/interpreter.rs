@@ -52,21 +52,17 @@ impl Interpreter {
     }
 
     fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
-        let mut return_value = Value::Empty;
-
         for stmt in ast {
-            match self.exec(&stmt)? {
-                Some(val) => {
-                    return_value = val;
-                }
-                None => break,
-            }
+            match self.exec(&stmt) {
+                Err(UmpteenError::RuntimeError(RuntimeError::Return(value))) => return Ok(value),
+                x => x,
+            }?;
         }
 
-        Ok(return_value)
+        Ok(Value::Empty)
     }
 
-    fn exec(&mut self, stmt: &Stmt) -> Result<Option<Value>, UmpteenError> {
+    fn exec(&mut self, stmt: &Stmt) -> Result<Value, UmpteenError> {
         match stmt {
             Stmt::Declare { name, init } => {
                 self.env.declare(name)?;
@@ -83,11 +79,6 @@ impl Interpreter {
                 let value = self.eval(expr)?;
                 println!("{}", value);
             }
-            Stmt::Return(expr) => {
-                return Ok(Some(self.eval(expr)?));
-            }
-            Stmt::Empty => (),
-            Stmt::Exit => return Ok(None),
             Stmt::Block(statements) => {
                 let mem_key = Some(self.env.new_enclosed());
                 self.exec_block(statements, mem_key)?;
@@ -105,20 +96,24 @@ impl Interpreter {
                     self.exec_block(else_branch, Some(else_scope))?;
                 }
             }
-            Stmt::Break => Err(RuntimeError::Break)?,
-            Stmt::Continue => Err(RuntimeError::Continue)?,
             Stmt::Loop(body) => {
                 let loop_scope = self.env.new_enclosed();
                 loop {
-                match self.exec_block(body, Some(loop_scope)) {
-                    Err(UmpteenError::RuntimeError(RuntimeError::Break)) => break,
-                    Err(UmpteenError::RuntimeError(RuntimeError::Continue)) => continue,
-                    x => x,
-                }?;
-            }},
+                    match self.exec_block(body, Some(loop_scope)) {
+                        Err(UmpteenError::RuntimeError(RuntimeError::Break)) => break,
+                        Err(UmpteenError::RuntimeError(RuntimeError::Continue)) => continue,
+                        x => x,
+                    }?;
+                }
+            }
+
+            Stmt::Break => Err(RuntimeError::Break)?,
+            Stmt::Continue => Err(RuntimeError::Continue)?,
+            Stmt::Return(expr) => Err(RuntimeError::Return(self.eval(expr)?))?,
+            Stmt::Exit => Err(RuntimeError::Exit)?,
         }
 
-        Ok(Some(Value::Empty))
+        Ok(Value::Empty)
     }
 
     fn exec_block(&mut self, statements: &Ast, env_id: Option<Uuid>) -> Result<(), UmpteenError> {

@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display};
 
+use crate::repr::value::Value;
+
 use super::MemoryError;
 
 #[derive(Debug)]
@@ -8,8 +10,11 @@ pub enum RuntimeError {
     MemoryError(MemoryError),
     InvalidInstruction(u8),
     ChunkReadError,
+
     Break,
     Continue,
+    Return(Value),
+    Exit,
 }
 
 impl Display for RuntimeError {
@@ -24,6 +29,8 @@ impl Display for RuntimeError {
             }
             RuntimeError::Break => "break not allowed outside loop".to_string(),
             RuntimeError::Continue => "continue not allowed outside loop".to_string(),
+            RuntimeError::Return(_) => "return not allowed outside function".to_string(),
+            RuntimeError::Exit => "exit".to_string(),
         };
 
         write!(f, "{}", desc)
