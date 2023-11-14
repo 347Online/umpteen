@@ -2,7 +2,7 @@ use super::expr::Expr;
 
 pub type SubStmt<'t> = Box<Stmt<'t>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt<'t> {
     Expr(Expr<'t>),
     Declare {
