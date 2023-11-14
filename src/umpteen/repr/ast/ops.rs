@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{error::ParseError, repr::token::TokenType};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Unary {
     Not,
     Negate,
@@ -18,7 +18,7 @@ impl Display for Unary {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Binary {
     Add,
     Subtract,
