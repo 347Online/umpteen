@@ -144,7 +144,6 @@ impl<'p> Parser<'p> {
             } else {
                 let expr = self.expression()?;
                 self.consume(TokenType::Semicolon)?;
-                dbg!(&expr);
                 return Ok(Stmt::Return(expr));
             }
         }
