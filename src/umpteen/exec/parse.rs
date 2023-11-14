@@ -336,7 +336,6 @@ impl<'p> Parser<'p> {
         loop {
             if catch!(self, LeftParen) {
                 expr = self.finish_call(expr)?;
-                dbg!(&expr);
             } else {
                 break;
             }
