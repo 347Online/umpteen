@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::repr::value::Value;
+use crate::{exec::interpreter::Divergence, repr::value::Value};
 
 use super::MemoryError;
 
@@ -10,11 +10,7 @@ pub enum RuntimeError {
     MemoryError(MemoryError),
     InvalidInstruction(u8),
     ChunkReadError,
-
-    Break,
-    Continue,
-    Return(Value),
-    Exit,
+    IllegalDivergence(String),
 }
 
 impl Display for RuntimeError {
@@ -27,10 +23,7 @@ impl Display for RuntimeError {
             RuntimeError::InvalidInstruction(byte) => {
                 format!("invalid Instruction `{:#04x}`", byte)
             }
-            RuntimeError::Break => "break not allowed outside loop".to_string(),
-            RuntimeError::Continue => "continue not allowed outside loop".to_string(),
-            RuntimeError::Return(_) => "return not allowed outside function".to_string(),
-            RuntimeError::Exit => "explicit exit".to_string(),
+            RuntimeError::IllegalDivergence(x) => format!("illegal divergence, {}", x),
         };
 
         write!(f, "{}", desc)
@@ -40,6 +33,12 @@ impl Display for RuntimeError {
 impl From<MemoryError> for RuntimeError {
     fn from(value: MemoryError) -> Self {
         RuntimeError::MemoryError(value)
+    }
+}
+
+impl From<Divergence<'_>> for RuntimeError {
+    fn from(value: Divergence) -> Self {
+        RuntimeError::IllegalDivergence(value.to_string())
     }
 }
 
