@@ -33,12 +33,9 @@ impl Display for ParseError {
             }
             ParseError::ExpectedExpression => "expected expression".to_string(),
             ParseError::ExpectedStatement => "expected statement".to_string(),
-            ParseError::ExpectedToken(exp) => {
-                format!("expected {}", exp)
-            }
-            ParseError::UnexpectedToken(kind) => {
-                format!("unexpected token {}", kind)
-            }
+            ParseError::ExpectedToken(exp) => format!("expected {}", exp),
+            ParseError::UnexpectedToken(kind) => format!("unexpected token {}", kind),
+
             ParseError::InvalidNumericLiteral(e) => e.to_string(),
         };
         write!(f, "{}", desc)

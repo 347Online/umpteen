@@ -54,6 +54,7 @@ impl<'s> Lexer<'s> {
     }
 
     fn advance(&mut self) -> Option<char> {
+        self.line.advance();
         self.offset += 1;
         self.chars.next()
     }
@@ -65,7 +66,6 @@ impl<'s> Lexer<'s> {
         }
 
         let start = self.offset;
-        self.line.column(start + 1);
 
         let c = self.advance().unwrap();
 
@@ -101,17 +101,61 @@ impl<'s> Lexer<'s> {
             }
             c if c.is_whitespace() => return None,
 
-            ';' => token!(Semicolon),
             '(' => token!(LeftParen),
             ')' => token!(RightParen),
+            '{' => token!(LeftBrace),
+            '}' => token!(RightBrace),
+            '[' => token!(LeftBracket),
+            ']' => token!(RightBracket),
+            ';' => token!(Semicolon),
+            ',' => token!(Comma),
+
             '+' => token!(Plus),
             '-' => token!(Minus),
             '*' => token!(Asterisk),
-            '/' => token!(Slash), // TODO: Comments
+            '/' => token!(Slash),
             '%' => token!(Percent),
 
-            '!' => token!(Bang),
-            '=' => token!(Equal),
+            '>' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(GreaterEqual)
+                } else {
+                    token!(Greater)
+                }
+            }
+            '<' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(LessEqual)
+                } else {
+                    token!(Less)
+                }
+            }
+            '=' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(EqualEqual)
+                } else {
+                    token!(Equal)
+                }
+            }
+            '!' => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    token!(BangEqual)
+                } else {
+                    token!(Bang)
+                }
+            }
+            '&' if self.peek() == Some('&') => {
+                self.advance();
+                token!(And)
+            }
+            '|' if self.peek() == Some('|') => {
+                self.advance();
+                token!(Or)
+            }
 
             '"' => {
                 let mut end: usize = self.offset;
@@ -163,7 +207,13 @@ impl<'s> Lexer<'s> {
                     "true" => token!(True, lx),
                     "false" => token!(False, lx),
 
+                    "var" => token!(Var, lx),
                     "let" => token!(Let, lx),
+                    "if" => token!(If, lx),
+                    "else" => token!(Else, lx),
+                    "loop" => token!(Loop, lx),
+                    "break" => token!(Break, lx),
+                    "continue" => token!(Continue, lx),
                     "print" => token!(Print, lx), // TODO: Re-implement as a function
 
                     _ => token!(Identifier, lx),

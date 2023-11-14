@@ -4,9 +4,17 @@ use super::ops::{Binary, Unary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr<'t> {
     Literal(Value),
+    List(Vec<Expr<'t>>),
+    Binding {
+        name: &'t str,
+        index: Option<SubExpr<'t>>,
+    },
+    Grouping {
+        expr: SubExpr<'t>,
+    },
     UnOp {
         expr: SubExpr<'t>,
         op: Unary,
@@ -16,14 +24,9 @@ pub enum Expr<'t> {
         right: SubExpr<'t>,
         op: Binary,
     },
-    Binding {
-        name: &'t str,
-    },
     Assign {
-        target: SubExpr<'t>,
-        expr: SubExpr<'t>,
-    },
-    Grouping {
+        name: &'t str,
+        index: Option<SubExpr<'t>>,
         expr: SubExpr<'t>,
     },
 }

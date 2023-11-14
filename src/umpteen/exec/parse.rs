@@ -1,5 +1,5 @@
 use crate::{
-    error::{Line, ParseError},
+    error::ParseError,
     repr::{
         ast::{
             expr::Expr,
@@ -20,14 +20,14 @@ pub enum AstNode<'a> {
 pub type Ast<'a> = Vec<Stmt<'a>>;
 
 macro_rules! catch {
-    ($self:ident, $first:tt $(,$rest:tt)*) => {
+    ($self:ident, $first:tt $(,$rest:tt)*) => {{
         if $self.check(TokenType::$first)$( || $self.check(TokenType::$rest))* {
             $self.advance();
             true
         } else {
             false
         }
-    };
+    }};
 }
 
 macro_rules! op {
@@ -83,20 +83,17 @@ impl<'p> Parser<'p> {
     pub fn parse(&mut self) -> Ast<'p> {
         let mut ast = vec![];
 
-        loop {
-            let stmt = match self.statement() {
-                Ok(stmt) => stmt,
+        while !self.at_end() {
+            match self.declaration() {
+                Ok(stmt) => ast.push(stmt),
                 Err(e) => {
                     report_at(e, self.peek());
                     break;
                 }
-            };
-            ast.push(stmt);
-            if self.at_end() {
-                ast.push(Stmt::Exit);
-                break;
             }
         }
+
+        ast.push(Stmt::Exit);
 
         #[cfg(debug_assertions)]
         dbg!(&ast);
@@ -104,14 +101,100 @@ impl<'p> Parser<'p> {
         ast
     }
 
+    fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, Var) {
+            return self.declare_variable(true);
+        }
+        if catch!(self, Let) {
+            return self.declare_variable(false);
+        }
+
+        self.statement()
+    }
+
     fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, If) {
+            return self.conditional();
+        }
+
         if catch!(self, Print) {
             return self.print();
+        }
+
+        if catch!(self, Loop) {
+            return self.repetition();
+        }
+
+        if catch!(self, Break) {
+            self.consume(TokenType::Semicolon)?;
+            return Ok(Stmt::Break);
+        }
+
+        if catch!(self, Continue) {
+            self.consume(TokenType::Semicolon)?;
+            return Ok(Stmt::Continue);
+        }
+
+        if catch!(self, LeftBrace) {
+            return Ok(Stmt::Block(self.block()?));
         }
 
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon)?;
         Ok(Stmt::Expr(expr))
+    }
+
+    fn repetition(&mut self) -> Result<Stmt<'p>, ParseError> {
+        self.consume(TokenType::LeftBrace)?;
+        let block = self.block()?;
+        Ok(Stmt::Loop(block))
+    }
+
+    fn conditional(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let expr = self.expression()?;
+
+        self.consume(TokenType::LeftBrace)?;
+        let then_branch = self.block()?;
+        let else_branch = if catch!(self, Else) {
+            // if catch!(self, If) {
+                // Some(Box::new(Stmt::Block(vec![self.conditional()?])))
+            // } else {
+                Some(self.block()?)
+            // }
+        } else {
+            None
+        };
+
+        Ok(Stmt::Condition {
+            test: expr,
+            then_branch,
+            else_branch,
+        })
+    }
+
+    fn block(&mut self) -> Result<Ast<'p>, ParseError> {
+        let mut statements = vec![];
+
+        while !self.at_end() && !catch!(self, RightBrace) {
+            statements.push(self.declaration()?);
+        }
+
+        Ok(statements)
+    }
+
+    fn declare_variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme;
+
+        let init = if catch!(self, Equal) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::Semicolon)?;
+
+        // TODO: Do something different for an immutable binding.
+        // For now, all bindings are mutable
+        Ok(Stmt::Declare { name, init })
     }
 
     fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
@@ -121,7 +204,25 @@ impl<'p> Parser<'p> {
     }
 
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
+        let expr = self.equality()?;
+
+        if catch!(self, Equal) {
+            let equals = self.previous();
+            let value = self.assignment()?;
+
+            if let Expr::Binding { name, index } = expr {
+                let expr = Box::new(value);
+                return Ok(Expr::Assign { name, index, expr });
+            }
+
+            report_at("Invalid Assignment Target", equals);
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr<'p>, ParseError> {
@@ -172,8 +273,15 @@ impl<'p> Parser<'p> {
 
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
         if catch!(self, Identifier) {
-            todo!()
+            let name = self.previous().lexeme;
+            if catch!(self, LeftBracket) {
+                let index = Some(Box::new(self.expression()?));
+                self.consume(TokenType::RightBracket)?;
+                return Ok(Expr::Binding { name, index });
+            }
+            return Ok(Expr::Binding { name, index: None });
         }
+
         if catch!(self, Empty, True, False, Number, String) {
             let tk = self.previous();
             let expr = literal!(self,
@@ -190,10 +298,24 @@ impl<'p> Parser<'p> {
         if catch!(self, LeftParen) {
             let expr = Box::new(self.expression()?);
             self.consume(TokenType::RightParen)?;
-            Ok(Expr::Grouping { expr })
-        } else {
-            unreachable!()
+            return Ok(Expr::Grouping { expr });
         }
+
+        if catch!(self, LeftBracket) {
+            let mut list = vec![];
+
+            while !self.check(TokenType::RightBracket) {
+                let expr = self.expression()?;
+                list.push(expr);
+                if !catch!(self, Comma) {
+                    break;
+                }
+            }
+            self.consume(TokenType::RightBracket)?;
+            return Ok(Expr::List(list));
+        }
+
+        Err(ParseError::UnexpectedToken(self.previous().kind))
     }
 
     fn advance(&mut self) -> Token<'p> {
@@ -212,7 +334,7 @@ impl<'p> Parser<'p> {
     }
 
     fn previous(&self) -> Token<'p> {
-        self.tokens[self.index - 1]
+        self.tokens[self.index.saturating_sub(1)]
     }
 
     fn check(&self, kind: TokenType) -> bool {
