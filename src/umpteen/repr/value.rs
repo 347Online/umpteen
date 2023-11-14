@@ -150,6 +150,7 @@ impl Add for Value {
         let lhs = self;
         let val = match (lhs.clone(), rhs.clone()) {
             (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
+            (Value::String(a), Value::String(b)) => Value::String(Box::new(*a + &b)),
 
             (a, b) => Err(ParseError::IllegalBinaryOperation(a, b, Binary::Add))?,
         };
