@@ -1,21 +1,38 @@
-use std::fmt::Display;
+use std::{
+    cell::RefCell,
+    fmt::{Debug, Display},
+    rc::Rc,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+use crate::exec::interpreter::Interpreter;
 
 use super::value::Value;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     List(Vec<Value>),
-    SomethingElse
-    // Fnc(Fnc),
+    Fnc(Fnc),
 }
 
 impl Object {
     pub fn is_empty(&self) -> bool {
         match self {
             Object::List(values) => values.is_empty(),
-            Object::SomethingElse => todo!(),
-            // Object::Fnc(_) => false,
+            Object::Fnc(_) => false,
         }
+    }
+
+    pub fn list(values: Vec<Value>) -> Rc<RefCell<Self>> {
+        Self::create(Object::List(values))
+    }
+
+    pub fn fnc(f: Fnc) -> Rc<RefCell<Self>> {
+        Self::create(Object::Fnc(f))
+    }
+
+    fn create(obj: Object) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(obj))
     }
 }
 
@@ -37,7 +54,86 @@ impl Display for Object {
                 buffer.push(']');
                 write!(f, "{}", buffer)
             }
-            Object::SomethingElse => todo!(), // Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
+            Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
         }
+    }
+}
+
+pub trait Call {
+    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value;
+    fn arity(&self) -> usize;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NativeFnc {
+    Time,
+    Print,
+}
+
+impl From<Fnc> for Value {
+    fn from(value: Fnc) -> Self {
+        Value::Object(Object::fnc(value))
+    }
+}
+
+impl From<Vec<Value>> for Value {
+    fn from(value: Vec<Value>) -> Self {
+        Value::Object(Object::list(value))
+    }
+}
+
+impl Call for NativeFnc {
+    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
+        match self {
+            NativeFnc::Time => {
+                return (SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Panicked while trying to read system time")
+                    .as_millis() as f64)
+                    .into()
+            }
+            NativeFnc::Print => println!("{}", args[0]),
+        }
+
+        Value::Empty
+    }
+
+    fn arity(&self) -> usize {
+        match self {
+            NativeFnc::Time => 0,
+            NativeFnc::Print => 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct UserFnc {}
+
+impl Call for UserFnc {
+    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
+        todo!()
+    }
+
+    fn arity(&self) -> usize {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Fnc {
+    Native(NativeFnc),
+    User(UserFnc),
+}
+
+impl Call for Fnc {
+    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
+        match self {
+            Fnc::Native(f) => f.call(interpreter, args),
+            Fnc::User(f) => f.call(interpreter, args),
+        }
+    }
+
+    fn arity(&self) -> usize {
+        todo!()
     }
 }

@@ -102,14 +102,14 @@ impl<'p> Parser<'p> {
     }
 
     fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, Fnc) {
+            return self.declare_fnc();
+        }
         if catch!(self, Var) {
             return self.declare_variable(true);
         }
         if catch!(self, Let) {
             return self.declare_variable(false);
-        }
-        if catch!(self, Fnc) {
-            return self.declare_fnc();
         }
 
         self.statement()
@@ -120,9 +120,9 @@ impl<'p> Parser<'p> {
             return self.conditional();
         }
 
-        if catch!(self, Print) {
-            return self.print();
-        }
+        // if catch!(self, Print) {
+        //     return self.print();
+        // }
 
         if catch!(self, Loop) {
             return self.repetition();
@@ -244,11 +244,11 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Exit)
     }
 
-    fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
-        let value = self.expression()?;
-        self.consume(TokenType::Semicolon)?;
-        Ok(Stmt::Print(value))
-    }
+    // fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
+    //     let value = self.expression()?;
+    //     self.consume(TokenType::Semicolon)?;
+    //     Ok(Stmt::Print(value))
+    // }
 
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
         self.assignment()
@@ -335,8 +335,43 @@ impl<'p> Parser<'p> {
                 op,
             })
         } else {
-            self.primary()
+            self.call()
         }
+    }
+
+    fn finish_call(&mut self, callee: Expr<'p>) -> Result<Expr<'p>, ParseError> {
+        let mut args = vec![];
+
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if args.len() >= 255 { // TODO: Constant instead of magic number
+                    eprintln!("Too many arguments, limit is 255");
+                }
+                args.push(self.expression()?);
+                if !catch!(self, Comma) {
+                    args.push(self.expression()?);
+                }
+            }
+        }
+
+        self.consume(TokenType::RightParen)?;
+
+        let callee = Box::new(callee);
+        Ok(Expr::Call { callee, args })
+    }
+
+    fn call(&mut self) -> Result<Expr<'p>, ParseError> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if catch!(self, LeftParen) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
     }
 
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {

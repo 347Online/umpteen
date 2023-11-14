@@ -286,7 +286,7 @@ impl<'s> Lexer<'s> {
                     "continue" => token!(Continue, lx),
                     "fnc" => token!(Fnc, lx),
                     "return" => token!(Return, lx),
-                    "print" => token!(Print, lx), // TODO: Re-implement as a function
+                    // "print" => token!(Print, lx), // TODO: Re-implement as a function
 
                     _ => token!(Identifier, lx),
                 }

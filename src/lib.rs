@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 pub mod umpteen {
     pub mod error;
     pub mod exec;

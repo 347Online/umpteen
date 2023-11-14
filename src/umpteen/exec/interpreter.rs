@@ -10,8 +10,9 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
+        object::{Object, Call},
         token::Token,
-        value::Value, object::Object,
+        value::Value,
     },
 };
 
@@ -93,10 +94,10 @@ impl Interpreter {
             Stmt::Expr(expr) => {
                 self.eval(expr)?;
             }
-            Stmt::Print(expr) => {
-                let value = self.eval(expr)?;
-                println!("{}", value);
-            }
+            // Stmt::Print(expr) => {
+            //     let value = self.eval(expr)?;
+            //     println!("{}", value);
+            // }
             Stmt::Block(statements) => {
                 let mem_key = Some(self.env.new_enclosed());
                 self.exec_block(statements, mem_key)?;
@@ -272,6 +273,25 @@ impl Interpreter {
                 }
             }
             Expr::Grouping { expr } => self.eval(expr)?,
+            Expr::Call {
+                callee,
+                args: call_args,
+            } => {
+                let callee = self.eval(callee)?;
+
+                let mut args = vec![];
+                for arg in call_args {
+                    args.push(self.eval(arg)?);
+                }
+
+                if let Value::Object(ref obj) = callee
+                    && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
+                {
+                    return Ok(fnc.call(self, args));
+                }
+
+                panic!("so and so is not a function"); // TODO: Error variant 
+            }
         };
 
         Ok(result)

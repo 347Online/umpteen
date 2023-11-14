@@ -1,3 +1,6 @@
+use crate::exec::interpreter::Divergence;
+
+use super::{CompilerError, MemoryError, ParseError, RuntimeError};
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -27,10 +30,6 @@ impl Display for UmpteenError {
         }
     }
 }
-
-use crate::exec::interpreter::Divergence;
-
-use super::{CompilerError, MemoryError, ParseError, RuntimeError};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);

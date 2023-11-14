@@ -29,6 +29,10 @@ pub enum Expr<'t> {
         index: Option<SubExpr<'t>>,
         expr: SubExpr<'t>,
     },
+    Call {
+        callee: SubExpr<'t>,
+        args: Vec<Expr<'t>>
+    }
 }
 
 impl<'t> Expr<'t> {

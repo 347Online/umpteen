@@ -4,7 +4,10 @@ use uuid::Uuid;
 
 use crate::{
     error::MemoryError,
-    repr::{object::Object, value::Value},
+    repr::{
+        object::{Fnc, NativeFnc, Object},
+        value::Value,
+    },
 };
 
 #[derive(Debug, Default)]
@@ -177,8 +180,16 @@ impl Env {
 
 impl Default for Env {
     fn default() -> Self {
-        let globals = Memory::default();
+        let builtins = HashMap::from([(
+            String::from("print"),
+            Some(Value::from(Fnc::Native(NativeFnc::Print))),
+        )]);
         let glob_key = Uuid::new_v4();
+        let globals = Memory {
+            vars: builtins,
+            env_id: glob_key,
+            parent: None,
+        };
         let scopes = HashMap::from([(glob_key, globals)]);
 
         Env {
