@@ -1,0 +1,18 @@
+# Sample Program: fib.um
+
+fnc fib(n: Number) -> Number {
+  if n <= 1 {
+    return n - 1;
+  }
+
+  return n + fib(n - 1);
+}
+
+var i = 100;
+loop {
+  print(fib(i));
+  i -= 1;
+  if i == 0 {
+    break;
+  }
+}

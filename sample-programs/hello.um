@@ -1,0 +1,3 @@
+# Sample Program: hello.um
+
+print("Hello, Umpteen!");
