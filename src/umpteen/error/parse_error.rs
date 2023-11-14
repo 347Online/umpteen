@@ -16,6 +16,7 @@ pub enum ParseError {
     IllegalUnaryOperation(Value, Unary),
     UnexpectedToken(TokenType),
     ExpectedToken(TokenType),
+    InvalidAssignmentTarget(String),
 }
 
 impl Display for ParseError {
@@ -37,6 +38,7 @@ impl Display for ParseError {
             ParseError::UnexpectedToken(kind) => format!("unexpected token {}", kind),
 
             ParseError::InvalidNumericLiteral(e) => e.to_string(),
+            ParseError::InvalidAssignmentTarget(target) => format!("invalid assignment target `{}`", target),
         };
         write!(f, "{}", desc)
     }

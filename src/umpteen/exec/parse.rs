@@ -93,7 +93,7 @@ impl<'p> Parser<'p> {
             }
         }
 
-        ast.push(Stmt::Exit);
+        // ast.push(Stmt::Exit);
 
         #[cfg(debug_assertions)]
         dbg!(&ast);
@@ -256,9 +256,9 @@ impl<'p> Parser<'p> {
     }
 
     fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
-        let expr = self.equality()?;
+        let target = self.equality()?;
 
-        if catch!(
+        if !catch!(
             self,
             Equal,
             PlusEqual,
@@ -267,41 +267,31 @@ impl<'p> Parser<'p> {
             SlashEqual,
             PercentEqual
         ) {
-            let op = self.previous();
-            let value = self.assignment()?;
-
-            if let Expr::Binding { name, index } = expr {
-                let expr = Box::new(value);
-                let assign = match op.kind {
-                    TokenType::Equal => Expr::Assign { name, index, expr },
-
-                    op => {
-                        let op: Binary = op.try_into().unwrap();
-                        let target = Box::new(Expr::Binding {
-                            name,
-                            index: index.clone(),
-                        });
-
-                        Expr::Assign {
-                            name,
-                            index,
-                            expr: Box::new(Expr::BinOp {
-                                left: target,
-                                right: expr,
-                                op,
-                            }),
-                        }
-                    }
-                };
-
-                return Ok(assign);
-            } else {
-                report_at("Invalid Assignment Target", op);
-                return Ok(Expr::Literal(Value::Empty));
-            }
+            return Ok(target);
         }
 
-        Ok(expr)
+        let op = self.previous();
+        let value = self.assignment()?;
+
+        if let Expr::Binding { name, index } = target.clone() {
+            let value = if op.kind == TokenType::Equal {
+                value
+            } else {
+                Expr::BinOp {
+                    left: Box::new(target),
+                    right: Box::new(value),
+                    op: op.kind.try_into().unwrap(),
+                }
+            };
+
+            Ok(Expr::Assign {
+                name,
+                index,
+                expr: Box::new(value),
+            })
+        } else {
+            Err(ParseError::InvalidAssignmentTarget(op.lexeme.to_owned()))
+        }
     }
 
     fn equality(&mut self) -> Result<Expr<'p>, ParseError> {

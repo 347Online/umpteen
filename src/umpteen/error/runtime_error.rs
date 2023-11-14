@@ -30,7 +30,7 @@ impl Display for RuntimeError {
             RuntimeError::Break => "break not allowed outside loop".to_string(),
             RuntimeError::Continue => "continue not allowed outside loop".to_string(),
             RuntimeError::Return(_) => "return not allowed outside function".to_string(),
-            RuntimeError::Exit => "exit".to_string(),
+            RuntimeError::Exit => "explicit exit".to_string(),
         };
 
         write!(f, "{}", desc)
