@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use uuid::Uuid;
 
@@ -21,9 +21,25 @@ use super::{
     parse::{Ast, Parser},
 };
 
-pub enum Eval {
-    Value(Value),
-    Variable(String),
+#[derive(Debug)]
+pub enum Divergence {
+    Break,
+    Continue,
+    Return(Value),
+    Exit,
+}
+
+impl Display for Divergence {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let repr = match self {
+            Divergence::Break => "break not allowed outside loop",
+            Divergence::Continue => "continue not allowed outside loop",
+            Divergence::Return(_) => "return not allowed outside function",
+            Divergence::Exit => "explicit exit",
+        };
+
+        write!(f, "{}", repr)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -56,7 +72,7 @@ impl Interpreter {
     fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
         for stmt in ast {
             match self.exec(&stmt) {
-                Err(UmpteenError::RuntimeError(RuntimeError::Return(value))) => return Ok(value),
+                Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
                 x => x,
             }?;
         }
@@ -102,17 +118,17 @@ impl Interpreter {
                 let loop_scope = self.env.new_enclosed();
                 loop {
                     match self.exec_block(body, Some(loop_scope)) {
-                        Err(UmpteenError::RuntimeError(RuntimeError::Break)) => break,
-                        Err(UmpteenError::RuntimeError(RuntimeError::Continue)) => continue,
+                        Err(UmpteenError::Divergence(Divergence::Break)) => break,
+                        Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
                         x => x,
                     }?;
                 }
             }
 
-            Stmt::Break => Err(RuntimeError::Break)?,
-            Stmt::Continue => Err(RuntimeError::Continue)?,
-            Stmt::Return(expr) => Err(RuntimeError::Return(self.eval(expr)?))?,
-            Stmt::Exit => Err(RuntimeError::Exit)?,
+            Stmt::Break => Err(Divergence::Break)?,
+            Stmt::Continue => Err(Divergence::Continue)?,
+            Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
+            Stmt::Exit => Err(Divergence::Exit)?,
         }
 
         Ok(Value::Empty)
@@ -183,7 +199,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a > b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::GreaterOrEqual => {
@@ -191,7 +211,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a >= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::LessThan => {
@@ -199,7 +223,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a < b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::LessOrEqual => {
@@ -207,7 +235,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a <= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                 }
