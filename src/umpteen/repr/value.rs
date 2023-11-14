@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
-    process::{ExitCode, Termination},
+    process::{ExitCode, Termination}, cell::RefCell, rc::Rc,
 };
 
 use crate::error::ParseError;
@@ -53,7 +53,7 @@ pub enum Value {
     Boolean(bool),
     Number(f64),
     String(Box<String>),
-    Object(Box<Object>),
+    Object(Rc<RefCell<Object>>),
 }
 
 impl Value {
@@ -76,7 +76,7 @@ impl Value {
             Value::Number(x) => *x > 0.0,
             Value::String(string) => !string.is_empty(),
 
-            Value::Object(x) => !x.is_empty(),
+            Value::Object(x) => !x.borrow().is_empty(),
         }
     }
 }
@@ -95,7 +95,7 @@ impl Display for Value {
             Value::Number(x) => write_val!(x),
             Value::String(string) => write_val!(string),
 
-            Value::Object(x) => write_val!(x),
+            Value::Object(x) => write_val!(x.borrow()),
         }
     }
 }

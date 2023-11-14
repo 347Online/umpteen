@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use uuid::Uuid;
 
 use crate::{
@@ -142,7 +144,7 @@ impl Interpreter {
                 for expr in expressions {
                     values.push(self.eval(expr)?);
                 }
-                Value::Object(Box::new(Object::List(values)))
+                Value::Object(Rc::new(RefCell::new(Object::List(values))))
             }
             Expr::UnOp { expr, op } => {
                 let value = self.eval(expr)?;

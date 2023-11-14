@@ -59,7 +59,7 @@ impl Memory {
         if self.vars.contains_key(name) {
             if let Some(idx) = index {
                 if let Some(Some(Value::Object(obj))) = self.vars.get_mut(name) {
-                    if let Object::List(list) = obj.as_mut() {
+                    if let Object::List(ref mut list) = *obj.borrow_mut() {
                         if idx >= list.len() {
                             list.resize(idx + 1, Value::Empty);
                         }
@@ -84,7 +84,7 @@ impl Memory {
 
         if let Some(idx) = index {
             if let Value::Object(obj) = var {
-                if let Object::List(list) = obj.as_ref() {
+                if let Object::List(ref list) = *obj.borrow() {
                     return Ok(list[idx].clone());
                 }
             } else {
