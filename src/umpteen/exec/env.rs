@@ -135,7 +135,6 @@ impl Env {
             }
         }
 
-
         Err(MemoryError::NoSuchVariable(name.to_owned()))
     }
 

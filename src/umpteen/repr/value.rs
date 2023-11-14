@@ -46,8 +46,7 @@ impl Display for Object {
                 }
                 buffer.push(']');
                 write!(f, "{}", buffer)
-            }
-            // Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
+            } // Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
         }
     }
 }

@@ -187,7 +187,7 @@ impl<'s> Lexer<'s> {
                 } else {
                     token!(Percent)
                 }
-            },
+            }
 
             '>' => {
                 if self.catch('=') {
