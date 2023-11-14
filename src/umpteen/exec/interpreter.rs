@@ -159,7 +159,7 @@ impl Interpreter {
                     Binary::Subtract => (lhs - self.eval(right)?)?,
                     Binary::Multiply => (lhs * self.eval(right)?)?,
                     Binary::Divide => (lhs / self.eval(right)?)?,
-                    Binary::Modulo => (lhs / self.eval(right)?)?,
+                    Binary::Modulo => (lhs % self.eval(right)?)?,
                     Binary::And => {
                         if lhs.truthy() {
                             self.eval(right)?

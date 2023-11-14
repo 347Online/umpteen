@@ -151,7 +151,13 @@ impl<'s> Lexer<'s> {
                 }
             }
 
-            '+' => token!(Plus),
+            '+' => {
+                if self.catch('=') {
+                    token!(PlusEqual)
+                } else {
+                    token!(Plus)
+                }
+            }
             '-' => {
                 if self.catch('>') {
                     token!(ThinArrow)
@@ -161,9 +167,27 @@ impl<'s> Lexer<'s> {
                     token!(Minus)
                 }
             }
-            '*' => token!(Star),
-            '/' => token!(Slash),
-            '%' => token!(Percent),
+            '*' => {
+                if self.catch('=') {
+                    token!(StarEqual)
+                } else {
+                    token!(Star)
+                }
+            }
+            '/' => {
+                if self.catch('=') {
+                    token!(SlashEqual)
+                } else {
+                    token!(Slash)
+                }
+            }
+            '%' => {
+                if self.catch('=') {
+                    token!(PercentEqual)
+                } else {
+                    token!(Percent)
+                }
+            },
 
             '>' => {
                 if self.catch('=') {

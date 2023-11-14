@@ -52,11 +52,11 @@ impl TryFrom<TokenType> for Binary {
             TokenType::GreaterEqual => Self::GreaterOrEqual,
             TokenType::Less => Self::LessThan,
             TokenType::LessEqual => Self::LessOrEqual,
-            TokenType::Plus => Self::Add,
-            TokenType::Minus => Self::Subtract,
-            TokenType::Star => Self::Multiply,
-            TokenType::Slash => Self::Divide,
-            TokenType::Percent => Self::Modulo,
+            TokenType::Plus | TokenType::PlusEqual => Self::Add,
+            TokenType::Minus | TokenType::MinusEqual => Self::Subtract,
+            TokenType::Star | TokenType::StarEqual => Self::Multiply,
+            TokenType::Slash | TokenType::SlashEqual => Self::Divide,
+            TokenType::Percent | TokenType::PercentEqual => Self::Modulo,
 
             _ => Err(ParseError::UnexpectedToken(value))?,
         };

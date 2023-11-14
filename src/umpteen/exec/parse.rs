@@ -137,7 +137,7 @@ impl<'p> Parser<'p> {
             self.consume(TokenType::Semicolon)?;
             return Ok(Stmt::Continue);
         }
-        
+
         if catch!(self, Return) {
             if catch!(self, Semicolon) {
                 return Ok(Stmt::Return(Expr::Literal(Value::Empty)));
@@ -258,16 +258,47 @@ impl<'p> Parser<'p> {
     fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
         let expr = self.equality()?;
 
-        if catch!(self, Equal) {
-            let equals = self.previous();
+        if catch!(
+            self,
+            Equal,
+            PlusEqual,
+            MinusEqual,
+            StarEqual,
+            SlashEqual,
+            PercentEqual
+        ) {
+            let op = self.previous();
             let value = self.assignment()?;
 
             if let Expr::Binding { name, index } = expr {
                 let expr = Box::new(value);
-                return Ok(Expr::Assign { name, index, expr });
-            }
+                let assign = match op.kind {
+                    TokenType::Equal => Expr::Assign { name, index, expr },
 
-            report_at("Invalid Assignment Target", equals);
+                    op => {
+                        let op: Binary = op.try_into().unwrap();
+                        let target = Box::new(Expr::Binding {
+                            name,
+                            index: index.clone(),
+                        });
+
+                        Expr::Assign {
+                            name,
+                            index,
+                            expr: Box::new(Expr::BinOp {
+                                left: target,
+                                right: expr,
+                                op,
+                            }),
+                        }
+                    }
+                };
+
+                return Ok(assign);
+            } else {
+                report_at("Invalid Assignment Target", op);
+                return Ok(Expr::Literal(Value::Empty));
+            }
         }
 
         Ok(expr)
