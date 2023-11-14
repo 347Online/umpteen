@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    collections::HashMap,
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     process::{ExitCode, Termination},
@@ -9,47 +8,7 @@ use std::{
 
 use crate::error::ParseError;
 
-use super::ast::{
-    ops::{Binary, Unary},
-    stmt::Stmt,
-};
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Object {
-    List(Vec<Value>),
-    // Fnc(Fnc),
-}
-
-impl Object {
-    pub fn is_empty(&self) -> bool {
-        match self {
-            Object::List(values) => values.is_empty(),
-            // Object::Fnc(_) => false,
-        }
-    }
-}
-
-impl Display for Object {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Object::List(values) => {
-                let mut buffer = String::from('[');
-                let mut first = true;
-
-                for value in values {
-                    if first {
-                        first = false;
-                    } else {
-                        buffer.push_str(", ");
-                    }
-                    buffer.push_str(&format!("{}", value));
-                }
-                buffer.push(']');
-                write!(f, "{}", buffer)
-            } // Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
-        }
-    }
-}
+use super::{ast::ops::{Binary, Unary}, object::Object};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Value {

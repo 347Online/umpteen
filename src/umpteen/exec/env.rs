@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use uuid::Uuid;
 
 use crate::{
     error::MemoryError,
-    repr::value::{Object, Value},
+    repr::{object::Object, value::Value},
 };
 
 #[derive(Debug, Default)]

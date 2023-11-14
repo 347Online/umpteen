@@ -3,7 +3,7 @@ use std::{cell::RefCell, fmt::Display, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
-    error::{MemoryError, ParseError, RuntimeError, UmpteenError},
+    error::{MemoryError, ParseError, UmpteenError},
     repr::{
         ast::{
             expr::Expr,
@@ -11,7 +11,7 @@ use crate::{
             stmt::Stmt,
         },
         token::Token,
-        value::{Object, Value},
+        value::Value, object::Object,
     },
 };
 
