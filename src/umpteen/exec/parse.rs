@@ -226,10 +226,10 @@ impl<'p> Parser<'p> {
 
         println!("Parsed Params: {:?}", params);
 
-        self.consume(TokenType::ThinArrow)?;
-        let return_type = self.consume(TokenType::TypeName)?.lexeme;
-
-        println!("Return type: {}", return_type);
+        if catch!(self, ThinArrow) {
+            let return_type = self.consume(TokenType::TypeName)?.lexeme;
+            println!("Return type: {}", return_type);
+        }
 
         self.consume(TokenType::LeftBrace)?;
         let body = self.block()?;
