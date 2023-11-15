@@ -1,4 +1,4 @@
-use crate::{repr::value::Value, boxed};
+use crate::{boxed, repr::value::Value};
 
 use super::ops::{Binary, Unary};
 
