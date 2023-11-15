@@ -12,6 +12,7 @@ pub struct Lexer<'s> {
     line: Line,
     offset: usize,
     finished: bool,
+    previous: TokenType,
 }
 
 impl<'s> Lexer<'s> {
@@ -24,6 +25,7 @@ impl<'s> Lexer<'s> {
             line: Line::new(1),
             offset: 0,
             finished: false,
+            previous: TokenType::Eof,
         }
     }
 
@@ -102,6 +104,12 @@ impl<'s> Lexer<'s> {
             ($t:tt) => {
                 Token::new(TokenType::$t, lexeme!(), self.line)
             };
+        }
+
+        macro_rules! last {
+            ($first:tt$(,$rest:tt)+) => {{
+                self.previous == TokenType::$first$(|| self.previous == TokenType::$rest)+
+            }};
         }
 
         let tk = match c {
@@ -273,7 +281,7 @@ impl<'s> Lexer<'s> {
                 let lx = lexeme!(end);
 
                 match lx {
-                    "Empty" => token!(Empty, lx),
+                    "empty" => token!(Empty, lx),
                     "true" => token!(True, lx),
                     "false" => token!(False, lx),
 
@@ -287,7 +295,13 @@ impl<'s> Lexer<'s> {
                     "fnc" => token!(Fnc, lx),
                     "return" => token!(Return, lx),
 
-                    _ => token!(Identifier, lx),
+                    _ => {
+                        if last!(ThinArrow, Colon) {
+                            token!(TypeName, lx)
+                        } else {
+                            token!(Identifier, lx)
+                        }
+                    }
                 }
             }
 
@@ -297,6 +311,7 @@ impl<'s> Lexer<'s> {
             }
         };
 
+        self.previous = tk.kind;
         Some(tk)
     }
 }

@@ -38,6 +38,7 @@ pub enum TokenType {
     Or,
 
     ThinArrow,
+    TypeName,
     FatArrow,
 
     Var,

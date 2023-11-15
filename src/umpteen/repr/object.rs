@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    fmt::{Debug, Display},
+    fmt::{Debug, Display, Write as _},
     rc::Rc,
 };
 
@@ -61,7 +61,7 @@ impl Display for Object {
 pub trait Call {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value;
     fn arity(&self) -> usize;
-    fn name(&self) -> &str;
+    fn name(&self) -> String;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,13 +107,8 @@ impl Call for NativeFnc {
         }
     }
 
-    fn name(&self) -> &str {
-        match self {
-            // TODO: There has to be a better way to do this
-            NativeFnc::Time => "time",
-            NativeFnc::Print => "print",
-            NativeFnc::Str => "str",
-        }
+    fn name(&self) -> String {
+        format!("{:?}", self).to_ascii_lowercase()
     }
 }
 
@@ -129,7 +124,7 @@ impl Call for UserFnc {
         todo!()
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> String {
         todo!()
     }
 }
@@ -152,7 +147,7 @@ impl Call for Fnc {
         todo!()
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> String {
         match self {
             Fnc::Native(n) => n.name(),
             Fnc::User(u) => u.name(),
@@ -163,8 +158,8 @@ impl Call for Fnc {
 impl Display for Fnc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Fnc::Native(native) => write!(f, "< native `{}` >", native.name()),
-            Fnc::User(_) => write!(f, "todo!"),
+            Fnc::Native(native) => write!(f, "<native fnc {}()>", native.name()),
+            Fnc::User(_) => write!(f, "<fnc todo()>"),
         }
     }
 }
