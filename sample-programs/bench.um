@@ -1,0 +1,16 @@
+let now = time();
+print("Starting...");
+
+let interations = 1000000;
+let i = 0;
+
+loop {
+  i += 1;
+  print(i);
+
+  if i >= interations {
+    break;
+  }
+}
+
+print("Completed in "+str(time() - now) + " seconds");
