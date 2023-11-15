@@ -27,9 +27,10 @@ impl Display for ParseError {
                     op, lhs, rhs
                 )
             }
-            ParseError::IllegalUnaryOperation(val, op) => {
-                format!("cannot apply unary {} operation to {}", op, val)
+            ParseError::IllegalUnaryOperation(op, x) => {
+                format!("cannot apply unary {} operation to {}", op, x)
             }
+
             ParseError::UnexpectedEof => "unexpected end of file".to_string(),
             ParseError::ExpectedExpression => "expected expression".to_string(),
             ParseError::ExpectedStatement => "expected statement".to_string(),
