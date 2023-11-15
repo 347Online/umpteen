@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::{
-    env::Env,
+    env::{Env, Memory},
     lexer::Lexer,
     parse::{Ast, Parser},
 };
@@ -130,12 +130,19 @@ impl Interpreter {
             Stmt::Continue => Err(Divergence::Continue)?,
             Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
             Stmt::Exit => Err(Divergence::Exit)?,
+            Stmt::Fnc { name, params, body } => {
+                eprintln!("fnc {}({:?}) {{ {:#?} }}", name, params, body)
+            }
         }
 
         Ok(Value::Empty)
     }
 
-    fn exec_block(&mut self, statements: &Ast, env_id: Option<Uuid>) -> Result<(), UmpteenError> {
+    pub fn exec_block(
+        &mut self,
+        statements: &Ast,
+        env_id: Option<Uuid>,
+    ) -> Result<(), UmpteenError> {
         let mut res = Ok(());
         let previous = self.env.set_current(env_id);
 
@@ -299,6 +306,12 @@ impl Interpreter {
 
     pub fn start(&self) -> Instant {
         self.start
+    }
+
+    pub fn new_context(&mut self) -> (Uuid, &mut Memory) {
+        let key = self.env.new_enclosed();
+        let mem = self.env.retrieve_mut(key).unwrap();
+        (key, mem)
     }
 }
 

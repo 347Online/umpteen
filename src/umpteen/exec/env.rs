@@ -158,7 +158,7 @@ impl Env {
         self.scopes.get(&id)
     }
 
-    fn retrieve_mut(&mut self, id: Uuid) -> Option<&mut Memory> {
+    pub fn retrieve_mut(&mut self, id: Uuid) -> Option<&mut Memory> {
         self.scopes.get_mut(&id)
     }
 
