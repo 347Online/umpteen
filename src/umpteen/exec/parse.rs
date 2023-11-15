@@ -94,8 +94,6 @@ impl<'p> Parser<'p> {
             }
         }
 
-        // ast.push(Stmt::Exit);
-
         #[cfg(debug_assertions)]
         dbg!(&ast);
 
@@ -221,7 +219,7 @@ impl<'p> Parser<'p> {
             let param = self.consume(TokenType::Identifier)?.lexeme;
             self.consume(TokenType::Colon)?;
             let param_type = self.consume(TokenType::TypeName)?.lexeme;
-            params.push(format!("{}: {}", param, param_type)); //(param, param_type));
+            params.push(format!("{}: {}", param, param_type));
         }
 
         println!("Parsed Params: {:?}", params);
