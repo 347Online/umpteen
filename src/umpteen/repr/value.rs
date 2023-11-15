@@ -60,7 +60,10 @@ impl Display for Value {
             Value::Number(x) => write_val!(x),
             Value::String(string) => write_val!(string),
 
-            Value::Object(x) => write_val!(x.borrow()),
+            Value::Object(x) => {
+                let repr = x.as_ptr();
+                write!(f, "{}", unsafe { repr.read() })
+            }
         }
     }
 }

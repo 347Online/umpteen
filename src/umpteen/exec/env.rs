@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     error::MemoryError,
     repr::{
-        object::{Fnc, NativeFnc, Object},
+        object::{Call, Fnc, NativeFnc, Object},
         value::Value,
     },
 };
@@ -178,13 +178,18 @@ impl Env {
     }
 }
 
+macro_rules! builtin {
+    ($f:tt) => {
+        (
+            String::from(NativeFnc::$f.name()),
+            Some(Value::from(NativeFnc::$f)),
+        )
+    };
+}
+
 impl Default for Env {
     fn default() -> Self {
-        let builtins = HashMap::from([
-            (String::from("print"), Some(Value::from(NativeFnc::Print))),
-            (String::from("time"), Some(Value::from(NativeFnc::Time))),
-            (String::from("str"), Some(Value::from(NativeFnc::Str))),
-        ]);
+        let builtins = HashMap::from([builtin!(Print), builtin!(Time), builtin!(Str)]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {
             vars: builtins,

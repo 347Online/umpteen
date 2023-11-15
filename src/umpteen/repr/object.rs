@@ -53,7 +53,7 @@ impl Display for Object {
                 buffer.push(']');
                 write!(f, "{}", buffer)
             }
-            Object::Fnc(fnc) => write!(f, "{:#?}", fnc),
+            Object::Fnc(fnc) => write!(f, "{}", fnc),
         }
     }
 }
@@ -61,13 +61,14 @@ impl Display for Object {
 pub trait Call {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value;
     fn arity(&self) -> usize;
+    fn name(&self) -> &str;
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum NativeFnc {
     Time,
     Print,
-    Str
+    Str,
 }
 
 impl From<UserFnc> for Value {
@@ -105,6 +106,15 @@ impl Call for NativeFnc {
             NativeFnc::Str => 1,
         }
     }
+
+    fn name(&self) -> &str {
+        match self {
+            // TODO: There has to be a better way to do this
+            NativeFnc::Time => "time",
+            NativeFnc::Print => "print",
+            NativeFnc::Str => "str",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -116,6 +126,10 @@ impl Call for UserFnc {
     }
 
     fn arity(&self) -> usize {
+        todo!()
+    }
+
+    fn name(&self) -> &str {
         todo!()
     }
 }
@@ -136,5 +150,21 @@ impl Call for Fnc {
 
     fn arity(&self) -> usize {
         todo!()
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            Fnc::Native(n) => n.name(),
+            Fnc::User(u) => u.name(),
+        }
+    }
+}
+
+impl Display for Fnc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Fnc::Native(native) => write!(f, "< native `{}` >", native.name()),
+            Fnc::User(_) => write!(f, "todo!"),
+        }
     }
 }
