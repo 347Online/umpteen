@@ -183,6 +183,7 @@ impl Default for Env {
         let builtins = HashMap::from([
             (String::from("print"), Some(Value::from(NativeFnc::Print))),
             (String::from("time"), Some(Value::from(NativeFnc::Time))),
+            (String::from("str"), Some(Value::from(NativeFnc::Str))),
         ]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {

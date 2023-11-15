@@ -67,6 +67,7 @@ pub trait Call {
 pub enum NativeFnc {
     Time,
     Print,
+    Str
 }
 
 impl From<UserFnc> for Value {
@@ -91,6 +92,7 @@ impl Call for NativeFnc {
         match self {
             NativeFnc::Time => return interpreter.start().elapsed().as_secs_f64().into(),
             NativeFnc::Print => println!("{}", args[0]),
+            NativeFnc::Str => return args[0].to_string().into(),
         }
 
         Value::Empty
@@ -100,6 +102,7 @@ impl Call for NativeFnc {
         match self {
             NativeFnc::Time => 0,
             NativeFnc::Print => 1,
+            NativeFnc::Str => 1,
         }
     }
 }
