@@ -220,14 +220,14 @@ impl<'p> Parser<'p> {
 
             let param = self.consume(TokenType::Identifier)?.lexeme;
             self.consume(TokenType::Colon)?;
-            let param_type = self.consume(TokenType::Identifier)?.lexeme;
-            params.push((param, param_type));
+            let param_type = self.consume(TokenType::TypeName)?.lexeme;
+            params.push(format!("{}: {}", param, param_type)); //(param, param_type));
         }
 
         println!("Parsed Params: {:?}", params);
 
         self.consume(TokenType::ThinArrow)?;
-        let return_type = self.consume(TokenType::Identifier)?.lexeme;
+        let return_type = self.consume(TokenType::TypeName)?.lexeme;
 
         println!("Return type: {}", return_type);
 

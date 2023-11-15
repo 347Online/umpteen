@@ -61,8 +61,11 @@ impl Display for Value {
             Value::String(string) => write_val!(string),
 
             Value::Object(x) => {
-                let repr = x.as_ptr();
-                write!(f, "{}", unsafe { repr.read() })
+                // SAFETY
+                // ??????
+                // I *think* this is okay? 😅
+                let repr = unsafe { x.as_ptr().as_ref().unwrap() };
+                write!(f, "{}", repr)
             }
         }
     }

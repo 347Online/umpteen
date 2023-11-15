@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    fmt::{Debug, Display, Write as _},
+    fmt::{Debug, Display},
     rc::Rc,
 };
 
@@ -144,7 +144,10 @@ impl Call for Fnc {
     }
 
     fn arity(&self) -> usize {
-        todo!()
+        match self {
+            Fnc::Native(n) => n.arity(),
+            Fnc::User(u) => u.arity(),
+        }
     }
 
     fn name(&self) -> String {

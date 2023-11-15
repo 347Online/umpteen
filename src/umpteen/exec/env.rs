@@ -116,7 +116,6 @@ impl Env {
     }
 
     pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
-        // Always uses current scope
         self.mem_mut().declare(name)
     }
 
