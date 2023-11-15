@@ -1,16 +1,16 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc, time::Instant};
 
 use uuid::Uuid;
 
 use crate::{
-    error::{MemoryError, ParseError, UmpteenError},
+    error::{MemoryError, ParseError, RuntimeError, UmpteenError},
     repr::{
         ast::{
             expr::Expr,
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        object::{Object, Call},
+        object::{Call, Object},
         token::Token,
         value::Value,
     },
@@ -43,14 +43,18 @@ impl Display for Divergence {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Interpreter {
     env: Env,
+    start: Instant,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            env: Env::default(),
+            start: Instant::now(),
+        }
     }
 
     pub fn run(&mut self, src: &str) -> Result<Value, UmpteenError> {
@@ -286,10 +290,20 @@ impl Interpreter {
                     return Ok(fnc.call(self, args));
                 }
 
-                panic!("so and so is not a function"); // TODO: Error variant 
+                Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
             }
         };
 
         Ok(result)
+    }
+
+    pub fn start(&self) -> Instant {
+        self.start
+    }
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
     }
 }

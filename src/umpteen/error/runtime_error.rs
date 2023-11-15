@@ -11,6 +11,7 @@ pub enum RuntimeError {
     InvalidInstruction(u8),
     ChunkReadError,
     IllegalDivergence(String),
+    TriedToCallNonFunction(String)
 }
 
 impl Display for RuntimeError {
@@ -24,6 +25,7 @@ impl Display for RuntimeError {
                 format!("invalid Instruction `{:#04x}`", byte)
             }
             RuntimeError::IllegalDivergence(x) => format!("illegal divergence, {}", x),
+            RuntimeError::TriedToCallNonFunction(x) => format!("`{}` is not a function", x),
         };
 
         write!(f, "{}", desc)

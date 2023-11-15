@@ -2,7 +2,6 @@ use std::{
     cell::RefCell,
     fmt::{Debug, Display},
     rc::Rc,
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::exec::interpreter::Interpreter;
@@ -70,9 +69,14 @@ pub enum NativeFnc {
     Print,
 }
 
-impl From<Fnc> for Value {
-    fn from(value: Fnc) -> Self {
-        Value::Object(Object::fnc(value))
+impl From<UserFnc> for Value {
+    fn from(value: UserFnc) -> Self {
+        Value::Object(Object::fnc(Fnc::User(value)))
+    }
+}
+impl From<NativeFnc> for Value {
+    fn from(value: NativeFnc) -> Self {
+        Value::Object(Object::fnc(Fnc::Native(value)))
     }
 }
 
@@ -85,13 +89,7 @@ impl From<Vec<Value>> for Value {
 impl Call for NativeFnc {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
         match self {
-            NativeFnc::Time => {
-                return (SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Panicked while trying to read system time")
-                    .as_millis() as f64)
-                    .into()
-            }
+            NativeFnc::Time => return interpreter.start().elapsed().as_secs_f64().into(),
             NativeFnc::Print => println!("{}", args[0]),
         }
 

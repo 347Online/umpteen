@@ -180,10 +180,10 @@ impl Env {
 
 impl Default for Env {
     fn default() -> Self {
-        let builtins = HashMap::from([(
-            String::from("print"),
-            Some(Value::from(Fnc::Native(NativeFnc::Print))),
-        )]);
+        let builtins = HashMap::from([
+            (String::from("print"), Some(Value::from(NativeFnc::Print))),
+            (String::from("time"), Some(Value::from(NativeFnc::Time))),
+        ]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {
             vars: builtins,
