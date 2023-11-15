@@ -62,8 +62,7 @@ impl Display for Value {
 
             Value::Object(x) => {
                 // SAFETY
-                // ??????
-                // I *think* this is okay? 😅
+                // TODO: Determine enforcement of the invariants or find a safe alternative
                 let repr = unsafe { x.as_ptr().as_ref().unwrap() };
                 write!(f, "{}", repr)
             }

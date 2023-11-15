@@ -1,3 +1,5 @@
+// TODO: Rename this type to InterpreterError, reserving RuntimeError for the future compiled variant's more minimal runtime
+
 use std::{error::Error, fmt::Display};
 
 use crate::exec::interpreter::Divergence;
@@ -11,7 +13,7 @@ pub enum RuntimeError {
     InvalidInstruction(u8),
     ChunkReadError,
     IllegalDivergence(String),
-    TriedToCallNonFunction(String)
+    TriedToCallNonFunction(String),
 }
 
 impl Display for RuntimeError {
@@ -20,12 +22,9 @@ impl Display for RuntimeError {
             RuntimeError::StackMissingValue => "popped when stack was empty".to_string(),
             RuntimeError::ChunkReadError => "chunk read error".to_string(),
             RuntimeError::MemoryError(e) => e.to_string(),
-
-            RuntimeError::InvalidInstruction(byte) => {
-                format!("invalid Instruction `{:#04x}`", byte)
-            }
-            RuntimeError::IllegalDivergence(x) => format!("illegal divergence, {}", x),
+            RuntimeError::IllegalDivergence(x) => format!("illegal divergence: {}", x),
             RuntimeError::TriedToCallNonFunction(x) => format!("`{}` is not a function", x),
+            RuntimeError::InvalidInstruction(x) => format!("invalid Instruction `{:#04x}`", x),
         };
 
         write!(f, "{}", desc)

@@ -21,25 +21,23 @@ pub enum ParseError {
 impl Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let desc = match self {
-            ParseError::UnexpectedEof => "unexpected end of file".to_string(),
             ParseError::IllegalBinaryOperation(lhs, rhs, op) => {
                 format!(
                     "cannot apply binary {} operation to {} and {}",
                     op, lhs, rhs
                 )
             }
-            ParseError::IllegalUnaryOperation(val, op) => {
-                format!("cannot apply unary {} operation to {}", op, val)
+            ParseError::IllegalUnaryOperation(op, x) => {
+                format!("cannot apply unary {} operation to {}", op, x)
             }
+
+            ParseError::UnexpectedEof => "unexpected end of file".to_string(),
             ParseError::ExpectedExpression => "expected expression".to_string(),
             ParseError::ExpectedStatement => "expected statement".to_string(),
             ParseError::ExpectedToken(exp) => format!("expected {}", exp),
             ParseError::UnexpectedToken(kind) => format!("unexpected token: {}", kind),
-
             ParseError::InvalidNumericLiteral(e) => e.to_string(),
-            ParseError::InvalidAssignmentTarget(target) => {
-                format!("invalid assignment target `{}`", target)
-            }
+            ParseError::InvalidAssignmentTarget(x) => format!("invalid assignment target `{}`", x),
         };
         write!(f, "{}", desc)
     }

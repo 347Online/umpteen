@@ -94,8 +94,6 @@ impl<'p> Parser<'p> {
             }
         }
 
-        // ast.push(Stmt::Exit);
-
         #[cfg(debug_assertions)]
         dbg!(&ast);
 
@@ -224,8 +222,10 @@ impl<'p> Parser<'p> {
             params.push((param, param_type));
         }
 
-        self.consume(TokenType::ThinArrow)?;
-        let return_type = self.consume(TokenType::TypeName)?.lexeme;
+        if catch!(self, ThinArrow) {
+            let return_type = self.consume(TokenType::TypeName)?.lexeme;
+            println!("Return type: {}", return_type);
+        }
 
         self.consume(TokenType::LeftBrace)?;
         let body = self.block()?;

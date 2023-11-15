@@ -1,3 +1,5 @@
+// TODO: Migrate Fnc-related definitions to fnc.rs to improve readability
+
 use std::{
     cell::RefCell,
     fmt::{Debug, Display},

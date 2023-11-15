@@ -65,7 +65,7 @@ impl Memory {
 
     pub fn get(&self, name: &str, index: Option<usize>) -> Result<Value, MemoryError> {
         let Some(Some(var)) = self.vars.get(name) else {
-            return Err(MemoryError::UninitializedVariableAccess(name.to_owned()));
+            Err(MemoryError::UninitializedVariable(name.to_owned()))?
         };
 
         if let Some(idx) = index {
