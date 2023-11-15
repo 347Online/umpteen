@@ -19,5 +19,10 @@ pub enum Stmt<'t> {
     Break,
     Continue,
     Return(Expr<'t>),
+    Fnc {
+        name: &'t str,
+        params: Vec<(String, String)>, // TODO: Second tuple value should be Type
+        body: Vec<Stmt<'t>>,
+    },
     Exit,
 }

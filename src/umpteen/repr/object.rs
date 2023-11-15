@@ -4,9 +4,9 @@ use std::{
     rc::Rc,
 };
 
-use crate::exec::interpreter::Interpreter;
+use crate::exec::{env::Env, interpreter::Interpreter};
 
-use super::value::Value;
+use super::{ast::stmt::Stmt, value::Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
@@ -71,8 +71,8 @@ pub enum NativeFnc {
     Str,
 }
 
-impl From<UserFnc> for Value {
-    fn from(value: UserFnc) -> Self {
+impl<'uf> From<UserFnc<'uf>> for Value {
+    fn from(value: UserFnc<'uf>) -> Self {
         Value::Object(Object::fnc(Fnc::User(value)))
     }
 }
@@ -113,10 +113,21 @@ impl Call for NativeFnc {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UserFnc {}
+pub struct UserFnc<'uf> {
+    name: String,
+    params: Vec<(String, String)>,
+    body: Vec<Stmt<'uf>>,
+}
 
-impl Call for UserFnc {
+impl<'uf> Call for UserFnc<'uf> {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
+        let (mem_key, mut mem) = interpreter.new_context();
+        for (i, (param, _)) in self.params.into_iter().enumerate() {
+            mem.declare(&param);
+            mem.assign(&param, None, args[i]);
+        }
+
+        interpreter.exec_block(&self.body, Some(mem_key));
         todo!()
     }
 
@@ -130,12 +141,12 @@ impl Call for UserFnc {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Fnc {
+pub enum Fnc<'f> {
     Native(NativeFnc),
-    User(UserFnc),
+    User(UserFnc<'f>),
 }
 
-impl Call for Fnc {
+impl<'f> Call for Fnc<'f> {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
         match self {
             Fnc::Native(f) => f.call(interpreter, args),
@@ -158,7 +169,7 @@ impl Call for Fnc {
     }
 }
 
-impl Display for Fnc {
+impl Display for Fnc<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Fnc::Native(native) => write!(f, "<native fnc {}()>", native.name()),

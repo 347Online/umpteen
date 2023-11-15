@@ -221,24 +221,16 @@ impl<'p> Parser<'p> {
             let param = self.consume(TokenType::Identifier)?.lexeme;
             self.consume(TokenType::Colon)?;
             let param_type = self.consume(TokenType::TypeName)?.lexeme;
-            params.push(format!("{}: {}", param, param_type)); //(param, param_type));
+            params.push((param, param_type));
         }
-
-        println!("Parsed Params: {:?}", params);
 
         self.consume(TokenType::ThinArrow)?;
         let return_type = self.consume(TokenType::TypeName)?.lexeme;
 
-        println!("Return type: {}", return_type);
-
         self.consume(TokenType::LeftBrace)?;
         let body = self.block()?;
 
-        println!("Fnc body: {:#?}", body);
-
-        // TODO: Instantiate a function with args and body
-
-        Ok(Stmt::Exit)
+        Ok(Stmt::Fnc { name, params, body })
     }
 
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
