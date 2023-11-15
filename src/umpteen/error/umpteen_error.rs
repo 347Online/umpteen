@@ -1,3 +1,6 @@
+use crate::exec::interpreter::Divergence;
+
+use super::{CompilerError, MemoryError, ParseError, RuntimeError};
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -12,21 +15,21 @@ pub enum UmpteenError {
     RuntimeError(RuntimeError),
     MemoryError(MemoryError),
     ReplError(ReadlineError),
+    Divergence(Divergence),
 }
 
 impl Display for UmpteenError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             UmpteenError::ParseError(e) => write!(f, "{}", e),
             UmpteenError::CompilerError(e) => write!(f, "{}", e),
             UmpteenError::RuntimeError(e) => write!(f, "{}", e),
             UmpteenError::MemoryError(e) => write!(f, "{}", e),
             UmpteenError::ReplError(e) => write!(f, "{}", e),
+            UmpteenError::Divergence(e) => write!(f, "{}", e),
         }
     }
 }
-
-use super::{CompilerError, MemoryError, ParseError, RuntimeError};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Line(usize, usize);
@@ -49,7 +52,7 @@ impl Line {
 }
 
 impl Display for Line {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.1 == 0 {
             write!(f, "{}", self.0)
         } else {
@@ -85,6 +88,12 @@ impl From<MemoryError> for UmpteenError {
 impl From<ReadlineError> for UmpteenError {
     fn from(value: ReadlineError) -> Self {
         UmpteenError::ReplError(value)
+    }
+}
+
+impl From<Divergence> for UmpteenError {
+    fn from(value: Divergence) -> Self {
+        UmpteenError::Divergence(value)
     }
 }
 

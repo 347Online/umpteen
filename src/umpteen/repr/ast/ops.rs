@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{error::ParseError, repr::token::TokenType};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Unary {
     Not,
     Negate,
@@ -18,7 +18,7 @@ impl Display for Unary {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Binary {
     Add,
     Subtract,
@@ -52,11 +52,11 @@ impl TryFrom<TokenType> for Binary {
             TokenType::GreaterEqual => Self::GreaterOrEqual,
             TokenType::Less => Self::LessThan,
             TokenType::LessEqual => Self::LessOrEqual,
-            TokenType::Plus => Self::Add,
-            TokenType::Minus => Self::Subtract,
-            TokenType::Asterisk => Self::Multiply,
-            TokenType::Slash => Self::Divide,
-            TokenType::Percent => Self::Modulo,
+            TokenType::Plus | TokenType::PlusEqual => Self::Add,
+            TokenType::Minus | TokenType::MinusEqual => Self::Subtract,
+            TokenType::Star | TokenType::StarEqual => Self::Multiply,
+            TokenType::Slash | TokenType::SlashEqual => Self::Divide,
+            TokenType::Percent | TokenType::PercentEqual => Self::Modulo,
 
             _ => Err(ParseError::UnexpectedToken(value))?,
         };

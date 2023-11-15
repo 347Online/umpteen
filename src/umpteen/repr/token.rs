@@ -11,6 +11,7 @@ pub enum TokenType {
     LeftBracket,
     RightBracket,
     Semicolon,
+    Colon,
     Comma,
 
     Equal,
@@ -23,22 +24,32 @@ pub enum TokenType {
     LessEqual,
 
     Plus,
+    PlusEqual,
     Minus,
-    Asterisk,
+    MinusEqual,
+    Star,
+    StarEqual,
     Slash,
+    SlashEqual,
     Percent,
+    PercentEqual,
 
     And,
     Or,
 
+    ThinArrow,
+    TypeName,
+    FatArrow,
+
     Var,
     Let,
-    Print,
     If,
     Else,
     Loop,
     Break,
     Continue,
+    Fnc,
+    Return,
 
     True,
     False,

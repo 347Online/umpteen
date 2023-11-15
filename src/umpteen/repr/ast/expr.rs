@@ -1,10 +1,10 @@
-use crate::repr::value::Value;
+use crate::{boxed, repr::value::Value};
 
 use super::ops::{Binary, Unary};
 
 pub type SubExpr<'t> = Box<Expr<'t>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr<'t> {
     Literal(Value),
     List(Vec<Expr<'t>>),
@@ -29,17 +29,19 @@ pub enum Expr<'t> {
         index: Option<SubExpr<'t>>,
         expr: SubExpr<'t>,
     },
+    Call {
+        callee: SubExpr<'t>,
+        args: Vec<Expr<'t>>,
+    },
 }
 
 impl<'t> Expr<'t> {
     pub fn unary(expr: Expr<'t>, op: Unary) -> Expr<'t> {
-        // Helper method for initializing unary op expressions
-        let expr = Box::new(expr);
+        let expr = boxed!(expr);
         Expr::UnOp { expr, op }
     }
     pub fn binary(left: Expr<'t>, right: Expr<'t>, op: Binary) -> Expr<'t> {
-        // Helper method for initializing binary op expressions
-        let (left, right) = (Box::new(left), Box::new(right));
+        let (left, right) = (boxed!(left), boxed!(right));
         Expr::BinOp { left, right, op }
     }
 }

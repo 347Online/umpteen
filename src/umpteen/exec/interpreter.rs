@@ -1,3 +1,5 @@
+use std::{cell::RefCell, fmt::Display, rc::Rc, time::Instant};
+
 use uuid::Uuid;
 
 use crate::{
@@ -8,30 +10,51 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
+        object::{Call, Object},
         token::Token,
-        value::{Object, Value},
+        value::Value,
     },
 };
 
 use super::{
-    env::Env,
+    env::{Env, Memory},
     lexer::Lexer,
     parse::{Ast, Parser},
 };
 
-pub enum Eval {
-    Value(Value),
-    Variable(String),
+#[derive(Debug)]
+pub enum Divergence {
+    Break,
+    Continue,
+    Return(Value),
+    Exit,
 }
 
-#[derive(Debug, Default)]
+impl Display for Divergence {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let repr = match self {
+            Divergence::Break => "break not allowed outside loop",
+            Divergence::Continue => "continue not allowed outside loop",
+            Divergence::Return(_) => "return not allowed outside function",
+            Divergence::Exit => "explicit exit",
+        };
+
+        write!(f, "{}", repr)
+    }
+}
+
+#[derive(Debug)]
 pub struct Interpreter {
     env: Env,
+    start: Instant,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            env: Env::default(),
+            start: Instant::now(),
+        }
     }
 
     pub fn run(&mut self, src: &str) -> Result<Value, UmpteenError> {
@@ -52,21 +75,17 @@ impl Interpreter {
     }
 
     fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
-        let mut return_value = Value::Empty;
-
         for stmt in ast {
-            match self.exec(&stmt)? {
-                Some(val) => {
-                    return_value = val;
-                }
-                None => break,
-            }
+            match self.exec(&stmt) {
+                Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
+                x => x,
+            }?;
         }
 
-        Ok(return_value)
+        Ok(Value::Empty)
     }
 
-    fn exec(&mut self, stmt: &Stmt) -> Result<Option<Value>, UmpteenError> {
+    fn exec(&mut self, stmt: &Stmt) -> Result<Value, UmpteenError> {
         match stmt {
             Stmt::Declare { name, init } => {
                 self.env.declare(name)?;
@@ -79,15 +98,6 @@ impl Interpreter {
             Stmt::Expr(expr) => {
                 self.eval(expr)?;
             }
-            Stmt::Print(expr) => {
-                let value = self.eval(expr)?;
-                println!("{}", value);
-            }
-            Stmt::Return(expr) => {
-                return Ok(Some(self.eval(expr)?));
-            }
-            Stmt::Empty => (),
-            Stmt::Exit => return Ok(None),
             Stmt::Block(statements) => {
                 let mem_key = Some(self.env.new_enclosed());
                 self.exec_block(statements, mem_key)?;
@@ -105,23 +115,31 @@ impl Interpreter {
                     self.exec_block(else_branch, Some(else_scope))?;
                 }
             }
-            Stmt::Break => Err(RuntimeError::Break)?,
-            Stmt::Continue => Err(RuntimeError::Continue)?,
             Stmt::Loop(body) => {
                 let loop_scope = self.env.new_enclosed();
                 loop {
-                match self.exec_block(body, Some(loop_scope)) {
-                    Err(UmpteenError::RuntimeError(RuntimeError::Break)) => break,
-                    Err(UmpteenError::RuntimeError(RuntimeError::Continue)) => continue,
-                    x => x,
-                }?;
-            }},
+                    match self.exec_block(body, Some(loop_scope)) {
+                        Err(UmpteenError::Divergence(Divergence::Break)) => break,
+                        Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
+                        x => x,
+                    }?;
+                }
+            }
+
+            Stmt::Break => Err(Divergence::Break)?,
+            Stmt::Continue => Err(Divergence::Continue)?,
+            Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
+            Stmt::Exit => Err(Divergence::Exit)?,
         }
 
-        Ok(Some(Value::Empty))
+        Ok(Value::Empty)
     }
 
-    fn exec_block(&mut self, statements: &Ast, env_id: Option<Uuid>) -> Result<(), UmpteenError> {
+    pub fn exec_block(
+        &mut self,
+        statements: &Ast,
+        env_id: Option<Uuid>,
+    ) -> Result<(), UmpteenError> {
         let mut res = Ok(());
         let previous = self.env.set_current(env_id);
 
@@ -147,7 +165,7 @@ impl Interpreter {
                 for expr in expressions {
                     values.push(self.eval(expr)?);
                 }
-                Value::Object(Box::new(Object::List(values)))
+                Value::Object(Rc::new(RefCell::new(Object::List(values))))
             }
             Expr::UnOp { expr, op } => {
                 let value = self.eval(expr)?;
@@ -164,7 +182,7 @@ impl Interpreter {
                     Binary::Subtract => (lhs - self.eval(right)?)?,
                     Binary::Multiply => (lhs * self.eval(right)?)?,
                     Binary::Divide => (lhs / self.eval(right)?)?,
-                    Binary::Modulo => (lhs / self.eval(right)?)?,
+                    Binary::Modulo => (lhs % self.eval(right)?)?,
                     Binary::And => {
                         if lhs.truthy() {
                             self.eval(right)?
@@ -186,7 +204,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a > b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::GreaterOrEqual => {
@@ -194,7 +216,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a >= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::LessThan => {
@@ -202,7 +228,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a < b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                     Binary::LessOrEqual => {
@@ -210,7 +240,11 @@ impl Interpreter {
                         match (&lhs, &rhs) {
                             (Value::Number(a), Value::Number(b)) => Value::Boolean(a <= b),
 
-                            _ => Err(ParseError::IllegalBinaryOperation(lhs, rhs, *op))?,
+                            _ => Err(ParseError::IllegalBinaryOperation(
+                                lhs.to_string(),
+                                rhs.to_string(),
+                                *op,
+                            ))?,
                         }
                     }
                 }
@@ -243,8 +277,43 @@ impl Interpreter {
                 }
             }
             Expr::Grouping { expr } => self.eval(expr)?,
+            Expr::Call {
+                callee,
+                args: call_args,
+            } => {
+                let callee = self.eval(callee)?;
+
+                let mut args = vec![];
+                for arg in call_args {
+                    args.push(self.eval(arg)?);
+                }
+
+                if let Value::Object(ref obj) = callee
+                    && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
+                {
+                    return Ok(fnc.call(self, args));
+                }
+
+                Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
+            }
         };
 
         Ok(result)
+    }
+
+    pub fn start(&self) -> Instant {
+        self.start
+    }
+
+    pub fn new_context(&mut self) -> (Uuid, &mut Memory) {
+        let key = self.env.new_enclosed();
+        let mem = self.env.retrieve_mut(key).unwrap();
+        (key, mem)
+    }
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
     }
 }

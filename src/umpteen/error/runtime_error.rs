@@ -1,4 +1,8 @@
+// TODO: Rename this type to InterpreterError, reserving RuntimeError for the future compiled variant's more minimal runtime
+
 use std::{error::Error, fmt::Display};
+
+use crate::exec::interpreter::Divergence;
 
 use super::MemoryError;
 
@@ -8,8 +12,8 @@ pub enum RuntimeError {
     MemoryError(MemoryError),
     InvalidInstruction(u8),
     ChunkReadError,
-    Break,
-    Continue,
+    IllegalDivergence(String),
+    TriedToCallNonFunction(String),
 }
 
 impl Display for RuntimeError {
@@ -18,12 +22,9 @@ impl Display for RuntimeError {
             RuntimeError::StackMissingValue => "popped when stack was empty".to_string(),
             RuntimeError::ChunkReadError => "chunk read error".to_string(),
             RuntimeError::MemoryError(e) => e.to_string(),
-
-            RuntimeError::InvalidInstruction(byte) => {
-                format!("invalid Instruction `{:#04x}`", byte)
-            }
-            RuntimeError::Break => "break not allowed outside loop".to_string(),
-            RuntimeError::Continue => "continue not allowed outside loop".to_string(),
+            RuntimeError::IllegalDivergence(x) => format!("illegal divergence: {}", x),
+            RuntimeError::TriedToCallNonFunction(x) => format!("`{}` is not a function", x),
+            RuntimeError::InvalidInstruction(x) => format!("invalid Instruction `{:#04x}`", x),
         };
 
         write!(f, "{}", desc)
@@ -33,6 +34,12 @@ impl Display for RuntimeError {
 impl From<MemoryError> for RuntimeError {
     fn from(value: MemoryError) -> Self {
         RuntimeError::MemoryError(value)
+    }
+}
+
+impl From<Divergence> for RuntimeError {
+    fn from(value: Divergence) -> Self {
+        RuntimeError::IllegalDivergence(value.to_string())
     }
 }
 

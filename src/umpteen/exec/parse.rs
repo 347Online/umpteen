@@ -1,4 +1,5 @@
 use crate::{
+    boxed,
     error::ParseError,
     repr::{
         ast::{
@@ -47,9 +48,9 @@ macro_rules! binop {
         let mut expr = $self.$next()?;
         while catch!($self$(,$tk)+) {
             let op = op!($self, Binary$(,$tk => $op)+);
-            let right = Box::new($self.$next()?);
+            let right = boxed!($self.$next()?);
             expr = Expr::BinOp {
-                left: Box::new(expr),
+                left: boxed!(expr),
                 right,
                 op
             }
@@ -93,8 +94,6 @@ impl<'p> Parser<'p> {
             }
         }
 
-        ast.push(Stmt::Exit);
-
         #[cfg(debug_assertions)]
         dbg!(&ast);
 
@@ -102,6 +101,9 @@ impl<'p> Parser<'p> {
     }
 
     fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
+        if catch!(self, Fnc) {
+            return self.declare_fnc();
+        }
         if catch!(self, Var) {
             return self.declare_variable(true);
         }
@@ -117,10 +119,6 @@ impl<'p> Parser<'p> {
             return self.conditional();
         }
 
-        if catch!(self, Print) {
-            return self.print();
-        }
-
         if catch!(self, Loop) {
             return self.repetition();
         }
@@ -133,6 +131,16 @@ impl<'p> Parser<'p> {
         if catch!(self, Continue) {
             self.consume(TokenType::Semicolon)?;
             return Ok(Stmt::Continue);
+        }
+
+        if catch!(self, Return) {
+            if catch!(self, Semicolon) {
+                return Ok(Stmt::Return(Expr::Literal(Value::Empty)));
+            } else {
+                let expr = self.expression()?;
+                self.consume(TokenType::Semicolon)?;
+                return Ok(Stmt::Return(expr));
+            }
         }
 
         if catch!(self, LeftBrace) {
@@ -156,11 +164,7 @@ impl<'p> Parser<'p> {
         self.consume(TokenType::LeftBrace)?;
         let then_branch = self.block()?;
         let else_branch = if catch!(self, Else) {
-            // if catch!(self, If) {
-                // Some(Box::new(Stmt::Block(vec![self.conditional()?])))
-            // } else {
-                Some(self.block()?)
-            // }
+            Some(self.block()?)
         } else {
             None
         };
@@ -197,10 +201,42 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Declare { name, init })
     }
 
-    fn print(&mut self) -> Result<Stmt<'p>, ParseError> {
-        let value = self.expression()?;
-        self.consume(TokenType::Semicolon)?;
-        Ok(Stmt::Print(value))
+    fn declare_fnc(&mut self) -> Result<Stmt<'p>, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme;
+        self.consume(TokenType::LeftParen)?;
+
+        let mut first = true;
+
+        let mut params = vec![];
+
+        while !catch!(self, RightParen) {
+            if first {
+                first = false;
+            } else {
+                self.consume(TokenType::Comma)?;
+            }
+
+            let param = self.consume(TokenType::Identifier)?.lexeme;
+            self.consume(TokenType::Colon)?;
+            let param_type = self.consume(TokenType::TypeName)?.lexeme;
+            params.push(format!("{}: {}", param, param_type));
+        }
+
+        println!("Parsed Params: {:?}", params);
+
+        if catch!(self, ThinArrow) {
+            let return_type = self.consume(TokenType::TypeName)?.lexeme;
+            println!("Return type: {}", return_type);
+        }
+
+        self.consume(TokenType::LeftBrace)?;
+        let body = self.block()?;
+
+        println!("Fnc body: {:#?}", body);
+
+        // TODO: Instantiate a function with args and body
+
+        Ok(Stmt::Exit)
     }
 
     fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
@@ -208,21 +244,42 @@ impl<'p> Parser<'p> {
     }
 
     fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
-        let expr = self.equality()?;
+        let target = self.equality()?;
 
-        if catch!(self, Equal) {
-            let equals = self.previous();
-            let value = self.assignment()?;
-
-            if let Expr::Binding { name, index } = expr {
-                let expr = Box::new(value);
-                return Ok(Expr::Assign { name, index, expr });
-            }
-
-            report_at("Invalid Assignment Target", equals);
+        if !catch!(
+            self,
+            Equal,
+            PlusEqual,
+            MinusEqual,
+            StarEqual,
+            SlashEqual,
+            PercentEqual
+        ) {
+            return Ok(target);
         }
 
-        Ok(expr)
+        let op = self.previous();
+        let value = self.assignment()?;
+
+        if let Expr::Binding { name, index } = target.clone() {
+            let value = if op.kind == TokenType::Equal {
+                value
+            } else {
+                Expr::BinOp {
+                    left: boxed!(target),
+                    right: boxed!(value),
+                    op: op.kind.try_into().unwrap(),
+                }
+            };
+
+            Ok(Expr::Assign {
+                name,
+                index,
+                expr: boxed!(value),
+            })
+        } else {
+            Err(ParseError::InvalidAssignmentTarget(op.lexeme.to_owned()))
+        }
     }
 
     fn equality(&mut self) -> Result<Expr<'p>, ParseError> {
@@ -251,7 +308,7 @@ impl<'p> Parser<'p> {
     fn factor(&mut self) -> Result<Expr<'p>, ParseError> {
         binop!(self, unary,
             Slash => Divide,
-            Asterisk => Multiply,
+            Star => Multiply,
             Percent => Modulo
         )
     }
@@ -263,19 +320,54 @@ impl<'p> Parser<'p> {
                 Minus => Negate
             );
             Ok(Expr::UnOp {
-                expr: Box::new(self.unary()?),
+                expr: boxed!(self.unary()?),
                 op,
             })
         } else {
-            self.primary()
+            self.call()
         }
+    }
+
+    fn call(&mut self) -> Result<Expr<'p>, ParseError> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if catch!(self, LeftParen) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: Expr<'p>) -> Result<Expr<'p>, ParseError> {
+        let mut args = vec![];
+
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if args.len() > 255 {
+                    // TODO: Constant instead of magic number
+                    eprintln!("Too many arguments, limit is 255");
+                }
+                args.push(self.expression()?);
+                if !catch!(self, Comma) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen)?;
+
+        let callee = boxed!(callee);
+        Ok(Expr::Call { callee, args })
     }
 
     fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
         if catch!(self, Identifier) {
             let name = self.previous().lexeme;
             if catch!(self, LeftBracket) {
-                let index = Some(Box::new(self.expression()?));
+                let index = Some(boxed!(self.expression()?));
                 self.consume(TokenType::RightBracket)?;
                 return Ok(Expr::Binding { name, index });
             }
@@ -289,14 +381,14 @@ impl<'p> Parser<'p> {
                 False => Boolean(false),
                 Empty => Empty,
                 Number => Number(tk.lexeme.parse()?),
-                String => String(Box::new(tk.lexeme.to_owned()))
+                String => String(boxed!(tk.lexeme.to_owned()))
             );
 
             return Ok(expr);
         }
 
         if catch!(self, LeftParen) {
-            let expr = Box::new(self.expression()?);
+            let expr = boxed!(self.expression()?);
             self.consume(TokenType::RightParen)?;
             return Ok(Expr::Grouping { expr });
         }
@@ -315,7 +407,7 @@ impl<'p> Parser<'p> {
             return Ok(Expr::List(list));
         }
 
-        Err(ParseError::UnexpectedToken(self.previous().kind))
+        Err(ParseError::UnexpectedToken(self.peek().kind))
     }
 
     fn advance(&mut self) -> Token<'p> {

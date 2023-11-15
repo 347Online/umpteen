@@ -1,28 +1,14 @@
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use uuid::Uuid;
 
 use crate::{
     error::MemoryError,
-    repr::value::{Object, Value},
+    repr::{
+        object::{Call, Fnc, NativeFnc, Object},
+        value::Value,
+    },
 };
-
-#[derive(Debug)]
-pub enum StackItem {
-    Address(usize),
-    Value(Value),
-}
-
-impl Display for StackItem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            StackItem::Address(addr) => write!(f, "{}", addr),
-            StackItem::Value(val) => write!(f, "{}", val),
-        }
-    }
-}
-
-pub type Stack = Vec<StackItem>;
 
 #[derive(Debug, Default)]
 pub struct Memory {
@@ -59,7 +45,7 @@ impl Memory {
         if self.vars.contains_key(name) {
             if let Some(idx) = index {
                 if let Some(Some(Value::Object(obj))) = self.vars.get_mut(name) {
-                    if let Object::List(list) = obj.as_mut() {
+                    if let Object::List(ref mut list) = *obj.borrow_mut() {
                         if idx >= list.len() {
                             list.resize(idx + 1, Value::Empty);
                         }
@@ -79,12 +65,12 @@ impl Memory {
 
     pub fn get(&self, name: &str, index: Option<usize>) -> Result<Value, MemoryError> {
         let Some(Some(var)) = self.vars.get(name) else {
-            return Err(MemoryError::UninitializedVariableAccess(name.to_owned()));
+            Err(MemoryError::UninitializedVariable(name.to_owned()))?
         };
 
         if let Some(idx) = index {
             if let Value::Object(obj) = var {
-                if let Object::List(list) = obj.as_ref() {
+                if let Object::List(ref list) = *obj.borrow() {
                     return Ok(list[idx].clone());
                 }
             } else {
@@ -130,7 +116,6 @@ impl Env {
     }
 
     pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
-        // Always uses current scope
         self.mem_mut().declare(name)
     }
 
@@ -152,10 +137,7 @@ impl Env {
             }
         }
 
-
         Err(MemoryError::NoSuchVariable(name.to_owned()))
-        // todo!()
-        // // self.mem_mut().assign(name, index, value)
     }
 
     pub fn set_current(&mut self, id: Option<Uuid>) -> Option<Uuid> {
@@ -176,7 +158,7 @@ impl Env {
         self.scopes.get(&id)
     }
 
-    fn retrieve_mut(&mut self, id: Uuid) -> Option<&mut Memory> {
+    pub fn retrieve_mut(&mut self, id: Uuid) -> Option<&mut Memory> {
         self.scopes.get_mut(&id)
     }
 
@@ -195,10 +177,24 @@ impl Env {
     }
 }
 
+macro_rules! builtin {
+    ($f:tt) => {
+        (
+            String::from(NativeFnc::$f.name()),
+            Some(Value::from(NativeFnc::$f)),
+        )
+    };
+}
+
 impl Default for Env {
     fn default() -> Self {
-        let globals = Memory::default();
+        let builtins = HashMap::from([builtin!(Print), builtin!(Time), builtin!(Str)]);
         let glob_key = Uuid::new_v4();
+        let globals = Memory {
+            vars: builtins,
+            env_id: glob_key,
+            parent: None,
+        };
         let scopes = HashMap::from([(glob_key, globals)]);
 
         Env {

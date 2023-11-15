@@ -1,10 +1,13 @@
+#![feature(let_chains, box_patterns)]
+
 pub mod umpteen {
     pub mod error;
     pub mod exec;
     pub mod repr;
-    pub mod util;
+    pub(crate) mod util;
 }
-pub use umpteen::*;
+pub(crate) use umpteen::util;
+pub use umpteen::{error, exec, repr};
 
 use rustyline::error::ReadlineError;
 use umpteen::{error::UmpteenError, exec::interpreter::Interpreter, repr::value::Value};

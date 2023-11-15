@@ -12,6 +12,7 @@ pub struct Lexer<'s> {
     line: Line,
     offset: usize,
     finished: bool,
+    previous: TokenType,
 }
 
 impl<'s> Lexer<'s> {
@@ -24,6 +25,7 @@ impl<'s> Lexer<'s> {
             line: Line::new(1),
             offset: 0,
             finished: false,
+            previous: TokenType::Eof,
         }
     }
 
@@ -47,10 +49,20 @@ impl<'s> Lexer<'s> {
         let c = self.chars.peek()?;
         Some(*c)
     }
+
     fn peek_ahead(&mut self, n: usize) -> Option<char> {
         let x = self.chars.clone().nth(n)?;
 
         Some(x)
+    }
+
+    fn catch(&mut self, c: char) -> bool {
+        if self.peek() == Some(c) {
+            self.advance();
+            true
+        } else {
+            false
+        }
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -94,6 +106,12 @@ impl<'s> Lexer<'s> {
             };
         }
 
+        macro_rules! last {
+            ($first:tt$(,$rest:tt)+) => {{
+                self.previous == TokenType::$first$(|| self.previous == TokenType::$rest)+
+            }};
+        }
+
         let tk = match c {
             '\n' => {
                 self.line.newline();
@@ -108,52 +126,112 @@ impl<'s> Lexer<'s> {
             '[' => token!(LeftBracket),
             ']' => token!(RightBracket),
             ';' => token!(Semicolon),
+            ':' => token!(Colon),
             ',' => token!(Comma),
+            '#' => {
+                if matches!((self.peek(), self.peek_ahead(1)), (Some('#'), Some('#'))) {
+                    self.advance();
+                    self.advance();
+                    while let Some(c) = self.peek() {
+                        if c == '\n' {
+                            self.line.newline();
+                        }
+                        if c == '#' {
+                            self.advance();
+                            if matches!((self.peek(), self.peek_ahead(1)), (Some('#'), Some('#'))) {
+                                self.advance();
+                                self.advance();
+                                break;
+                            }
+                        } else {
+                            self.advance();
+                        }
+                    }
+                    return None;
+                } else {
+                    while let Some(c) = self.peek() {
+                        if c == '\n' {
+                            break;
+                        }
+                        self.advance();
+                    }
+                    return None;
+                }
+            }
 
-            '+' => token!(Plus),
-            '-' => token!(Minus),
-            '*' => token!(Asterisk),
-            '/' => token!(Slash),
-            '%' => token!(Percent),
+            '+' => {
+                if self.catch('=') {
+                    token!(PlusEqual)
+                } else {
+                    token!(Plus)
+                }
+            }
+            '-' => {
+                if self.catch('>') {
+                    token!(ThinArrow)
+                } else if self.catch('=') {
+                    token!(MinusEqual)
+                } else {
+                    token!(Minus)
+                }
+            }
+            '*' => {
+                if self.catch('=') {
+                    token!(StarEqual)
+                } else {
+                    token!(Star)
+                }
+            }
+            '/' => {
+                if self.catch('=') {
+                    token!(SlashEqual)
+                } else {
+                    token!(Slash)
+                }
+            }
+            '%' => {
+                if self.catch('=') {
+                    token!(PercentEqual)
+                } else {
+                    token!(Percent)
+                }
+            }
 
             '>' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(GreaterEqual)
                 } else {
                     token!(Greater)
                 }
             }
             '<' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(LessEqual)
                 } else {
                     token!(Less)
                 }
             }
             '=' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(EqualEqual)
+                } else if self.catch('>') {
+                    token!(FatArrow)
                 } else {
                     token!(Equal)
                 }
             }
             '!' => {
-                if self.peek() == Some('=') {
-                    self.advance();
+                if self.catch('=') {
                     token!(BangEqual)
                 } else {
                     token!(Bang)
                 }
             }
-            '&' if self.peek() == Some('&') => {
-                self.advance();
+
+            '&' if self.catch('&') => {
                 token!(And)
             }
-            '|' if self.peek() == Some('|') => {
-                self.advance();
+            '|' if self.catch('|') => {
                 token!(Or)
             }
 
@@ -203,7 +281,7 @@ impl<'s> Lexer<'s> {
                 let lx = lexeme!(end);
 
                 match lx {
-                    "Empty" => token!(Empty, lx),
+                    "empty" => token!(Empty, lx),
                     "true" => token!(True, lx),
                     "false" => token!(False, lx),
 
@@ -214,9 +292,16 @@ impl<'s> Lexer<'s> {
                     "loop" => token!(Loop, lx),
                     "break" => token!(Break, lx),
                     "continue" => token!(Continue, lx),
-                    "print" => token!(Print, lx), // TODO: Re-implement as a function
+                    "fnc" => token!(Fnc, lx),
+                    "return" => token!(Return, lx),
 
-                    _ => token!(Identifier, lx),
+                    _ => {
+                        if last!(ThinArrow, Colon) {
+                            token!(TypeName, lx)
+                        } else {
+                            token!(Identifier, lx)
+                        }
+                    }
                 }
             }
 
@@ -226,6 +311,7 @@ impl<'s> Lexer<'s> {
             }
         };
 
+        self.previous = tk.kind;
         Some(tk)
     }
 }
