@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{error::UmpteenError, exec::interpreter::Interpreter};
 
-use super::{ast::stmt::Stmt, value::Value};
+use super::{ast::stmt::Stmt, object::Object, value::Value};
 
 pub trait Call {
     fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError>;
@@ -15,6 +15,7 @@ pub enum NativeFnc {
     Time,
     Print,
     Str,
+    Len,
 }
 
 impl Call for NativeFnc {
@@ -33,6 +34,20 @@ impl Call for NativeFnc {
                 let value = &args[0];
                 Value::from(value.to_string())
             }
+            NativeFnc::Len => {
+                let value = &args[0];
+
+                return match value {
+                    Value::Empty => Ok(Value::from(0.0)),
+                    Value::Boolean(_) => Ok(Value::from(1.0)),
+                    Value::Number(_) => Ok(Value::from(1.0)),
+                    Value::String(s) => Ok(Value::from(s.len() as f64)),
+                    Value::Object(ref obj) => match *obj.borrow() {
+                        Object::List(ref list) => Ok(Value::from(list.len() as f64)),
+                        Object::Fnc(_) => Ok(Value::from(1.0)),
+                    },
+                };
+            }
         };
 
         Ok(return_value)
@@ -43,6 +58,7 @@ impl Call for NativeFnc {
             NativeFnc::Time => 0,
             NativeFnc::Print => 1,
             NativeFnc::Str => 1,
+            NativeFnc::Len => 1,
         }
     }
 

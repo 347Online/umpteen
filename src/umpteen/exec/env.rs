@@ -70,6 +70,10 @@ impl Memory {
         };
 
         if let Some(idx) = index {
+            if let Value::String(s) = var {
+                return Ok(Value::from(&s[idx..idx+1]));
+            }
+
             if let Value::Object(obj) = var {
                 if let Object::List(ref list) = *obj.borrow() {
                     return Ok(list[idx].clone());
@@ -189,7 +193,12 @@ macro_rules! builtin {
 
 impl Default for Env {
     fn default() -> Self {
-        let builtins = HashMap::from([builtin!(Print), builtin!(Time), builtin!(Str)]);
+        let builtins = HashMap::from([
+            builtin!(Print),
+            builtin!(Time),
+            builtin!(Str),
+            builtin!(Len),
+        ]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {
             vars: builtins,
