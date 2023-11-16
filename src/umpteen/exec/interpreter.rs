@@ -117,8 +117,9 @@ impl Interpreter {
                 }
             }
             Stmt::Loop(body) => {
-                let loop_scope = self.env.new_enclosed();
                 loop {
+                    let loop_scope = self.env.new_enclosed();
+                    dbg!(loop_scope);
                     match self.exec_block(body, Some(loop_scope)) {
                         Err(UmpteenError::Divergence(Divergence::Break)) => break,
                         Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
