@@ -10,9 +10,9 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        object::{Call, Object, UserFnc},
+        object::Object,
         token::Token,
-        value::Value,
+        value::Value, fnc::{UserFnc, Call},
     },
 };
 
