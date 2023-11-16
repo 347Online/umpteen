@@ -6,6 +6,7 @@ pub mod umpteen {
     pub mod repr;
     pub(crate) mod util;
 }
+
 pub(crate) use umpteen::util;
 pub use umpteen::{error, exec, repr};
 
@@ -14,7 +15,7 @@ use umpteen::{error::UmpteenError, exec::interpreter::Interpreter, repr::value::
 
 pub fn repl() {
     let mut rl = rustyline::DefaultEditor::new().unwrap();
-    let _ = rl.load_history("umpteen_history.txt");
+    let _ = rl.load_history("umpteen_history");
 
     let mut umpteen = Interpreter::new();
     prompt();
@@ -46,7 +47,7 @@ pub fn repl() {
         interrupt = false;
     }
 
-    let _ = rl.save_history("umpteen_history.txt");
+    let _ = rl.save_history("umpteen_history");
 }
 
 pub fn run_file(path: &str) {
