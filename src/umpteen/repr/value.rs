@@ -20,7 +20,7 @@ pub enum Value {
     Boolean(bool),
     Number(f64),
     String(Box<String>),
-    Object(Rc<RefCell<Object>>),
+    Object(RefCell<Object>),
 }
 
 impl Value {

@@ -171,7 +171,7 @@ impl Interpreter {
                 for expr in expressions {
                     values.push(self.eval(expr)?);
                 }
-                Value::Object(Rc::new(RefCell::new(Object::List(values))))
+                Value::Object(RefCell::new(Object::List(values)))
             }
             Expr::UnOp { expr, op } => {
                 let value = self.eval(expr)?;

@@ -22,16 +22,16 @@ impl Object {
         }
     }
 
-    pub fn list(values: Vec<Value>) -> Rc<RefCell<Self>> {
+    pub fn list(values: Vec<Value>) -> RefCell<Self> {
         Self::create(Object::List(values))
     }
 
-    pub fn fnc(f: Fnc) -> Rc<RefCell<Self>> {
+    pub fn fnc(f: Fnc) -> RefCell<Self> {
         Self::create(Object::Fnc(f))
     }
 
-    fn create(obj: Object) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(obj))
+    fn create(obj: Object) -> RefCell<Self> {
+        RefCell::new(obj)
     }
 }
 
