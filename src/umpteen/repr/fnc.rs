@@ -4,18 +4,8 @@ use crate::{error::UmpteenError, exec::interpreter::Interpreter};
 
 use super::{ast::stmt::Stmt, object::Object, value::Value};
 
-macro_rules! print_flush {
-    ( $($t:tt)* ) => {
-        {
-            let mut h = stdout();
-            write!(h, $($t)* ).unwrap();
-            h.flush().unwrap();
-        }
-    }
-}
-
 pub trait Call {
-    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError>;
+    fn call(&mut self, vm: &mut Interpreter, args: &[Value]) -> Result<Value, UmpteenError>;
     fn arity(&self) -> usize;
     fn name(&self) -> String;
 }
@@ -30,30 +20,26 @@ pub enum NativeFnc {
 }
 
 impl Call for NativeFnc {
-    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
+    fn call(&mut self, vm: &mut Interpreter, args: &[Value]) -> Result<Value, UmpteenError> {
         let return_value = match self {
             NativeFnc::Time => {
                 let now = vm.start().elapsed().as_secs_f64();
                 Value::from(now)
             }
             NativeFnc::Print => {
-                let value = &args[0];
-                println!("{}", value);
+                println!("{}", args[0]);
                 Value::Empty
             }
             NativeFnc::Printx => {
-                let value = &args[0];
-                print!("{}", value);
+                print!("{}", Value::from(&args[0].to_string()));
                 Value::Empty
             }
             NativeFnc::Str => {
-                let value = &args[0];
-                Value::from(value.to_string())
+                let string = &args[0].to_string();
+                Value::from(string)
             }
             NativeFnc::Len => {
-                let value = &args[0];
-
-                return match value {
+                return match &args[0] {
                     Value::Empty => Ok(Value::from(0.0)),
                     Value::Boolean(_) => Ok(Value::from(1.0)),
                     Value::Number(_) => Ok(Value::from(1.0)),
@@ -104,7 +90,7 @@ impl UserFnc {
 }
 
 impl Call for UserFnc {
-    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
+    fn call(&mut self, vm: &mut Interpreter, args: &[Value]) -> Result<Value, UmpteenError> {
         let (mem_key, mem) = vm.new_context();
         for (i, (param, _)) in self.params.iter().enumerate() {
             mem.declare(param).unwrap();
@@ -132,7 +118,7 @@ pub enum Fnc {
 }
 
 impl Call for Fnc {
-    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
+    fn call(&mut self, vm: &mut Interpreter, args: &[Value]) -> Result<Value, UmpteenError> {
         match self {
             Fnc::Native(f) => f.call(vm, args),
             Fnc::User(f) => f.call(vm, args),
@@ -157,8 +143,8 @@ impl Call for Fnc {
 impl Display for Fnc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Fnc::Native(native) => write!(f, "<native fnc {}()>", native.name()),
-            Fnc::User(_) => write!(f, "<fnc todo()>"),
+            Fnc::Native(nf) => write!(f, "<native fnc {}()>", nf.name()),
+            Fnc::User(uf) => write!(f, "<fnc {}()>", uf.name()),
         }
     }
 }

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc, time::Instant};
+use std::{fmt::Display, time::Instant};
 
 use uuid::Uuid;
 
@@ -78,9 +78,10 @@ impl Interpreter {
     fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
         for stmt in ast {
             match self.exec(&stmt) {
+                Ok(_) => (),
                 Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
-                x => x,
-            }?;
+                Err(e) => Err(e)?,
+            };
         }
 
         Ok(Value::Empty)
@@ -116,17 +117,14 @@ impl Interpreter {
                     self.exec_block(else_branch, Some(else_scope))?;
                 }
             }
-            Stmt::Loop(body) => {
-                loop {
-                    let loop_scope = self.env.new_enclosed();
-                    dbg!(loop_scope);
-                    match self.exec_block(body, Some(loop_scope)) {
-                        Err(UmpteenError::Divergence(Divergence::Break)) => break,
-                        Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
-                        x => x,
-                    }?;
-                }
-            }
+            Stmt::Loop(body) => loop {
+                let loop_scope = self.env.new_enclosed();
+                match self.exec_block(body, Some(loop_scope)) {
+                    Err(UmpteenError::Divergence(Divergence::Break)) => break,
+                    Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
+                    x => x,
+                }?;
+            },
 
             Stmt::Break => Err(Divergence::Break)?,
             Stmt::Continue => Err(Divergence::Continue)?,
@@ -172,7 +170,7 @@ impl Interpreter {
                 for expr in expressions {
                     values.push(self.eval(expr)?);
                 }
-                Value::Object(RefCell::new(Object::List(values)))
+                Value::Object(Object::list(values))
             }
             Expr::UnOp { expr, op } => {
                 let value = self.eval(expr)?;
@@ -298,10 +296,12 @@ impl Interpreter {
                 if let Value::Object(ref obj) = callee
                     && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
                 {
-                    match fnc.call(self, args) {
+                    match fnc.call(self, &args) {
                         Ok(value) => return Ok(value),
-                        Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
-                        Err(e) => Err(e)?
+                        Err(UmpteenError::Divergence(Divergence::Return(value))) => {
+                            return Ok(value)
+                        }
+                        Err(e) => Err(e)?,
                     }
                 }
 

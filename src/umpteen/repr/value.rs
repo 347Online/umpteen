@@ -3,10 +3,9 @@ use std::{
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     process::{ExitCode, Termination},
-    rc::Rc,
 };
 
-use crate::{boxed, error::ParseError};
+use crate::{boxed, error::ParseError, umpteen::util::unescape};
 
 use super::{
     ast::ops::{Binary, Unary},
@@ -78,13 +77,13 @@ impl From<bool> for Value {
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::String(boxed!(value.to_string()))
+        Value::String(boxed!(unescape(value)))
     }
 }
 
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Value::String(boxed!(value))
+impl From<&String> for Value {
+    fn from(value: &String) -> Self {
+        Value::from(value as &str)
     }
 }
 

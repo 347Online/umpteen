@@ -3,14 +3,41 @@
 use std::{
     cell::RefCell,
     fmt::{Debug, Display},
+    ops::{Deref, DerefMut},
     rc::Rc,
 };
 
-use super::{value::Value, fnc::{Fnc, UserFnc, NativeFnc}};
+use super::{
+    fnc::{Fnc, NativeFnc, UserFnc},
+    value::Value,
+};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct List(Vec<Value>);
+
+impl List {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Deref for List {
+    type Target = Vec<Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for List {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
-    List(Vec<Value>),
+    List(List),
     Fnc(Fnc),
 }
 
@@ -23,10 +50,10 @@ impl Object {
     }
 
     pub fn list(values: Vec<Value>) -> RefCell<Self> {
-        Self::create(Object::List(values))
+        Self::create(Object::List(List(values)))
     }
 
-    pub fn fnc(f: Fnc) -> RefCell<Self> {
+    fn fnc(f: Fnc) -> RefCell<Self> {
         Self::create(Object::Fnc(f))
     }
 
@@ -42,7 +69,7 @@ impl Display for Object {
                 let mut buffer = String::from('[');
                 let mut first = true;
 
-                for value in values {
+                for value in values.iter() {
                     if first {
                         first = false;
                     } else {
@@ -69,8 +96,8 @@ impl From<NativeFnc> for Value {
     }
 }
 
-impl From<Vec<Value>> for Value {
-    fn from(value: Vec<Value>) -> Self {
-        Value::Object(Object::list(value))
+impl From<Vec<Value>> for List {
+    fn from(values: Vec<Value>) -> Self {
+        List(values)
     }
 }

@@ -28,7 +28,7 @@ pub fn repl() {
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(&line);
-                handle(umpteen.run(&line))
+                handle(umpteen.run(&line));
             }
             Err(ReadlineError::Interrupted) => {
                 if interrupt {
