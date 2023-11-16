@@ -21,7 +21,7 @@ pub enum Stmt {
     Return(Expr),
     Fnc {
         name: String,
-        params: Vec<(String, String)>, // TODO: Second tuple value should be Type
+        params: Vec<(String, String)>, // TODO: Second tuple value should be Type instead of String
         body: Vec<Stmt>,
     },
     Exit,

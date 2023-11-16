@@ -10,7 +10,7 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        object::{Call, Object},
+        object::{Call, Object, UserFnc},
         token::Token,
         value::Value,
     },
@@ -130,7 +130,11 @@ impl Interpreter {
             Stmt::Continue => Err(Divergence::Continue)?,
             Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
             Stmt::Exit => Err(Divergence::Exit)?,
-            Stmt::Fnc { name, params, body } => todo!(),
+            Stmt::Fnc { name, params, body } => {
+                let fnc = UserFnc::new(name.to_string(), params.to_owned(), body.clone());
+                self.env.declare(name)?;
+                self.env.assign(name, None, Value::from(fnc))?;
+            }
         }
 
         Ok(Value::Empty)

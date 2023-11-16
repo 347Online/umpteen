@@ -117,30 +117,41 @@ impl Call for NativeFnc {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserFnc {
     name: String,
+    arity: usize,
     params: Vec<(String, String)>,
-    // body: Vec<Stmt<'uf>>,
+    body: Vec<Stmt>,
+}
+
+impl UserFnc {
+    pub fn new(name: String, params: Vec<(String, String)>, body: Vec<Stmt>) -> Self {
+        UserFnc {
+            name,
+            arity: params.len(),
+            params,
+            body,
+        }
+    }
 }
 
 impl Call for UserFnc {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
         let (mem_key, mem) = interpreter.new_context();
         for (i, (param, _)) in self.params.iter().enumerate() {
-            mem.declare(param)
-                .expect("It should be impossible for user code to cause an error");
-            mem.assign(param, None, args[i].clone())
-                .expect("It should be impossible for user code to cause an error");
+            mem.declare(param).unwrap();
+            mem.assign(param, None, args[i].clone()).unwrap();
         }
 
-        // interpreter.exec_block(&self.body, Some(mem_key));
-        todo!()
+        interpreter.exec_block(&self.body, Some(mem_key)).unwrap();
+
+        Value::Empty
     }
 
     fn arity(&self) -> usize {
-        todo!()
+        self.arity
     }
 
     fn name(&self) -> String {
-        todo!()
+        self.name.clone()
     }
 }
 
