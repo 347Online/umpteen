@@ -195,6 +195,7 @@ impl Default for Env {
     fn default() -> Self {
         let builtins = HashMap::from([
             builtin!(Print),
+            builtin!(Printx),
             builtin!(Time),
             builtin!(Str),
             builtin!(Len),

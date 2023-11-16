@@ -4,6 +4,16 @@ use crate::{error::UmpteenError, exec::interpreter::Interpreter};
 
 use super::{ast::stmt::Stmt, object::Object, value::Value};
 
+macro_rules! print_flush {
+    ( $($t:tt)* ) => {
+        {
+            let mut h = stdout();
+            write!(h, $($t)* ).unwrap();
+            h.flush().unwrap();
+        }
+    }
+}
+
 pub trait Call {
     fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError>;
     fn arity(&self) -> usize;
@@ -14,6 +24,7 @@ pub trait Call {
 pub enum NativeFnc {
     Time,
     Print,
+    Printx,
     Str,
     Len,
 }
@@ -28,6 +39,11 @@ impl Call for NativeFnc {
             NativeFnc::Print => {
                 let value = &args[0];
                 println!("{}", value);
+                Value::Empty
+            }
+            NativeFnc::Printx => {
+                let value = &args[0];
+                print!("{}", value);
                 Value::Empty
             }
             NativeFnc::Str => {
@@ -57,6 +73,7 @@ impl Call for NativeFnc {
         match self {
             NativeFnc::Time => 0,
             NativeFnc::Print => 1,
+            NativeFnc::Printx => 1,
             NativeFnc::Str => 1,
             NativeFnc::Len => 1,
         }
