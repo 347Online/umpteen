@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
-use crate::exec::interpreter::Interpreter;
+use crate::{error::UmpteenError, exec::interpreter::Interpreter};
 
 use super::{ast::stmt::Stmt, value::Value};
 
 pub trait Call {
-    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value;
+    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError>;
     fn arity(&self) -> usize;
     fn name(&self) -> String;
 }
@@ -16,15 +16,26 @@ pub enum NativeFnc {
     Print,
     Str,
 }
-impl Call for NativeFnc {
-    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
-        match self {
-            NativeFnc::Time => return interpreter.start().elapsed().as_secs_f64().into(),
-            NativeFnc::Print => println!("{}", args[0]),
-            NativeFnc::Str => return args[0].to_string().into(),
-        }
 
-        Value::Empty
+impl Call for NativeFnc {
+    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
+        let return_value = match self {
+            NativeFnc::Time => {
+                let now = vm.start().elapsed().as_secs_f64();
+                Value::from(now)
+            }
+            NativeFnc::Print => {
+                let value = &args[0];
+                println!("{}", value);
+                Value::Empty
+            }
+            NativeFnc::Str => {
+                let value = &args[0];
+                Value::from(value.to_string())
+            }
+        };
+
+        Ok(return_value)
     }
 
     fn arity(&self) -> usize {
@@ -60,16 +71,16 @@ impl UserFnc {
 }
 
 impl Call for UserFnc {
-    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
-        let (mem_key, mem) = interpreter.new_context();
+    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
+        let (mem_key, mem) = vm.new_context();
         for (i, (param, _)) in self.params.iter().enumerate() {
             mem.declare(param).unwrap();
-            mem.assign(param, None, args[i].clone()).unwrap();
+            mem.assign(param, None, args[i].clone())?;
         }
 
-        interpreter.exec_block(&self.body, Some(mem_key)).unwrap();
+        vm.exec_block(&self.body, Some(mem_key))?;
 
-        Value::Empty
+        Ok(Value::Empty)
     }
 
     fn arity(&self) -> usize {
@@ -88,10 +99,10 @@ pub enum Fnc {
 }
 
 impl Call for Fnc {
-    fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
+    fn call(&mut self, vm: &mut Interpreter, args: Vec<Value>) -> Result<Value, UmpteenError> {
         match self {
-            Fnc::Native(f) => f.call(interpreter, args),
-            Fnc::User(f) => f.call(interpreter, args),
+            Fnc::Native(f) => f.call(vm, args),
+            Fnc::User(f) => f.call(vm, args),
         }
     }
 

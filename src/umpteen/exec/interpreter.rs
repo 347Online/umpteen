@@ -10,9 +10,10 @@ use crate::{
             ops::{Binary, Unary},
             stmt::Stmt,
         },
+        fnc::{Call, UserFnc},
         object::Object,
         token::Token,
-        value::Value, fnc::{UserFnc, Call},
+        value::Value,
     },
 };
 
@@ -296,7 +297,7 @@ impl Interpreter {
                 if let Value::Object(ref obj) = callee
                     && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
                 {
-                    return Ok(fnc.call(self, args));
+                    return fnc.call(self, args);
                 }
 
                 Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
