@@ -2,17 +2,15 @@
 
 fnc fib(n: Number) -> Number {
   if n <= 1 {
-    return n - 1;
+    return n;
   }
 
-  return n + fib(n - 1);
+  return fib(n - 1) + fib(n - 2);
 }
 
-var i = 100;
+var i = 0;
+
 loop {
   print(fib(i));
-  i -= 1;
-  if i == 0 {
-    break;
-  }
+  i += 1;
 }

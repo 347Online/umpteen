@@ -297,7 +297,11 @@ impl Interpreter {
                 if let Value::Object(ref obj) = callee
                     && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
                 {
-                    return fnc.call(self, args);
+                    match fnc.call(self, args) {
+                        Ok(value) => return Ok(value),
+                        Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
+                        Err(e) => Err(e)?
+                    }
                 }
 
                 Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
