@@ -9,8 +9,13 @@ fnc fib(n: Number) -> Number {
 }
 
 var i = 0;
+let iterations = 20;
 
 loop {
   print(fib(i));
   i += 1;
+
+  if i >= iterations {
+    break;
+  }
 }

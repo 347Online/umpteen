@@ -29,7 +29,7 @@ impl Memory {
 
     pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
         if self.vars.contains_key(name) {
-            panic!("variable already declared")
+            panic!("variable `{name}` already declared")
         } else {
             self.vars.insert(name.to_string(), None);
         }
