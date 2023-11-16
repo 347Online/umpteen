@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     error::MemoryError,
     repr::{
-        object::{Call, Fnc, NativeFnc, Object},
+        object::{Call, NativeFnc, Object},
         value::Value,
     },
 };

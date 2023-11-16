@@ -130,6 +130,7 @@ impl Interpreter {
             Stmt::Continue => Err(Divergence::Continue)?,
             Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
             Stmt::Exit => Err(Divergence::Exit)?,
+            Stmt::Fnc { name, params, body } => todo!(),
         }
 
         Ok(Value::Empty)

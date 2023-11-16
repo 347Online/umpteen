@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::exec::{env::Env, interpreter::Interpreter};
+use crate::exec::interpreter::Interpreter;
 
 use super::{ast::stmt::Stmt, value::Value};
 
@@ -73,8 +73,8 @@ pub enum NativeFnc {
     Str,
 }
 
-impl<'uf> From<UserFnc<'uf>> for Value {
-    fn from(value: UserFnc<'uf>) -> Self {
+impl From<UserFnc> for Value {
+    fn from(value: UserFnc) -> Self {
         Value::Object(Object::fnc(Fnc::User(value)))
     }
 }
@@ -115,21 +115,23 @@ impl Call for NativeFnc {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UserFnc<'uf> {
+pub struct UserFnc {
     name: String,
     params: Vec<(String, String)>,
-    body: Vec<Stmt<'uf>>,
+    // body: Vec<Stmt<'uf>>,
 }
 
-impl<'uf> Call for UserFnc<'uf> {
+impl Call for UserFnc {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
-        let (mem_key, mut mem) = interpreter.new_context();
-        for (i, (param, _)) in self.params.into_iter().enumerate() {
-            mem.declare(&param);
-            mem.assign(&param, None, args[i]);
+        let (mem_key, mem) = interpreter.new_context();
+        for (i, (param, _)) in self.params.iter().enumerate() {
+            mem.declare(param)
+                .expect("It should be impossible for user code to cause an error");
+            mem.assign(param, None, args[i].clone())
+                .expect("It should be impossible for user code to cause an error");
         }
 
-        interpreter.exec_block(&self.body, Some(mem_key));
+        // interpreter.exec_block(&self.body, Some(mem_key));
         todo!()
     }
 
@@ -143,12 +145,12 @@ impl<'uf> Call for UserFnc<'uf> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Fnc<'f> {
+pub enum Fnc {
     Native(NativeFnc),
-    User(UserFnc<'f>),
+    User(UserFnc),
 }
 
-impl<'f> Call for Fnc<'f> {
+impl Call for Fnc {
     fn call(&mut self, interpreter: &mut Interpreter, args: Vec<Value>) -> Value {
         match self {
             Fnc::Native(f) => f.call(interpreter, args),
@@ -171,7 +173,7 @@ impl<'f> Call for Fnc<'f> {
     }
 }
 
-impl Display for Fnc<'_> {
+impl Display for Fnc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Fnc::Native(native) => write!(f, "<native fnc {}()>", native.name()),

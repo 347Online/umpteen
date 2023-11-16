@@ -219,7 +219,7 @@ impl<'p> Parser<'p> {
             let param = self.consume(TokenType::Identifier)?.lexeme;
             self.consume(TokenType::Colon)?;
             let param_type = self.consume(TokenType::TypeName)?.lexeme;
-            params.push((param, param_type));
+            params.push((param.to_string(), param_type.to_string()));
         }
 
         if catch!(self, ThinArrow) {
