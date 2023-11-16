@@ -87,6 +87,13 @@ impl From<&String> for Value {
     }
 }
 
+impl From<char> for Value {
+    fn from(value: char) -> Self {
+        let mut tmp = [0_u8; 1];
+        Value::from(&*value.encode_utf8(&mut tmp))
+    }
+}
+
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
         Value::Number(value)

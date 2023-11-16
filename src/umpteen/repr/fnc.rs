@@ -12,11 +12,13 @@ pub trait Call {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum NativeFnc {
-    Time,
-    Print,
-    Printx,
-    Str,
-    Len,
+    Time,   // Returns a numeric representation of the current time
+    Print,  // Print a line to stdout
+    Printx, // Similar to print without a trailing newline and limited support for escape sequences
+    Str,    // Returns a string representation of an Umpteen Value
+    Len,    // Returns the "length" of a Value (List: Entries, String: Bytes, Empty: 0, Other: 1)
+    Chr,    // Converts a number from 0 - 255 to its ASCII representation
+    Ord,    // Converts one ASCII character to its numeric representation
 }
 
 impl Call for NativeFnc {
@@ -38,18 +40,33 @@ impl Call for NativeFnc {
                 let string = &args[0].to_string();
                 Value::from(string)
             }
-            NativeFnc::Len => {
-                return match &args[0] {
-                    Value::Empty => Ok(Value::from(0.0)),
-                    Value::Boolean(_) => Ok(Value::from(1.0)),
-                    Value::Number(_) => Ok(Value::from(1.0)),
-                    Value::String(s) => Ok(Value::from(s.len() as f64)),
-                    Value::Object(ref obj) => match *obj.borrow() {
-                        Object::List(ref list) => Ok(Value::from(list.len() as f64)),
-                        Object::Fnc(_) => Ok(Value::from(1.0)),
-                    },
-                };
-            }
+            NativeFnc::Len => match &args[0] {
+                Value::Empty => Value::from(0.0),
+                Value::Boolean(_) => Value::from(1.0),
+                Value::Number(_) => Value::from(1.0),
+                Value::String(s) => Value::from(s.len() as f64),
+                Value::Object(ref obj) => match *obj.borrow() {
+                    Object::List(ref list) => Value::from(list.len() as f64),
+                    Object::Fnc(_) => Value::from(1.0),
+                },
+            },
+            NativeFnc::Chr => match &args[0] {
+                Value::Number(x) if (0.0..=255.0).contains(x) => {
+                    Value::from(x.trunc() as u8 as char)
+                }
+                _ => {
+                    eprintln!("Value must be a number from 0 - 255");
+                    Value::Empty
+                }
+            },
+            NativeFnc::Ord => match &args[0] {
+                Value::String(c) => Value::from(c.as_bytes()[0] as f64),
+
+                _ => {
+                    eprintln!("Value must be a number from 0 - 255");
+                    Value::Empty
+                }
+            },
         };
 
         Ok(return_value)
@@ -58,10 +75,8 @@ impl Call for NativeFnc {
     fn arity(&self) -> usize {
         match self {
             NativeFnc::Time => 0,
-            NativeFnc::Print => 1,
-            NativeFnc::Printx => 1,
-            NativeFnc::Str => 1,
-            NativeFnc::Len => 1,
+
+            _ => 1,
         }
     }
 

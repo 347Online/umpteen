@@ -199,6 +199,8 @@ impl Default for Env {
             builtin!(Time),
             builtin!(Str),
             builtin!(Len),
+            builtin!(Chr),
+            builtin!(Ord),
         ]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {
