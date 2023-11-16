@@ -1,97 +1,149 @@
 # Sample Program: brain.um
 
-fnc increment() {
-  if memory[pointer] == 255 {
-    memory[pointer] = 0;
+fnc inc() {
+  if memory[ptr] == 255 {
+    memory[ptr] = 0;
     return;
   }
-  memory[pointer] += 1;
+
+  memory[ptr] += 1;
 }
 
-fnc decrement() {
-  if memory[pointer] == 0 {
-    memory[pointer] = 255;
+fnc dec() {
+  if memory[ptr] == 0 {
+    memory[ptr] = 255;
     return;
   }
-  memory[pointer] -= 1;
+
+  memory[ptr] -= 1;
 }
 
-fnc shiftRight() {
-  if pointer == 30000 {
-    pointer = 0;
+fnc right() {
+  if ptr == 30000 {
+    ptr = 0;
     return;
   }
-  pointer += 1;
+
+  ptr += 1;
 }
 
-fnc shiftLeft() {
-  if pointer == 0 {
-    pointer = 30000;
+fnc left() {
+  if ptr == 0 {
+    ptr = 30000;
     return;
   }
-  pointer -= 1;
+
+  ptr -= 1;
 }
 
-fnc writeChar() {
-  let byte = memory[pointer];
+fnc write_char() {
+  let byte = memory[ptr];
   let c = chr(byte);
   print(c);
 }
 
-fnc readChar() {
-  let c = read();
-  let byte = ord(c);
-  memory[pointer] = byte;
-}
 
-var memory = [0u8; 30000];
-var pointer = 0;
 
-var programCounter = 0;
+var memory = [];
+let mem_size = 100;
+var i = mem_size;
 
-fnc brain(instrs: String) {
-  loop {
-    let c = instrs.charAt(programCounter);
-
-    match c {
-      '+' => increment();
-      '-' => decrement();
-      '>' => shiftRight();
-      '<' => shiftLeft();
-      '.' => writeChar();
-      ',' => readChar();
-      '[' => {
-        if memory[pointer] != 0 {
-          continue;
-        }
-
-        loop {
-          programCounter += 1;
-          let c = instrs.charAt(programCounter);
-          if c == '' {
-            break;
-          }
-        }
-      }
-      ']' => {
-        if memory[pointer] == 0 {
-          continue;
-        }
-
-        loop {
-          programCounter -= 1;
-          let c = instrs.charAt(programCounter);
-          if c == '' {
-            break;
-          }
-        }
-      }
-      Empty => break;
-    }
-    
-    programCounter += 1;
+loop {
+  i -= 1;
+  if i < 0 {
+    break;
   }
+  memory[i] = 0;
 }
+
+var depth = 0;
+var ptr = 0;
+
+var pc = 0;
+
 
 let hello = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
-brain(hello);
+print("Made it to ln 66");
+print(hello);
+print(len(hello));
+fnc brain(code: String) {
+  print("Made it here");
+  print(code);
+  let count = len(code);
+
+  loop {
+    let c = code[pc];
+    print(c);
+    pc += 1;
+
+    if c == "+" {
+      inc();
+    } else if c == "-" {
+      dec();
+    } else if c == ">" {
+      right();
+    } else if c == "<" {
+      left();
+    } else if c == "." {
+      write_char();
+    } else if c == "," {
+      # TODO 
+    } else if c == "[" {
+      if memory[ptr] != 0 {
+        continue;
+      }
+
+      let start_depth = depth;
+      loop {
+        if pc >= count {
+          print("ran out of instructions");
+          break;
+        }
+
+        if code[pc] == "[" {
+          depth += 1;
+        }
+        if code[pc] == "]" {
+          depth -= 1;
+          if depth == start_depth {
+            break;
+          }
+        }
+
+        pc += 1;
+      }
+    } else if c == "]" {
+      if memory[ptr] == 0 {
+        continue;
+      }
+
+      let start_depth = depth;
+      loop {
+        pc -= 1;
+        if pc < 0 {
+          print("ran out of instructions");
+          break;
+        }
+
+        if code[pc] == "]" {
+          depth += 1;
+        }
+        if code[pc] == "[" {
+          depth -= 1;
+          if depth == start_depth {
+            pc += 1;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  print("Finished");
+}
+
+print("hello?");
+print("hello?");
+brain("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.");
+print(memory);
+print("Hello?");
