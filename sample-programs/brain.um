@@ -39,10 +39,8 @@ fnc left() {
 fnc write_char() {
   let byte = memory[ptr];
   let c = chr(byte);
-  print(c);
+  printx(c);
 }
-
-
 
 var memory = [];
 let mem_size = 100;
@@ -61,34 +59,36 @@ var ptr = 0;
 
 var pc = 0;
 
-
-let hello = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
-print("Made it to ln 66");
-print(hello);
-print(len(hello));
 fnc brain(code: String) {
-  print("Made it here");
-  print(code);
   let count = len(code);
 
   loop {
+    if pc >= count {
+      break;
+    }
+
     let c = code[pc];
-    print(c);
     pc += 1;
 
     if c == "+" {
       inc();
-    } else if c == "-" {
+    }
+    if c == "-" {
       dec();
-    } else if c == ">" {
-      right();
-    } else if c == "<" {
+    }
+    if c == "<" {
       left();
-    } else if c == "." {
+    }
+    if c == ">" {
+      right();
+    }
+    if c == "." {
       write_char();
-    } else if c == "," {
-      # TODO 
-    } else if c == "[" {
+    }
+    if c == "," {
+      # TODO
+    }
+    if c == "[" {
       if memory[ptr] != 0 {
         continue;
       }
@@ -112,7 +112,8 @@ fnc brain(code: String) {
 
         pc += 1;
       }
-    } else if c == "]" {
+    }
+    if c == "]" {
       if memory[ptr] == 0 {
         continue;
       }
@@ -138,12 +139,8 @@ fnc brain(code: String) {
       }
     }
   }
-
-  print("Finished");
 }
 
-print("hello?");
-print("hello?");
-brain("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.");
-print(memory);
-print("Hello?");
+let hello = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+
+brain(hello);
