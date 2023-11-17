@@ -240,6 +240,9 @@ impl<'s> Lexer<'s> {
                 while self.peek().is_some() {
                     end = self.offset;
                     let c = self.advance().unwrap();
+                    if c == '\\' {
+                        self.advance();
+                    }
                     if c == '"' {
                         break;
                     }
