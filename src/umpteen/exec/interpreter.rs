@@ -3,7 +3,7 @@ use std::{fmt::Display, time::Instant};
 use uuid::Uuid;
 
 use crate::{
-    error::{MemoryError, ParseError, RuntimeError, UmpteenError},
+    error::{InterpretError, MemoryError, ParseError, UmpteenError},
     repr::{
         ast::{
             expr::Expr,
@@ -305,7 +305,7 @@ impl Interpreter {
                     }
                 }
 
-                Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
+                Err(InterpretError::TriedToCallNonFunction(callee.to_string()))?
             }
         };
 
