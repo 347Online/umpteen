@@ -71,7 +71,7 @@ impl Memory {
 
         if let Some(idx) = index {
             if let Value::String(s) = var {
-                return Ok(Value::from(&s[idx..idx+1]));
+                return Ok(Value::from(&s[idx..idx + 1]));
             }
 
             if let Value::Object(obj) = var {
