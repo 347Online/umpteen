@@ -1,5 +1,3 @@
-// TODO: Rename this type to InterpreterError, reserving RuntimeError for the future compiled variant's more minimal runtime
-
 use std::{error::Error, fmt::Display};
 
 use crate::exec::interpreter::Divergence;
