@@ -1,6 +1,6 @@
 use crate::exec::interpreter::Divergence;
 
-use super::{CompilerError, InterpretError, MemoryError, ParseError};
+use super::{InterpretError, MemoryError, ParseError};
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -11,8 +11,7 @@ use rustyline::error::ReadlineError;
 #[derive(Debug)]
 pub enum UmpteenError {
     ParseError(ParseError),
-    CompilerError(CompilerError),
-    RuntimeError(InterpretError),
+    InterpretError(InterpretError),
     MemoryError(MemoryError),
     ReplError(ReadlineError),
     Divergence(Divergence),
@@ -22,8 +21,7 @@ impl Display for UmpteenError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             UmpteenError::ParseError(e) => write!(f, "{}", e),
-            UmpteenError::CompilerError(e) => write!(f, "{}", e),
-            UmpteenError::RuntimeError(e) => write!(f, "{}", e),
+            UmpteenError::InterpretError(e) => write!(f, "{}", e),
             UmpteenError::MemoryError(e) => write!(f, "{}", e),
             UmpteenError::ReplError(e) => write!(f, "{}", e),
             UmpteenError::Divergence(e) => write!(f, "{}", e),
@@ -67,15 +65,9 @@ impl From<ParseError> for UmpteenError {
     }
 }
 
-impl From<CompilerError> for UmpteenError {
-    fn from(value: CompilerError) -> Self {
-        UmpteenError::CompilerError(value)
-    }
-}
-
 impl From<InterpretError> for UmpteenError {
     fn from(value: InterpretError) -> Self {
-        UmpteenError::RuntimeError(value)
+        UmpteenError::InterpretError(value)
     }
 }
 
