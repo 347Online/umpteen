@@ -78,6 +78,10 @@ impl<'t> Token<'t> {
     pub fn new(kind: TokenType, lexeme: &'t str, line: Line) -> Self {
         Self { kind, lexeme, line }
     }
+
+    pub fn lexeme(&self) -> String {
+        self.lexeme.to_string()
+    }
 }
 
 impl Display for Token<'_> {

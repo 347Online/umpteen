@@ -5,7 +5,8 @@ use uuid::Uuid;
 use crate::{
     error::MemoryError,
     repr::{
-        object::{Call, Fnc, NativeFnc, Object},
+        fnc::{Call, NativeFnc},
+        object::Object,
         value::Value,
     },
 };
@@ -28,7 +29,7 @@ impl Memory {
 
     pub fn declare(&mut self, name: &str) -> Result<(), MemoryError> {
         if self.vars.contains_key(name) {
-            panic!("variable already declared")
+            panic!("variable `{name}` already declared")
         } else {
             self.vars.insert(name.to_string(), None);
         }
@@ -69,6 +70,10 @@ impl Memory {
         };
 
         if let Some(idx) = index {
+            if let Value::String(s) = var {
+                return Ok(Value::from(&s[idx..idx+1]));
+            }
+
             if let Value::Object(obj) = var {
                 if let Object::List(ref list) = *obj.borrow() {
                     return Ok(list[idx].clone());
@@ -188,7 +193,15 @@ macro_rules! builtin {
 
 impl Default for Env {
     fn default() -> Self {
-        let builtins = HashMap::from([builtin!(Print), builtin!(Time), builtin!(Str)]);
+        let builtins = HashMap::from([
+            builtin!(Print),
+            builtin!(Printx),
+            builtin!(Time),
+            builtin!(Str),
+            builtin!(Len),
+            builtin!(Chr),
+            builtin!(Ord),
+        ]);
         let glob_key = Uuid::new_v4();
         let globals = Memory {
             vars: builtins,

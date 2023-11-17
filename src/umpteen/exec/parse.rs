@@ -13,12 +13,7 @@ use crate::{
     util::report_at,
 };
 
-pub enum AstNode<'a> {
-    Stmt(Stmt<'a>),
-    Expr(Expr<'a>),
-}
-
-pub type Ast<'a> = Vec<Stmt<'a>>;
+pub type Ast = Vec<Stmt>;
 
 macro_rules! catch {
     ($self:ident, $first:tt $(,$rest:tt)*) => {{
@@ -81,7 +76,7 @@ impl<'p> Parser<'p> {
         Parser { tokens, index: 0 }
     }
 
-    pub fn parse(&mut self) -> Ast<'p> {
+    pub fn parse(&mut self) -> Ast {
         let mut ast = vec![];
 
         while !self.at_end() {
@@ -100,7 +95,7 @@ impl<'p> Parser<'p> {
         ast
     }
 
-    fn declaration(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn declaration(&mut self) -> Result<Stmt, ParseError> {
         if catch!(self, Fnc) {
             return self.declare_fnc();
         }
@@ -114,7 +109,7 @@ impl<'p> Parser<'p> {
         self.statement()
     }
 
-    fn statement(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
         if catch!(self, If) {
             return self.conditional();
         }
@@ -152,13 +147,13 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Expr(expr))
     }
 
-    fn repetition(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn repetition(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LeftBrace)?;
         let block = self.block()?;
         Ok(Stmt::Loop(block))
     }
 
-    fn conditional(&mut self) -> Result<Stmt<'p>, ParseError> {
+    fn conditional(&mut self) -> Result<Stmt, ParseError> {
         let expr = self.expression()?;
 
         self.consume(TokenType::LeftBrace)?;
@@ -176,7 +171,7 @@ impl<'p> Parser<'p> {
         })
     }
 
-    fn block(&mut self) -> Result<Ast<'p>, ParseError> {
+    fn block(&mut self) -> Result<Ast, ParseError> {
         let mut statements = vec![];
 
         while !self.at_end() && !catch!(self, RightBrace) {
@@ -186,8 +181,8 @@ impl<'p> Parser<'p> {
         Ok(statements)
     }
 
-    fn declare_variable(&mut self, mutable: bool) -> Result<Stmt<'p>, ParseError> {
-        let name = self.consume(TokenType::Identifier)?.lexeme;
+    fn declare_variable(&mut self, mutable: bool) -> Result<Stmt, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme();
 
         let init = if catch!(self, Equal) {
             Some(self.expression()?)
@@ -201,8 +196,8 @@ impl<'p> Parser<'p> {
         Ok(Stmt::Declare { name, init })
     }
 
-    fn declare_fnc(&mut self) -> Result<Stmt<'p>, ParseError> {
-        let name = self.consume(TokenType::Identifier)?.lexeme;
+    fn declare_fnc(&mut self) -> Result<Stmt, ParseError> {
+        let name = self.consume(TokenType::Identifier)?.lexeme();
         self.consume(TokenType::LeftParen)?;
 
         let mut first = true;
@@ -216,34 +211,28 @@ impl<'p> Parser<'p> {
                 self.consume(TokenType::Comma)?;
             }
 
-            let param = self.consume(TokenType::Identifier)?.lexeme;
+            let param = self.consume(TokenType::Identifier)?.lexeme();
             self.consume(TokenType::Colon)?;
-            let param_type = self.consume(TokenType::TypeName)?.lexeme;
-            params.push(format!("{}: {}", param, param_type));
+            let param_type = self.consume(TokenType::TypeName)?.lexeme();
+            params.push((param.to_string(), param_type.to_string()));
         }
 
-        println!("Parsed Params: {:?}", params);
-
         if catch!(self, ThinArrow) {
-            let return_type = self.consume(TokenType::TypeName)?.lexeme;
+            let return_type = self.consume(TokenType::TypeName)?.lexeme();
             println!("Return type: {}", return_type);
         }
 
         self.consume(TokenType::LeftBrace)?;
         let body = self.block()?;
 
-        println!("Fnc body: {:#?}", body);
-
-        // TODO: Instantiate a function with args and body
-
-        Ok(Stmt::Exit)
+        Ok(Stmt::Fnc { name, params, body })
     }
 
-    fn expression(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn expression(&mut self) -> Result<Expr, ParseError> {
         self.assignment()
     }
 
-    fn assignment(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn assignment(&mut self) -> Result<Expr, ParseError> {
         let target = self.equality()?;
 
         if !catch!(
@@ -282,14 +271,14 @@ impl<'p> Parser<'p> {
         }
     }
 
-    fn equality(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn equality(&mut self) -> Result<Expr, ParseError> {
         binop!(self, comparison,
             BangEqual => Inequality,
             EqualEqual => Equality
         )
     }
 
-    fn comparison(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn comparison(&mut self) -> Result<Expr, ParseError> {
         binop!(self, term,
             Greater => GreaterThan,
             GreaterEqual => GreaterOrEqual,
@@ -298,14 +287,14 @@ impl<'p> Parser<'p> {
         )
     }
 
-    fn term(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn term(&mut self) -> Result<Expr, ParseError> {
         binop!(self, factor,
             Plus => Add,
             Minus => Subtract
         )
     }
 
-    fn factor(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn factor(&mut self) -> Result<Expr, ParseError> {
         binop!(self, unary,
             Slash => Divide,
             Star => Multiply,
@@ -313,7 +302,7 @@ impl<'p> Parser<'p> {
         )
     }
 
-    fn unary(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn unary(&mut self) -> Result<Expr, ParseError> {
         if catch!(self, Bang, Minus) {
             let op = op!(self, Unary,
                 Bang => Not,
@@ -328,7 +317,7 @@ impl<'p> Parser<'p> {
         }
     }
 
-    fn call(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn call(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.primary()?;
 
         loop {
@@ -342,7 +331,7 @@ impl<'p> Parser<'p> {
         Ok(expr)
     }
 
-    fn finish_call(&mut self, callee: Expr<'p>) -> Result<Expr<'p>, ParseError> {
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
         let mut args = vec![];
 
         if !self.check(TokenType::RightParen) {
@@ -363,9 +352,9 @@ impl<'p> Parser<'p> {
         Ok(Expr::Call { callee, args })
     }
 
-    fn primary(&mut self) -> Result<Expr<'p>, ParseError> {
+    fn primary(&mut self) -> Result<Expr, ParseError> {
         if catch!(self, Identifier) {
-            let name = self.previous().lexeme;
+            let name = self.previous().lexeme();
             if catch!(self, LeftBracket) {
                 let index = Some(boxed!(self.expression()?));
                 self.consume(TokenType::RightBracket)?;
@@ -410,14 +399,14 @@ impl<'p> Parser<'p> {
         Err(ParseError::UnexpectedToken(self.peek().kind))
     }
 
-    fn advance(&mut self) -> Token<'p> {
+    fn advance(&mut self) -> Token {
         if !self.at_end() {
             self.index += 1;
         }
         self.previous()
     }
 
-    fn consume(&mut self, kind: TokenType) -> Result<Token<'p>, ParseError> {
+    fn consume(&mut self, kind: TokenType) -> Result<Token, ParseError> {
         if self.check(kind) {
             Ok(self.advance())
         } else {

@@ -3,10 +3,9 @@ use std::{
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     process::{ExitCode, Termination},
-    rc::Rc,
 };
 
-use crate::{boxed, error::ParseError};
+use crate::{boxed, error::ParseError, umpteen::util::unescape};
 
 use super::{
     ast::ops::{Binary, Unary},
@@ -20,7 +19,7 @@ pub enum Value {
     Boolean(bool),
     Number(f64),
     String(Box<String>),
-    Object(Rc<RefCell<Object>>),
+    Object(RefCell<Object>),
 }
 
 impl Value {
@@ -78,13 +77,20 @@ impl From<bool> for Value {
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::String(boxed!(value.to_string()))
+        Value::String(boxed!(unescape(value)))
     }
 }
 
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Value::String(boxed!(value))
+impl From<&String> for Value {
+    fn from(value: &String) -> Self {
+        Value::from(value as &str)
+    }
+}
+
+impl From<char> for Value {
+    fn from(value: char) -> Self {
+        let mut tmp = [0_u8; 1];
+        Value::from(&*value.encode_utf8(&mut tmp))
     }
 }
 

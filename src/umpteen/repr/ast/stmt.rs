@@ -1,23 +1,28 @@
 use super::expr::Expr;
 
-pub type SubStmt<'t> = Box<Stmt<'t>>;
+pub type SubStmt = Box<Stmt>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Stmt<'t> {
-    Expr(Expr<'t>),
+pub enum Stmt {
+    Expr(Expr),
     Declare {
-        name: &'t str,
-        init: Option<Expr<'t>>,
+        name: String,
+        init: Option<Expr>,
     },
-    Block(Vec<Stmt<'t>>),
+    Block(Vec<Stmt>),
     Condition {
-        test: Expr<'t>,
-        then_branch: Vec<Stmt<'t>>,
-        else_branch: Option<Vec<Stmt<'t>>>,
+        test: Expr,
+        then_branch: Vec<Stmt>,
+        else_branch: Option<Vec<Stmt>>,
     },
-    Loop(Vec<Stmt<'t>>),
+    Loop(Vec<Stmt>),
     Break,
     Continue,
-    Return(Expr<'t>),
+    Return(Expr),
+    Fnc {
+        name: String,
+        params: Vec<(String, String)>, // TODO: Second tuple value should be Type instead of String
+        body: Vec<Stmt>,
+    },
     Exit,
 }

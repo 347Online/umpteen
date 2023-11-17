@@ -1,16 +1,17 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc, time::Instant};
+use std::{fmt::Display, time::Instant};
 
 use uuid::Uuid;
 
 use crate::{
-    error::{MemoryError, ParseError, RuntimeError, UmpteenError},
+    error::{InterpretError, MemoryError, ParseError, UmpteenError},
     repr::{
         ast::{
             expr::Expr,
             ops::{Binary, Unary},
             stmt::Stmt,
         },
-        object::{Call, Object},
+        fnc::{Call, UserFnc},
+        object::Object,
         token::Token,
         value::Value,
     },
@@ -77,9 +78,10 @@ impl Interpreter {
     fn interpret(&mut self, ast: Ast) -> Result<Value, UmpteenError> {
         for stmt in ast {
             match self.exec(&stmt) {
+                Ok(_) => (),
                 Err(UmpteenError::Divergence(Divergence::Return(value))) => return Ok(value),
-                x => x,
-            }?;
+                Err(e) => Err(e)?,
+            };
         }
 
         Ok(Value::Empty)
@@ -115,21 +117,24 @@ impl Interpreter {
                     self.exec_block(else_branch, Some(else_scope))?;
                 }
             }
-            Stmt::Loop(body) => {
+            Stmt::Loop(body) => loop {
                 let loop_scope = self.env.new_enclosed();
-                loop {
-                    match self.exec_block(body, Some(loop_scope)) {
-                        Err(UmpteenError::Divergence(Divergence::Break)) => break,
-                        Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
-                        x => x,
-                    }?;
-                }
-            }
+                match self.exec_block(body, Some(loop_scope)) {
+                    Err(UmpteenError::Divergence(Divergence::Break)) => break,
+                    Err(UmpteenError::Divergence(Divergence::Continue)) => continue,
+                    x => x,
+                }?;
+            },
 
             Stmt::Break => Err(Divergence::Break)?,
             Stmt::Continue => Err(Divergence::Continue)?,
             Stmt::Return(expr) => Err(Divergence::Return(self.eval(expr)?))?,
             Stmt::Exit => Err(Divergence::Exit)?,
+            Stmt::Fnc { name, params, body } => {
+                let fnc = UserFnc::new(name.to_string(), params.to_owned(), body.clone());
+                self.env.declare(name)?;
+                self.env.assign(name, None, Value::from(fnc))?;
+            }
         }
 
         Ok(Value::Empty)
@@ -165,7 +170,7 @@ impl Interpreter {
                 for expr in expressions {
                     values.push(self.eval(expr)?);
                 }
-                Value::Object(Rc::new(RefCell::new(Object::List(values))))
+                Value::Object(Object::list(values))
             }
             Expr::UnOp { expr, op } => {
                 let value = self.eval(expr)?;
@@ -291,10 +296,16 @@ impl Interpreter {
                 if let Value::Object(ref obj) = callee
                     && let Object::Fnc(ref mut fnc) = *obj.borrow_mut()
                 {
-                    return Ok(fnc.call(self, args));
+                    match fnc.call(self, &args) {
+                        Ok(value) => return Ok(value),
+                        Err(UmpteenError::Divergence(Divergence::Return(value))) => {
+                            return Ok(value)
+                        }
+                        Err(e) => Err(e)?,
+                    }
                 }
 
-                Err(RuntimeError::TriedToCallNonFunction(callee.to_string()))?
+                Err(InterpretError::TriedToCallNonFunction(callee.to_string()))?
             }
         };
 

@@ -2,45 +2,45 @@ use crate::{boxed, repr::value::Value};
 
 use super::ops::{Binary, Unary};
 
-pub type SubExpr<'t> = Box<Expr<'t>>;
+pub type SubExpr = Box<Expr>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr<'t> {
+pub enum Expr {
     Literal(Value),
-    List(Vec<Expr<'t>>),
+    List(Vec<Expr>),
     Binding {
-        name: &'t str,
-        index: Option<SubExpr<'t>>,
+        name: String,
+        index: Option<SubExpr>,
     },
     Grouping {
-        expr: SubExpr<'t>,
+        expr: SubExpr,
     },
     UnOp {
-        expr: SubExpr<'t>,
+        expr: SubExpr,
         op: Unary,
     },
     BinOp {
-        left: SubExpr<'t>,
-        right: SubExpr<'t>,
+        left: SubExpr,
+        right: SubExpr,
         op: Binary,
     },
     Assign {
-        name: &'t str,
-        index: Option<SubExpr<'t>>,
-        expr: SubExpr<'t>,
+        name: String,
+        index: Option<SubExpr>,
+        expr: SubExpr,
     },
     Call {
-        callee: SubExpr<'t>,
-        args: Vec<Expr<'t>>,
+        callee: SubExpr,
+        args: Vec<Expr>,
     },
 }
 
-impl<'t> Expr<'t> {
-    pub fn unary(expr: Expr<'t>, op: Unary) -> Expr<'t> {
+impl Expr {
+    pub fn unary(expr: Expr, op: Unary) -> Expr {
         let expr = boxed!(expr);
         Expr::UnOp { expr, op }
     }
-    pub fn binary(left: Expr<'t>, right: Expr<'t>, op: Binary) -> Expr<'t> {
+    pub fn binary(left: Expr, right: Expr, op: Binary) -> Expr {
         let (left, right) = (boxed!(left), boxed!(right));
         Expr::BinOp { left, right, op }
     }
