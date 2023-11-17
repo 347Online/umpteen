@@ -107,7 +107,7 @@ if something {
 
 ## Loops
 
-Execute statements multiple times with the `loop` keyword
+Execute statements multiple times with the `loop` keyword. Use `break` to exit early from the loop body, or `continue` to halt execution of the current iteration and skip to the next one
 
 ```umpteen
 var i = 0;
@@ -134,8 +134,6 @@ fnc fib(n: Number) -> Number {
   return n + fib(n - 1);
 }
 ```
-
-_NOTE: User-defined functions are not yet implemented_
 
 ## Data Types\*
 
