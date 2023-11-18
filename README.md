@@ -128,10 +128,10 @@ Declare a function with the `fnc` keyword. Parameters require type annotations. 
 ```umpteen
 fnc fib(n: Number) -> Number {
   if n <= 1 {
-    return n - 1;
+    return n;
   }
 
-  return n + fib(n - 1);
+  return fib(n - 2) + fib(n - 1);
 }
 ```
 
