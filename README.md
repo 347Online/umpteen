@@ -1,7 +1,7 @@
 # The Umpteen Programming Language
 
 This repository provides the reference implementation for the Umpteen Programming Language, bootstrapped from Rust.
-Umpteen is currently in active development and frequent breaking changes are expected until v1.0.x
+Umpteen is currently in development and frequent breaking changes are expected until v1.0.x
 
 As such, Umpteen is not yet recommended for use in production
 
